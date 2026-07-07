@@ -15,10 +15,11 @@ import { useHelperSheetStore } from '@/store/helperSheetStore';
 
 export default function App() {
   // Keys here ARE the fontFamily strings used in theme.ts (fonts.display /
-  // fonts.displayEmphasis) — each weight its own family, never synthetic bold.
+  // displayEmphasis / body) — each weight its own family, never synthetic bold.
+  // Courier Prime gives the whole app its typed-on-paper voice.
   const [fontsLoaded] = useFonts({
-    'Lora-Regular': require('./assets/fonts/Lora-Regular.ttf'),
-    'Lora-Medium': require('./assets/fonts/Lora-Medium.ttf'),
+    'CourierPrime-Regular': require('./assets/fonts/CourierPrime-Regular.ttf'),
+    'CourierPrime-Bold': require('./assets/fonts/CourierPrime-Bold.ttf'),
   });
 
   // Helper sheet host: one instance for the whole app so any screen can open

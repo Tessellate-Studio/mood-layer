@@ -198,10 +198,11 @@ between them.
 - **Monochrome only.** Every colour comes from `src/constants/theme.ts` ink/paper
   tokens (`paper`, `ink`, `inkSoft`, `inkMuted`, `shade1..4`). No hardcoded hex
   anywhere else; no colour beyond greys.
-- **Single-weight fonts, own family names.** Lora ships as `Lora-Regular` and
-  `Lora-Medium` — each registered under its own `fontFamily`, `fontWeight: '400'`
-  everywhere. Requesting synthetic bold on Android silently falls back to a
-  system serif.
+- **Typewriter voice — Courier Prime everywhere.** The app reads like a page
+  typed onto paper; monospace is the design, not a placeholder. Regular + Bold
+  ship as separate families (`CourierPrime-Regular` / `CourierPrime-Bold`), each
+  registered under its own `fontFamily` with `fontWeight: '400'` (synthetic bold
+  on Android silently falls back to a system font — forge AP#12).
 - **Reanimated 4 + Jest:** the hand-rolled mock in `jest.setup.js` (copied from
   alate, known-good) is load-bearing — v4 worklets crash Node if the real module
   loads in tests. Don't replace it with the package's own mock.

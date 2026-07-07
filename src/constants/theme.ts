@@ -58,75 +58,81 @@ export const borderRadius = {
 /** Minimum touch target (WCAG 2.1 AA / Android). */
 export const hitTarget = 44;
 
-// Typography — Lora (OFL) for display/headings, system sans for body.
-// Each Lora weight is its OWN family, registered under these exact keys in
-// App.tsx's useFonts map; fontWeight stays '400' everywhere. Asking Android
-// for synthetic bold silently falls back to a system serif (platform rule —
-// see forge anti-patterns; TTF name tables verified: NameID 1 = "Lora" /
-// "Lora Medium").
+// Typography — Courier Prime (OFL) throughout: a typewriter on paper.
+// Typewriter voice: Courier Prime (OFL) everywhere, so the whole app reads like
+// a page typed onto paper. Monospace is the point — it IS the ink-on-paper feel.
+// Each weight is its OWN family, registered under these exact keys in App.tsx's
+// useFonts map; fontWeight stays '400' everywhere (asking Android for synthetic
+// bold silently falls back to a system font — forge anti-pattern #12). TTF name
+// tables verified: NameID 1 = "Courier Prime" for both, subfamily Regular/Bold.
 export const fonts = {
-  display: 'Lora-Regular',
-  displayEmphasis: 'Lora-Medium',
-  /** undefined → platform default sans (Roboto on Android). */
-  body: undefined,
+  display: 'CourierPrime-Regular',
+  displayEmphasis: 'CourierPrime-Bold',
+  /** Body is monospace too — a typed page has one typeface. */
+  body: 'CourierPrime-Regular',
 } as const;
 
 export const typography = {
+  // Monospace reads larger and wider than a proportional face at the same pt,
+  // so display sizes are nudged down and line-heights opened up — a typed page
+  // breathes between its lines.
   display: {
     fontFamily: fonts.display,
-    fontSize: 34,
-    lineHeight: 42,
+    fontSize: 30,
+    lineHeight: 40,
     fontWeight: '400' as const,
     color: colors.ink,
   },
   title: {
     fontFamily: fonts.display,
-    fontSize: 24,
-    lineHeight: 32,
+    fontSize: 22,
+    lineHeight: 30,
     fontWeight: '400' as const,
     color: colors.ink,
   },
   heading: {
     fontFamily: fonts.displayEmphasis,
-    fontSize: 18,
+    fontSize: 17,
     lineHeight: 26,
     fontWeight: '400' as const,
     color: colors.ink,
   },
   body: {
     fontFamily: fonts.body,
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 15,
+    lineHeight: 25,
     fontWeight: '400' as const,
     color: colors.inkSoft,
   },
   bodyLarge: {
     fontFamily: fonts.body,
-    fontSize: 18,
-    lineHeight: 27,
+    fontSize: 17,
+    lineHeight: 28,
     fontWeight: '400' as const,
     color: colors.inkSoft,
   },
   caption: {
     fontFamily: fonts.body,
-    fontSize: 13,
+    fontSize: 12,
     lineHeight: 18,
     fontWeight: '400' as const,
     color: colors.inkMuted,
   },
   label: {
     fontFamily: fonts.body,
-    fontSize: 15,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 21,
     fontWeight: '400' as const,
     color: colors.ink,
   },
   overline: {
     fontFamily: fonts.body,
-    fontSize: 12,
+    fontSize: 11,
     lineHeight: 16,
     fontWeight: '400' as const,
-    letterSpacing: 1.2,
+    // Wide tracking on an uppercase monospace label reads like a stamped
+    // header on a form — leans into the paper feel.
+    letterSpacing: 2,
     textTransform: 'uppercase' as const,
     color: colors.inkMuted,
   },
