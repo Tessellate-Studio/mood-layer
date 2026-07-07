@@ -1,0 +1,131 @@
+// P10 — experiment screens. The notifications SERVICE is mocked so these tests
+// assert wiring (permission gate, reschedule on change) without touching the
+// expo-notifications surface directly.
+
+import React from 'react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { NavigationContainer } from '@react-navigation/native';
+
+jest.mock('@/services/notifications', () => ({
+  ensurePermissions: jest.fn(() => Promise.resolve(true)),
+  rescheduleNameIt: jest.fn(() => Promise.resolve(['id-1', 'id-2', 'id-3'])),
+  configureHandler: jest.fn(),
+  ensureChannel: jest.fn(() => Promise.resolve()),
+}));
+
+import * as notifications from '@/services/notifications';
+import ExperimentsScreen from '@/screens/ExperimentsScreen';
+import JudgmentFlowScreen from '@/screens/JudgmentFlowScreen';
+import NameItSetupScreen from '@/screens/NameItSetupScreen';
+import { useExperimentStore } from '@/store/experimentStore';
+
+const initialExperiments = useExperimentStore.getState();
+
+beforeEach(() => {
+  jest.clearAllMocks();
+  useExperimentStore.setState(initialExperiments, true);
+});
+
+function renderScreen(node: React.ReactElement) {
+  return render(<NavigationContainer>{node}</NavigationContainer>);
+}
+
+describe('NameItSetupScreen', () => {
+  it('renders its landmark', async () => {
+    renderScreen(<NameItSetupScreen />);
+    expect(await screen.findByTestId('screen-name-it')).toBeTruthy();
+  });
+
+  it('enabling asks permission then reschedules', async () => {
+    renderScreen(<NameItSetupScreen />);
+    // Switch fires onValueChange, not press.
+    fireEvent(await screen.findByTestId('name-it-enabled'), 'valueChange', true);
+
+    await waitFor(() => expect(notifications.ensurePermissions).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(notifications.rescheduleNameIt).toHaveBeenCalled());
+    expect(useExperimentStore.getState().nameIt.enabled).toBe(true);
+  });
+
+  it('does NOT enable when permission is denied', async () => {
+    (notifications.ensurePermissions as jest.Mock).mockResolvedValueOnce(false);
+    renderScreen(<NameItSetupScreen />);
+    fireEvent(await screen.findByTestId('name-it-enabled'), 'valueChange', true);
+
+    await waitFor(() => expect(notifications.ensurePermissions).toHaveBeenCalled());
+    expect(useExperimentStore.getState().nameIt.enabled).toBe(false);
+    expect(notifications.rescheduleNameIt).not.toHaveBeenCalled();
+  });
+
+  it('frequency stepper increments the value', async () => {
+    // Start enabled so the stepper is live and reschedules.
+    useExperimentStore.setState((s) => ({ nameIt: { ...s.nameIt, enabled: true, timesPerDay: 3 } }));
+    renderScreen(<NameItSetupScreen />);
+    fireEvent.press(await screen.findByTestId('freq-inc'));
+    await waitFor(() => expect(useExperimentStore.getState().nameIt.timesPerDay).toBe(4));
+  });
+});
+
+describe('JudgmentFlowScreen', () => {
+  it('walks the 4 steps and saves one entry', async () => {
+    renderScreen(<JudgmentFlowScreen />);
+    expect(await screen.findByTestId('screen-judgment')).toBeTruthy();
+
+    // Step 1 — target
+    fireEvent.changeText(screen.getByTestId('judgment-target'), 'my coworker');
+    fireEvent.press(screen.getByTestId('judgment-next'));
+
+    // Step 2 — judgment
+    fireEvent.changeText(await screen.findByTestId('judgment-judgment'), 'being disorganized');
+    fireEvent.press(screen.getByTestId('judgment-next'));
+
+    // Step 3 — pick a feeling + intensity. EmotionChip stamps `chip-${id}`,
+    // so the composite id `judgment-feeling-worried` renders as
+    // `chip-judgment-feeling-worried`.
+    fireEvent.press(await screen.findByTestId('chip-judgment-feeling-worried'));
+    fireEvent.press(screen.getByTestId('judgment-next'));
+
+    // Step 4 — optional free-writing, then save
+    fireEvent.changeText(await screen.findByTestId('judgment-freewriting'), 'the deadline scares me');
+    fireEvent.press(screen.getByTestId('judgment-save'));
+
+    await waitFor(() => expect(useExperimentStore.getState().judgmentEntries).toHaveLength(1));
+    const entry = useExperimentStore.getState().judgmentEntries[0];
+    expect(entry.target).toBe('my coworker');
+    expect(entry.judgment).toBe('being disorganized');
+    expect(entry.uncoveredFeeling?.emotionId).toBe('worried');
+    expect(entry.uncoveredFeeling?.family).toBe('fear');
+    expect(entry.freeWriting).toBe('the deadline scares me');
+  });
+
+  it('cannot advance step 1 with an empty target', async () => {
+    renderScreen(<JudgmentFlowScreen />);
+    fireEvent.press(await screen.findByTestId('judgment-next'));
+    // Still on step 1 — the judgment input hasn't appeared.
+    expect(screen.queryByTestId('judgment-judgment')).toBeNull();
+  });
+});
+
+describe('ExperimentsScreen past reflections', () => {
+  it('lists a past reflection and expands it on tap', async () => {
+    useExperimentStore.getState().addJudgmentEntry({
+      target: 'my friend',
+      judgment: 'canceling',
+      uncoveredFeeling: { emotionId: 'hurt', family: 'sadness', intensity: 3 },
+      freeWriting: 'I felt unimportant.',
+    });
+
+    renderScreen(<ExperimentsScreen />);
+    const entry = await screen.findByTestId('judgment-entry-0');
+    expect(entry).toBeTruthy();
+    // Collapsed: free-writing hidden until tapped.
+    expect(screen.queryByText('I felt unimportant.')).toBeNull();
+    fireEvent.press(entry);
+    expect(await screen.findByText('I felt unimportant.')).toBeTruthy();
+  });
+
+  it('shows no reflections section when the store is empty', async () => {
+    renderScreen(<ExperimentsScreen />);
+    await screen.findByTestId('screen-experiments');
+    expect(screen.queryByTestId('judgment-entry-0')).toBeNull();
+  });
+});
