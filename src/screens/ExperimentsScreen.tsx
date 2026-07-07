@@ -9,6 +9,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { borderRadius, colors, spacing, typography } from '@/constants/theme';
+import PaperTexture from '@/components/PaperTexture';
 import { findEmotionWord } from '@/content/emotions';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { useExperimentStore } from '@/store/experimentStore';
@@ -25,11 +26,14 @@ export default function ExperimentsScreen() {
   const [expanded, setExpanded] = React.useState<string | null>(null);
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.md }]}
-      testID="screen-experiments"
-    >
+    // ScrollView sits inside a plain container so the paper grain stays fixed
+    // behind the content instead of scrolling with it.
+    <View style={styles.container}>
+      <PaperTexture />
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.md }]}
+        testID="screen-experiments"
+      >
       <Text style={typography.title}>Experiments</Text>
 
       <Pressable
@@ -71,7 +75,8 @@ export default function ExperimentsScreen() {
           ))}
         </View>
       ) : null}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -106,9 +111,9 @@ function ReflectionRow({
       {expanded ? (
         <View style={styles.entryDetail}>
           {feelingLabel ? (
-            <Text style={typography.caption}>
-              Underneath: {feelingLabel} · {entry.uncoveredFeeling?.intensity}
-            </Text>
+            // Just the word — a bare intensity digit reads as noise here
+            // (device feedback); the quilt is where intensity lives.
+            <Text style={typography.caption}>Underneath: {feelingLabel}</Text>
           ) : null}
           {entry.freeWriting ? <Text style={typography.body}>{entry.freeWriting}</Text> : null}
         </View>

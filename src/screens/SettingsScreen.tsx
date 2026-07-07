@@ -20,12 +20,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Line } from 'react-native-svg';
 
 import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
+import PaperTexture from '@/components/PaperTexture';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { rescheduleNameIt } from '@/services/notifications';
 import { useCheckInStore } from '@/store/checkInStore';
 import { useExperimentStore } from '@/store/experimentStore';
 import { useInsightStore } from '@/store/insightStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { seedMonth } from '@/utils/devSeed';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -35,10 +37,11 @@ const APP_VERSION = 'v0.1.0';
 const ABOUT_TEXT =
   'The quilt comes from Paul Ekman, who showed we rarely feel one thing at a ' +
   'time — several feelings arrive together, stitched into one moment. The ' +
-  'practice of feeling instead of resisting comes from Joe Hudson: emotions ' +
-  'that are allowed to move through the body pass on their own, and letting ' +
-  'them builds resilience. This app is a practice companion, not therapy or ' +
-  'diagnosis.';
+  "quilt's colours follow the Atlas of Emotions, the map of feeling Ekman " +
+  'built with the Dalai Lama (atlasofemotions.org). The practice of feeling ' +
+  'instead of resisting comes from Joe Hudson: emotions that are allowed to ' +
+  'move through the body pass on their own, and letting them builds ' +
+  'resilience. This app is a practice companion, not therapy or diagnosis.';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -108,6 +111,7 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-settings">
+      <PaperTexture />
       <View style={styles.headerRow}>
         <Pressable
           testID="settings-back"
@@ -206,6 +210,23 @@ export default function SettingsScreen() {
         >
           <Text style={styles.rowLabel}>Delete everything</Text>
         </Pressable>
+
+        {__DEV__ ? (
+          // Dev builds only — never rendered in production. Paints a
+          // deterministic month of history for design review.
+          <Pressable
+            testID="settings-dev-seed"
+            accessibilityRole="button"
+            accessibilityLabel="Seed a month of sample data"
+            style={[styles.row, styles.deleteRow]}
+            onPress={() => {
+              const n = seedMonth();
+              Alert.alert('Seeded', `${n} check-ins painted across the last month.`);
+            }}
+          >
+            <Text style={styles.rowLabel}>Seed a month (dev)</Text>
+          </Pressable>
+        ) : null}
 
         <Text style={styles.version}>{APP_VERSION}</Text>
       </ScrollView>

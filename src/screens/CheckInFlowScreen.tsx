@@ -23,6 +23,7 @@ import IntensityDial from '@/components/IntensityDial';
 import ModalHeader from '@/components/ModalHeader';
 import { PatchPreview } from '@/components/QuiltPatch';
 import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
+import PaperTexture from '@/components/PaperTexture';
 import { EMOTION_FAMILIES, findEmotionWord, MASKING_STATES } from '@/content/emotions';
 import { RESISTANCE_TELLS } from '@/content/resistance';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
@@ -96,6 +97,7 @@ export default function CheckInFlowScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-checkin">
+      <PaperTexture />
       <ModalHeader title={title} closeTestID="checkin-close" onClose={() => navigation.goBack()} />
 
       {/* Stitched progress: one dash per step. */}
@@ -249,6 +251,7 @@ function IntensityStep({ state, setState }: StepProps) {
             <IntensityDial
               wordId={sel.emotionId}
               label={label}
+              family={sel.family}
               value={sel.intensity}
               onChange={(intensity: Intensity) => setState((s) => setIntensity(s, sel.emotionId, intensity))}
             />

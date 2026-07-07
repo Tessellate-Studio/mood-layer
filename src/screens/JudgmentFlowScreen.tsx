@@ -14,6 +14,7 @@ import EmotionChip from '@/components/EmotionChip';
 import IntensityDial from '@/components/IntensityDial';
 import ModalHeader from '@/components/ModalHeader';
 import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
+import PaperTexture from '@/components/PaperTexture';
 import { EMOTION_FAMILIES, findEmotionWord } from '@/content/emotions';
 import { JUDGMENT_EXAMPLES } from '@/content/judgmentExamples';
 import { useExperimentStore } from '@/store/experimentStore';
@@ -65,6 +66,7 @@ export default function JudgmentFlowScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-judgment">
+      <PaperTexture />
       <ModalHeader
         title="Under the judgment"
         closeTestID="judgment-close"
@@ -163,6 +165,7 @@ export default function JudgmentFlowScreen() {
                 <IntensityDial
                   wordId={feeling.emotionId}
                   label={findEmotionWord(feeling.emotionId)?.word.label ?? feeling.emotionId}
+                  family={feeling.family}
                   value={feeling.intensity}
                   onChange={(intensity: Intensity) =>
                     setFeeling((prev) => (prev ? { ...prev, intensity } : prev))

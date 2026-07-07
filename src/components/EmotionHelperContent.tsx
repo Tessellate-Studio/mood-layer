@@ -74,9 +74,13 @@ export function EmotionHelperContent({ family }: Props) {
       <Section label="In the body">
         {helper.bodySignature.map((line) => (
           <View key={line} style={styles.bodyRow}>
-            <Svg width={8} height={8} viewBox="0 0 8 8">
-              <Circle cx={4} cy={4} r={2} fill={colors.ink} />
-            </Svg>
+            {/* Dot lives in a first-line-height box so it centers on the text's
+                first line instead of floating above it (device finding). */}
+            <View style={styles.bodyDotBox}>
+              <Svg width={8} height={8} viewBox="0 0 8 8">
+                <Circle cx={4} cy={4} r={2} fill={colors.ink} />
+              </Svg>
+            </View>
             <Text style={[typography.body, styles.bodyRowText]}>{line}</Text>
           </View>
         ))}
@@ -135,11 +139,15 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: spacing.sm,
   },
+  bodyDotBox: {
+    // Exactly one text line tall → the dot vertically centers on the first
+    // line of the (possibly wrapping) text next to it.
+    height: typography.body.lineHeight,
+    justifyContent: 'center',
+  },
   bodyRowText: {
     flex: 1,
     flexWrap: 'wrap',
-    // Nudge text to sit level with the small dot.
-    marginTop: -2,
   },
   becomesRow: {
     flexDirection: 'row',

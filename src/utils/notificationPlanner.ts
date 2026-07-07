@@ -1,43 +1,48 @@
 // Pure scheduling maths for "name it" reminders: spread N times evenly across
-// the waking window, nudged by a small DETERMINISTIC jitter so the prompts
-// don't feel metronomic. No Math.random — a re-run must reproduce the same
-// day exactly (the service cancels + reschedules on every settings change, and
-// a random shuffle each time would churn the OS schedule and confuse anyone
-// reading the preview list).
+// the waking window, always ON THE HOUR. Device feedback (2026-07-08): the
+// original ±15-minute jitter produced times like 09:57 / 12:27 that read as
+// random noise in the preview — whole hours read like a kept appointment.
+// Deterministic: a re-run reproduces the same day exactly (the service cancels
+// + reschedules on every settings change).
 
 export interface DailyTime {
   hour: number;
   minute: number;
 }
 
+/** Frequency bounds — up to one nudge every waking hour or two. */
+export const MIN_TIMES_PER_DAY = 1;
+export const MAX_TIMES_PER_DAY = 10;
+
 /**
- * Evenly place `timesPerDay` reminders inside [wakeStart, wakeEnd) (hours),
- * each offset by an index-seeded jitter of −15..+15 minutes, clamped to the
- * window and sorted ascending. A single reminder lands near the midpoint.
+ * Evenly place `timesPerDay` reminders inside [wakeStart, wakeEnd] as DISTINCT
+ * whole hours, sorted ascending. A single reminder lands at the midpoint hour.
+ * If the window has fewer whole hours than requested, every hour in the window
+ * is used (the count caps at the window size rather than doubling up).
  */
 export function planDailyTimes(
-  timesPerDay: 1 | 2 | 3 | 4 | 5,
+  timesPerDay: number,
   wakeStart: number,
   wakeEnd: number
 ): DailyTime[] {
-  const startMin = wakeStart * 60;
-  const endMin = wakeEnd * 60;
-  const span = Math.max(0, endMin - startMin);
+  const span = Math.max(0, wakeEnd - wakeStart);
+  const requested = Math.min(
+    Math.max(Math.round(timesPerDay), MIN_TIMES_PER_DAY),
+    MAX_TIMES_PER_DAY
+  );
+  // Distinct whole hours available in the window (inclusive of both ends).
+  const n = Math.min(requested, span + 1);
 
-  // Slots sit at the centre of `timesPerDay` equal sub-bands: for n slots the
-  // i-th centre is start + span*(i + 0.5)/n. For n=1 that's the midpoint.
-  const times: number[] = [];
-  for (let i = 0; i < timesPerDay; i++) {
-    const base = startMin + (span * (i + 0.5)) / timesPerDay;
-    // Deterministic jitter in [-15, +15] seeded by slot index.
-    const jitter = ((i * 37) % 31) - 15;
-    let m = Math.round(base + jitter);
-    if (m < startMin) m = startMin;
-    if (m > endMin) m = endMin;
-    times.push(m);
+  const hours = new Set<number>();
+  for (let i = 0; i < n; i++) {
+    // Centre of the i-th of n equal sub-bands, rounded to a whole hour.
+    let h = Math.round(wakeStart + (span * (i + 0.5)) / n);
+    // Collisions from rounding walk forward to the next free hour (bounded by
+    // n ≤ span+1, so a free hour always exists in-window).
+    while (hours.has(h) && h < wakeEnd) h += 1;
+    while (hours.has(h) && h > wakeStart) h -= 1;
+    hours.add(h);
   }
 
-  return times
-    .sort((a, b) => a - b)
-    .map((m) => ({ hour: Math.floor(m / 60), minute: m % 60 }));
+  return [...hours].sort((a, b) => a - b).map((hour) => ({ hour, minute: 0 }));
 }

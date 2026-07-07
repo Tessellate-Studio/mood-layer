@@ -13,13 +13,14 @@ import Svg, { Circle, Line, Rect } from 'react-native-svg';
 import {
   borderRadius,
   colors,
+  familyPalette,
   hitTarget,
   motion,
-  shadeForIntensity,
   spacing,
   textures,
   typography,
 } from '@/constants/theme';
+import PaperTexture from '@/components/PaperTexture';
 import { EMOTION_FAMILIES, findEmotionWord } from '@/content/emotions';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import QuiltWeek from '@/components/QuiltWeek';
@@ -100,8 +101,9 @@ export default function QuiltScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-quilt">
+      <PaperTexture />
       <View style={styles.headerRow}>
-        <Text style={styles.title}>Your quilt</Text>
+        <Text style={styles.title}>Your emotional quilt</Text>
         <Pressable
           testID="open-settings"
           accessibilityRole="button"
@@ -195,7 +197,10 @@ export default function QuiltScreen() {
                 {selected.emotions.map((sel, i) => (
                   <View key={`${sel.emotionId}-${i}`} style={styles.emotionRow}>
                     <View
-                      style={[styles.swatch, { backgroundColor: shadeForIntensity[sel.intensity] }]}
+                      style={[
+                        styles.swatch,
+                        { backgroundColor: familyPalette[sel.family].shades[sel.intensity] },
+                      ]}
                     />
                     <Text style={typography.body}>{wordLabel(sel.emotionId)}</Text>
                     <Text style={styles.intensityDot}>· {sel.intensity}</Text>
