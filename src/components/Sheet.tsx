@@ -107,8 +107,11 @@ export function Sheet({ visible, onClose, children, testID }: Props) {
           >
             {/* Drag handle — a decorative grab bar. */}
             <View style={styles.handle} pointerEvents="none" />
-            {/* Stop backdrop taps from bubbling out through the sheet body. */}
-            <Pressable onPress={() => {}}>{children}</Pressable>
+            {/* Render children directly: the sheet sits above the backdrop in
+                the tree, so taps here never reach the backdrop. A wrapping
+                Pressable would collapse the whole sheet into one screen-reader
+                "button" and swallow inner scrolling. */}
+            {children}
           </Animated.View>
         </GestureDetector>
       </View>

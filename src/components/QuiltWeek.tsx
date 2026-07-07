@@ -155,10 +155,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     fontFamily: typography.caption.fontFamily,
-    fontSize: 10,
+    fontSize: 11,
     lineHeight: 14,
     fontWeight: '400',
-    color: colors.inkFaint,
+    // Weekday labels are meaningful text, so inkMuted (7:1) not inkFaint
+    // (~3.3:1, decoration-only) — WCAG 2.1 AA.
+    color: colors.inkMuted,
   },
   stitchOverlay: {
     position: 'absolute',
