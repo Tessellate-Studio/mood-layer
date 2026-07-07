@@ -107,6 +107,13 @@ jest.mock('expo-haptics', () => ({
   NotificationFeedbackType: { Success: 'success', Warning: 'warning', Error: 'error' },
 }));
 
+// appOwnership null ≈ dev/production build (not Expo Go) — screens that warn
+// about Expo Go limits stay quiet by default in tests.
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: { appOwnership: null },
+}));
+
 jest.mock('expo-font', () => ({
   useFonts: () => [true, null],
   loadAsync: jest.fn(() => Promise.resolve()),
@@ -127,6 +134,13 @@ jest.mock('expo-notifications', () => ({
   AndroidImportance: { DEFAULT: 3, LOW: 2, HIGH: 4 },
   SchedulableTriggerInputTypes: { DAILY: 'daily', DATE: 'date', TIME_INTERVAL: 'timeInterval' },
 }));
+
+// Safe-area insets: the real SafeAreaProvider measures natively and never
+// resolves under jest, so useSafeAreaInsets would throw on every screen — use
+// the package's official jest mock (zero insets, 320x640 frame).
+jest.mock('react-native-safe-area-context', () =>
+  require('react-native-safe-area-context/jest/mock').default
+);
 
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () =>
