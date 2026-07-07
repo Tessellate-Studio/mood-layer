@@ -107,6 +107,13 @@ jest.mock('expo-haptics', () => ({
   NotificationFeedbackType: { Success: 'success', Warning: 'warning', Error: 'error' },
 }));
 
+// appOwnership null ≈ dev/production build (not Expo Go) — screens that warn
+// about Expo Go limits stay quiet by default in tests.
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: { appOwnership: null },
+}));
+
 jest.mock('expo-font', () => ({
   useFonts: () => [true, null],
   loadAsync: jest.fn(() => Promise.resolve()),

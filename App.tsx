@@ -2,52 +2,38 @@ import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 import { useFonts } from 'expo-font';
-import * as Notifications from 'expo-notifications';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import EmotionHelperSheet from '@/components/EmotionHelperSheet';
+import { FONT_ASSETS } from '@/constants/fontAssets';
 import { colors } from '@/constants/theme';
 import AppNavigator from '@/navigation/AppNavigator';
 import { navigate } from '@/navigation/navigationRef';
-import { configureHandler } from '@/services/notifications';
+import { configureHandler, subscribeToNotificationTaps } from '@/services/notifications';
 import { useHelperSheetStore } from '@/store/helperSheetStore';
 
 export default function App() {
-  // Keys here ARE the fontFamily strings used in theme.ts (fonts.display /
-  // displayEmphasis / body) — each weight its own family, never synthetic bold.
-  // Courier Prime gives the whole app its typed-on-paper voice.
-  const [fontsLoaded] = useFonts({
-    'CourierPrime-Regular': require('./assets/fonts/CourierPrime-Regular.ttf'),
-    'CourierPrime-Bold': require('./assets/fonts/CourierPrime-Bold.ttf'),
-  });
+  // The map's keys ARE the fontFamily strings used in theme.ts — kept in
+  // src/constants/fontAssets.ts so a guardrail test can pin them to the theme
+  // tokens (a drift means Android silently drops the typewriter face).
+  const [fontsLoaded] = useFonts(FONT_ASSETS);
 
   // Helper sheet host: one instance for the whole app so any screen can open
   // an emotion's explainer through useHelperSheetStore, no prop drilling.
   const helperFamily = useHelperSheetStore((s) => s.family);
   const closeHelper = useHelperSheetStore((s) => s.close);
 
-  // "Name it" notifications: install the foreground handler once, deep-link a
-  // tapped reminder into the check-in flow (both warm-start responses and the
-  // cold-start case). Guarded so the jest mock (getLast… → null) is a no-op.
+  // "Name it" notifications: install the foreground handler once and deep-link
+  // tapped reminders (warm + cold start) into the check-in flow. All routed
+  // through the notifications service so its Expo Go import guard is the single
+  // choke point — importing expo-notifications here would crash Expo Go.
   React.useEffect(() => {
     configureHandler();
-
-    const routeFrom = (data: unknown) => {
+    return subscribeToNotificationTaps((data) => {
       const d = data as { route?: string; source?: string } | undefined;
       if (d?.route === 'CheckInFlow') navigate('CheckInFlow', { source: 'name-it' });
-    };
-
-    const sub = Notifications.addNotificationResponseReceivedListener((r) => {
-      routeFrom(r.notification.request.content.data);
     });
-
-    // Cold start: app launched by tapping a reminder.
-    Notifications.getLastNotificationResponseAsync().then((r) => {
-      if (r) routeFrom(r.notification.request.content.data);
-    });
-
-    return () => sub.remove();
   }, []);
 
   if (!fontsLoaded) {

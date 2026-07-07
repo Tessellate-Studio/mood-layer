@@ -9,7 +9,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import ScreenErrorBoundary from '@/components/ScreenErrorBoundary';
 import { ExperimentsIcon, InsightsIcon, QuiltIcon, type TabIconProps } from '@/components/TabIcon';
-import { colors } from '@/constants/theme';
+import { colors, fonts } from '@/constants/theme';
 import { navigationRef } from '@/navigation/navigationRef';
 import CheckInFlowScreen from '@/screens/CheckInFlowScreen';
 import ExperimentsScreen from '@/screens/ExperimentsScreen';
@@ -80,7 +80,9 @@ function MainTabs() {
         tabBarActiveTintColor: colors.ink,
         tabBarInactiveTintColor: colors.inkMuted,
         tabBarStyle: { backgroundColor: colors.paperRaised },
-        tabBarLabelStyle: { fontSize: 12, fontWeight: '400' },
+        // Typewriter face on the tab labels too — device test showed them
+        // falling back to system sans without an explicit fontFamily.
+        tabBarLabelStyle: { fontFamily: fonts.body, fontSize: 11, fontWeight: '400' },
       }}
     >
       <Tab.Screen

@@ -6,6 +6,7 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import Constants from 'expo-constants';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ModalHeader from '@/components/ModalHeader';
@@ -27,6 +28,13 @@ const WAKE_END_MAX = 23;
 function fmt(hour: number, minute: number): string {
   return `${`${hour}`.padStart(2, '0')}:${`${minute}`.padStart(2, '0')}`;
 }
+
+// Expo Go on Android can't fire local scheduled notifications (SDK 53+
+// removed support). Without this caption the toggle looks functional and
+// silently does nothing — the exact user-can't-see failure the closing-retro
+// exists to catch. appOwnership === 'expo' only in Expo Go, never in a dev or
+// production build.
+const IS_EXPO_GO = Constants.appOwnership === 'expo';
 
 export default function NameItSetupScreen() {
   const insets = useSafeAreaInsets();
@@ -111,6 +119,12 @@ export default function NameItSetupScreen() {
         </View>
         {permissionDenied ? (
           <Text style={styles.denied}>Reminders need notification permission</Text>
+        ) : null}
+        {IS_EXPO_GO ? (
+          <Text style={styles.denied} testID="expo-go-note">
+            Previewing in Expo Go — reminders will not fire here. They work in
+            the installed app.
+          </Text>
         ) : null}
 
         {/* Frequency */}
