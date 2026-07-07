@@ -1,18 +1,31 @@
-// Home tab: the quilt. This phase ships the skeleton — header + empty state +
-// a day/emotion list stand-in + the check-in FAB.
+// Home tab: the quilt canvas. Weeks stream in a FlatList (current week first);
+// each is an SVG of shaded, textured patches with a11y-focusable press
+// overlays. Tapping a patch opens a read-only detail sheet. A freshly stitched
+// check-in animates in once (skipped under reduce-motion).
 
 import React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Modal, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Line, Rect } from 'react-native-svg';
 
-import { borderRadius, colors, hitTarget, spacing, textures, typography } from '@/constants/theme';
-import { findEmotionWord } from '@/content/emotions';
+import {
+  borderRadius,
+  colors,
+  hitTarget,
+  motion,
+  shadeForIntensity,
+  spacing,
+  textures,
+  typography,
+} from '@/constants/theme';
+import { EMOTION_FAMILIES, findEmotionWord } from '@/content/emotions';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
+import QuiltWeek from '@/components/QuiltWeek';
 import { useCheckInStore } from '@/store/checkInStore';
-import type { CheckIn } from '@/types/models';
+import type { CheckIn, EmotionFamilyId } from '@/types/models';
+import { computeQuiltLayout } from '@/utils/quiltLayout';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -29,16 +42,60 @@ const GEAR_SPOKES = Array.from({ length: 8 }, (_, i) => {
   };
 });
 
-function emotionLabels(checkIn: CheckIn): string {
-  return checkIn.emotions
-    .map((sel) => findEmotionWord(sel.emotionId)?.word.label ?? sel.emotionId)
-    .join(', ');
+function wordLabel(emotionId: string): string {
+  return findEmotionWord(emotionId)?.word.label ?? emotionId;
+}
+
+function uniqueFamilies(checkIn: CheckIn): EmotionFamilyId[] {
+  const seen: EmotionFamilyId[] = [];
+  for (const sel of checkIn.emotions) {
+    if (!seen.includes(sel.family)) seen.push(sel.family);
+  }
+  return seen;
+}
+
+function stitchedTime(iso: string): string {
+  const d = new Date(iso);
+  const hh = `${d.getHours()}`.padStart(2, '0');
+  const mm = `${d.getMinutes()}`.padStart(2, '0');
+  return `stitched ${hh}:${mm}`;
 }
 
 export default function QuiltScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<Nav>();
   const checkIns = useCheckInStore((s) => s.checkIns);
+  const { width } = useWindowDimensions();
+
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [animateId, setAnimateId] = React.useState<string | null>(null);
+
+  // Content width the canvas gets; QuiltWeek reserves a left margin for
+  // weekday labels, so the layout engine is handed the already-margin-less
+  // width (it lays out patches from x=0).
+  const contentWidth = width - spacing.md * 2;
+  const blocks = React.useMemo(
+    () => computeQuiltLayout(checkIns, contentWidth - 34),
+    [checkIns, contentWidth]
+  );
+
+  // Stitch-in: when the newest check-in id changes (a fresh stitch, not a
+  // rehydrate), flag it for the one-shot arrival animation, then clear.
+  const prevFirstId = React.useRef<string | null>(checkIns[0]?.id ?? null);
+  React.useEffect(() => {
+    const firstId = checkIns[0]?.id ?? null;
+    if (firstId && firstId !== prevFirstId.current) {
+      setAnimateId(firstId);
+      const t = setTimeout(() => setAnimateId(null), motion.stitchMs);
+      prevFirstId.current = firstId;
+      return () => clearTimeout(t);
+    }
+    prevFirstId.current = firstId;
+  }, [checkIns]);
+
+  const selected = selectedId
+    ? checkIns.find((c) => c.id === selectedId) ?? null
+    : null;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-quilt">
@@ -86,16 +143,20 @@ export default function QuiltScreen() {
           <Text style={styles.emptyText}>Your quilt begins with one square.</Text>
         </View>
       ) : (
-        /* Quilt canvas lands in P7 — this list is a plain stand-in. */
         <FlatList
-          data={checkIns}
-          keyExtractor={(item) => item.id}
+          data={blocks}
+          keyExtractor={(item) => item.weekKey}
           contentContainerStyle={styles.listContent}
+          initialNumToRender={3}
+          windowSize={5}
+          removeClippedSubviews
           renderItem={({ item }) => (
-            <View style={styles.row}>
-              <Text style={typography.label}>{item.dayKey}</Text>
-              <Text style={styles.rowEmotions}>{emotionLabels(item)}</Text>
-            </View>
+            <QuiltWeek
+              block={item}
+              width={contentWidth}
+              animateId={animateId}
+              onPatchPress={setSelectedId}
+            />
           )}
         />
       )}
@@ -112,8 +173,71 @@ export default function QuiltScreen() {
           <Line x1={5} y1={12} x2={19} y2={12} stroke={colors.paper} strokeWidth={2} strokeLinecap="round" />
         </Svg>
       </Pressable>
+
+      <Modal
+        visible={selected !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedId(null)}
+      >
+        <Pressable style={styles.backdrop} onPress={() => setSelectedId(null)}>
+          {/* Inner press is swallowed so tapping the card doesn't dismiss. */}
+          <Pressable style={[styles.sheet, { paddingBottom: insets.bottom + spacing.lg }]} testID="patch-detail">
+            {selected ? (
+              <>
+                <Text style={styles.sheetTitle}>{buildTitle(selected)}</Text>
+                {selected.emotions.map((sel, i) => (
+                  <View key={`${sel.emotionId}-${i}`} style={styles.emotionRow}>
+                    <View
+                      style={[styles.swatch, { backgroundColor: shadeForIntensity[sel.intensity] }]}
+                    />
+                    <Text style={typography.body}>{wordLabel(sel.emotionId)}</Text>
+                    <Text style={styles.intensityDot}>· {sel.intensity}</Text>
+                  </View>
+                ))}
+                {selected.note ? <Text style={styles.note}>{selected.note}</Text> : null}
+                {selected.bodySensations && selected.bodySensations.length > 0 ? (
+                  <View style={styles.chipRow}>
+                    {selected.bodySensations.map((s) => (
+                      <Text key={s} style={styles.chip}>
+                        {s}
+                      </Text>
+                    ))}
+                  </View>
+                ) : null}
+                <Text style={styles.stitchedAt}>{stitchedTime(selected.createdAt)}</Text>
+                {uniqueFamilies(selected).map((fam) => (
+                  <Pressable
+                    key={fam}
+                    testID={`about-${fam}`}
+                    accessibilityRole="button"
+                    accessibilityLabel={`About ${EMOTION_FAMILIES[fam].label}`}
+                    style={styles.aboutLink}
+                    // TODO(P9): open EmotionHelper sheet for this family.
+                    onPress={() => {}}
+                  >
+                    <Text style={styles.aboutText}>about {EMOTION_FAMILIES[fam].label} →</Text>
+                  </Pressable>
+                ))}
+              </>
+            ) : null}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
+}
+
+/** The patch a11y label doubles as the detail title (weekday + parts + words). */
+function buildTitle(checkIn: CheckIn): string {
+  // computeQuiltLayout stamps a11yLabel onto patch layouts, but the detail
+  // sheet reads the raw CheckIn — rebuild the same human sentence here.
+  const d = new Date(checkIn.createdAt);
+  const weekday = d.toLocaleDateString(undefined, { weekday: 'long' });
+  const words = checkIn.emotions
+    .map((s) => `${wordLabel(s.emotionId).toLowerCase()} ${s.intensity}`)
+    .join(', ');
+  return `${weekday}: ${words}`;
 }
 
 const styles = StyleSheet.create({
@@ -151,20 +275,8 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingVertical: spacing.md,
-    // Keep the last row clear of the FAB.
     paddingBottom: FAB_SIZE + spacing.xxl,
-    gap: spacing.sm,
-  },
-  row: {
-    backgroundColor: colors.paperRaised,
-    borderRadius: borderRadius.md,
-    borderWidth: 0.5,
-    borderColor: colors.inkFaint,
-    padding: spacing.md,
-    gap: spacing.xs,
-  },
-  rowEmotions: {
-    ...typography.caption,
+    gap: spacing.lg,
   },
   fab: {
     position: 'absolute',
@@ -175,5 +287,64 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ink,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  backdrop: {
+    flex: 1,
+    backgroundColor: colors.scrim,
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: colors.paperRaised,
+    borderTopLeftRadius: borderRadius.sheet,
+    borderTopRightRadius: borderRadius.sheet,
+    padding: spacing.lg,
+    gap: spacing.sm,
+  },
+  sheetTitle: {
+    ...typography.heading,
+    marginBottom: spacing.xs,
+  },
+  emotionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  swatch: {
+    width: 20,
+    height: 20,
+    borderRadius: borderRadius.sm,
+  },
+  intensityDot: {
+    ...typography.caption,
+  },
+  note: {
+    ...typography.body,
+    marginTop: spacing.sm,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  chip: {
+    ...typography.caption,
+    borderWidth: 0.5,
+    borderColor: colors.inkFaint,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  stitchedAt: {
+    ...typography.caption,
+    marginTop: spacing.sm,
+  },
+  aboutLink: {
+    minHeight: hitTarget,
+    justifyContent: 'center',
+  },
+  aboutText: {
+    ...typography.label,
+    color: colors.inkSoft,
   },
 });

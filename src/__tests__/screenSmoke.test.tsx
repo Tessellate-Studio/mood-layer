@@ -113,13 +113,24 @@ describe('screen skeletons render their landmarks', () => {
     expect(await screen.findByText('Your quilt begins with one square.')).toBeTruthy();
   });
 
-  it('quilt lists check-in days and emotion labels when data exists', async () => {
+  it('quilt renders an accessible patch when a check-in exists', async () => {
+    // Detailed canvas behaviour is covered in quiltRender.test.tsx; here we
+    // only confirm the screen wires a check-in into a focusable patch. Use a
+    // today-based timestamp so it lands in the live current week.
+    const now = new Date();
+    const createdAt = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      10,
+      0
+    ).toISOString();
     useCheckInStore.setState({
       checkIns: [
         {
           id: 'c1',
-          createdAt: '2026-07-06T10:00:00.000Z',
-          dayKey: '2026-07-06',
+          createdAt,
+          dayKey: createdAt.slice(0, 10),
           emotions: [{ emotionId: 'irritated', family: 'anger', intensity: 2 }],
           resistanceFlags: [],
           source: 'manual',
@@ -131,8 +142,7 @@ describe('screen skeletons render their landmarks', () => {
         <QuiltScreen />
       </NavigationContainer>
     );
-    expect(await screen.findByText('2026-07-06')).toBeTruthy();
-    expect(screen.getByText(/Irritated/)).toBeTruthy();
+    expect(await screen.findByTestId('patch-c1')).toBeTruthy();
   });
 
   it('experiments shows the name-it status line from the store', async () => {
