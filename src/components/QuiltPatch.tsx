@@ -8,7 +8,7 @@ import React from 'react';
 import { View } from 'react-native';
 import Svg, { Circle, G, Line, Path, Rect } from 'react-native-svg';
 
-import { colors, shadeForIntensity, textures } from '@/constants/theme';
+import { colors, familyPalette, textures } from '@/constants/theme';
 import { EMOTION_FAMILIES } from '@/content/emotions';
 import type { EmotionSelection } from '@/types/models';
 import {
@@ -50,14 +50,13 @@ function wobblyBorderPath(seed: string, w: number, h: number): string {
   );
 }
 
-/** Texture colour: dark fills (intensity ≥3) need light thread to stay visible. */
-const textureColor = (intensity: SegmentLayout['intensity']) =>
-  intensity >= 3 ? colors.paper : colors.stitch;
-
+// Texture "thread" is a deep tone of the SAME hue as the fill (Atlas of
+// Emotions pastels) — tone-on-tone reads as stitched fabric at every
+// intensity, where ink-on-pastel read as grid lines.
 function SegmentTexture({ segment }: { segment: SegmentLayout }) {
   const patternId = EMOTION_FAMILIES[segment.family].patternId;
   const elements = generatePatternElements(patternId, segment.rect);
-  const stroke = textureColor(segment.intensity);
+  const stroke = familyPalette[segment.family].thread;
   return (
     <>
       {elements.map((el, i) => {
@@ -112,7 +111,7 @@ function PatchBody({
             y={segment.rect.y}
             width={segment.rect.w}
             height={segment.rect.h}
-            fill={shadeForIntensity[segment.intensity]}
+            fill={familyPalette[segment.family].shades[segment.intensity]}
           />
           <SegmentTexture segment={segment} />
           {/* Dashed segment boundary — drawing every segment's outline also

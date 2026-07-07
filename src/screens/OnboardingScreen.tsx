@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
 
 import { borderRadius, colors, hitTarget, motion, spacing, textures, typography } from '@/constants/theme';
+import PaperTexture from '@/components/PaperTexture';
 import { ONBOARDING_SLIDES } from '@/content/onboarding';
 import { useMotion } from '@/hooks/useMotion';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
@@ -190,6 +191,7 @@ export default function OnboardingScreen() {
       ]}
       testID="screen-onboarding"
     >
+      <PaperTexture />
       <ScrollView
         horizontal
         pagingEnabled
