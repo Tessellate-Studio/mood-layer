@@ -181,7 +181,12 @@ export default function QuiltScreen() {
         animationType="fade"
         onRequestClose={() => setSelectedId(null)}
       >
-        <Pressable style={styles.backdrop} onPress={() => setSelectedId(null)}>
+        <Pressable
+          style={styles.backdrop}
+          accessibilityRole="button"
+          accessibilityLabel="Close check-in details"
+          onPress={() => setSelectedId(null)}
+        >
           {/* Inner press is swallowed so tapping the card doesn't dismiss. */}
           <Pressable style={[styles.sheet, { paddingBottom: insets.bottom + spacing.lg }]} testID="patch-detail">
             {selected ? (

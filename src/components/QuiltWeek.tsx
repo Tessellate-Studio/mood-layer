@@ -7,7 +7,6 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withSpring,
   withTiming,
@@ -15,7 +14,7 @@ import Animated, {
 import Svg, { G, Line } from 'react-native-svg';
 
 import { colors, motion, spacing, textures, typography } from '@/constants/theme';
-import { useSettingsStore } from '@/store/settingsStore';
+import { useMotion } from '@/hooks/useMotion';
 import type { WeekBlock } from '@/utils/quiltLayout';
 import QuiltPatch from '@/components/QuiltPatch';
 
@@ -63,11 +62,7 @@ function QuiltWeekInner({
   animateId = null,
   onPatchPress,
 }: Props) {
-  const systemReduced = useReducedMotion();
-  const override = useSettingsStore((s) => s.reduceMotionOverride);
-  // Settings override (null = follow OS) — CLAUDE.md hard rule: every
-  // animation must disable cleanly under reduce-motion.
-  const reduceMotion = override ?? systemReduced;
+  const { reduced: reduceMotion } = useMotion();
 
   const canvasWidth = width - leftMargin;
   const animatedPatch = animateId

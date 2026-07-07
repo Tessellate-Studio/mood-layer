@@ -8,7 +8,6 @@ import React from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withSpring,
   withTiming,
@@ -17,7 +16,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { borderRadius, colors, motion, spacing } from '@/constants/theme';
-import { useSettingsStore } from '@/store/settingsStore';
+import { useMotion } from '@/hooks/useMotion';
 
 interface Props {
   visible: boolean;
@@ -33,11 +32,7 @@ const FALLBACK_HEIGHT = 480;
 
 export function Sheet({ visible, onClose, children, testID }: Props) {
   const insets = useSafeAreaInsets();
-  const systemReduced = useReducedMotion();
-  const override = useSettingsStore((s) => s.reduceMotionOverride);
-  // Settings override (null = follow OS) — CLAUDE.md hard rule: every
-  // animation must disable cleanly under reduce-motion.
-  const reduceMotion = override ?? systemReduced;
+  const { reduced: reduceMotion } = useMotion();
 
   const sheetHeight = useSharedValue(FALLBACK_HEIGHT);
   const translateY = useSharedValue(FALLBACK_HEIGHT);

@@ -9,7 +9,6 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import Animated, {
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withDelay,
   withTiming,
@@ -18,10 +17,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Line } from 'react-native-svg';
 
 import { borderRadius, colors, hitTarget, motion, spacing, typography } from '@/constants/theme';
+import { useMotion } from '@/hooks/useMotion';
 import { useCheckInStore } from '@/store/checkInStore';
 import { useExperimentStore } from '@/store/experimentStore';
 import { useInsightStore } from '@/store/insightStore';
-import { useSettingsStore } from '@/store/settingsStore';
 import type { InsightCardState } from '@/types/models';
 import { previousWeekKey } from '@/utils/dates';
 import { computeStatsForWeek } from '@/utils/insightEngine';
@@ -86,9 +85,7 @@ export default function InsightsScreen() {
   const cards = useInsightStore((s) => s.cards);
   const dismissCard = useInsightStore((s) => s.dismissCard);
 
-  const systemReduced = useReducedMotion();
-  const override = useSettingsStore((s) => s.reduceMotionOverride);
-  const reduceMotion = override ?? systemReduced;
+  const { reduced: reduceMotion } = useMotion();
 
   // Generate LAST week's cards the first time the tab is focused after the
   // week rolls over. getState() reads (not hook subscriptions) keep this

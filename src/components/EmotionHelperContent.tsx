@@ -7,7 +7,6 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withRepeat,
   withSequence,
@@ -18,7 +17,7 @@ import Svg, { Circle, Line } from 'react-native-svg';
 import { borderRadius, colors, motion, spacing, typography } from '@/constants/theme';
 import { EMOTION_FAMILIES } from '@/content/emotions';
 import { EMOTION_HELPERS } from '@/content/helpers';
-import { useSettingsStore } from '@/store/settingsStore';
+import { useMotion } from '@/hooks/useMotion';
 import type { EmotionFamilyId } from '@/types/models';
 
 interface Props {
@@ -38,12 +37,8 @@ export function EmotionHelperContent({ family }: Props) {
   const helper = EMOTION_HELPERS[family];
   const label = EMOTION_FAMILIES[family].label;
 
-  const systemReduced = useReducedMotion();
-  const override = useSettingsStore((s) => s.reduceMotionOverride);
-  // Settings override (null = follow OS) — CLAUDE.md hard rule: every
-  // animation must disable cleanly under reduce-motion. When reduced, the
-  // invitation card sits still at scale 1.
-  const reduceMotion = override ?? systemReduced;
+  // When reduced, the invitation card sits still at scale 1.
+  const { reduced: reduceMotion } = useMotion();
 
   const breathe = useSharedValue(1);
   React.useEffect(() => {

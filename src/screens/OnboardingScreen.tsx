@@ -9,7 +9,6 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Animated, {
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withDelay,
   withTiming,
@@ -19,6 +18,7 @@ import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
 
 import { borderRadius, colors, hitTarget, motion, spacing, textures, typography } from '@/constants/theme';
 import { ONBOARDING_SLIDES } from '@/content/onboarding';
+import { useMotion } from '@/hooks/useMotion';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { useSettingsStore } from '@/store/settingsStore';
 
@@ -175,9 +175,7 @@ export default function OnboardingScreen() {
   const [page, setPage] = React.useState(0);
   const lastIndex = ONBOARDING_SLIDES.length - 1;
 
-  const systemReduced = useReducedMotion();
-  const override = useSettingsStore((s) => s.reduceMotionOverride);
-  const reduceMotion = override ?? systemReduced;
+  const { reduced: reduceMotion } = useMotion();
 
   const begin = () => {
     useSettingsStore.getState().completeOnboarding();
