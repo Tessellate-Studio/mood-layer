@@ -1,13 +1,18 @@
-// The Mood Layer — monochrome ink-on-paper design tokens.
+// The Mood Layer — typewriter-on-paper design tokens.
 // HARD RULE (CLAUDE.md): every colour in the app comes from here. No hex
-// literals anywhere else, and nothing beyond greys — intensity and hierarchy
-// are expressed with shade, texture, and type size, never hue.
+// literals anywhere else. The chrome (text, lines, buttons, chips) stays
+// ink-on-paper; the ONLY colour lives in the quilt itself — soft pastel
+// family hues after Ekman & the Dalai Lama's Atlas of Emotions
+// (atlasofemotions.org): anger red, fear violet, sadness blue, disgust
+// green, enjoyment amber (+ two harmonised for surprise/contempt).
+
+import type { EmotionFamilyId } from '@/types/models';
 
 export const colors = {
-  /** App background — warm near-white, softer than #FFF on OLED. */
-  paper: '#FAFAF7',
-  /** Cards, sheets, elevated surfaces. */
-  paperRaised: '#FFFFFF',
+  /** App background — warm cream, like unbleached paper stock. */
+  paper: '#F8F6F0',
+  /** Cards, sheets, elevated surfaces — warm white, never pure #FFF. */
+  paperRaised: '#FDFCF8',
   /** Primary text and line work. 17.6:1 on paper. */
   ink: '#141414',
   /** Secondary text. 10.4:1 on paper. */
@@ -30,12 +35,58 @@ export const colors = {
 
 export type IntensityShade = 1 | 2 | 3 | 4;
 
-/** Shade token for an intensity value. */
+/** Grey shade token for an intensity value (non-quilt uses). */
 export const shadeForIntensity: Record<IntensityShade, string> = {
   1: colors.shade1,
   2: colors.shade2,
   3: colors.shade3,
   4: colors.shade4,
+};
+
+export interface FamilyPalette {
+  /** Patch fills, intensity 1 (a light touch) → 4 (pressed hard). */
+  shades: Record<IntensityShade, string>;
+  /** Deep same-hue tone for texture "thread" strokes over the fills. */
+  thread: string;
+}
+
+/**
+ * Quilt pastels per emotion family — Atlas of Emotions hues, softened to sit
+ * on cream paper. Decorative fills (a11y-exempt); all TEXT stays ink tiers.
+ * User-locked 2026-07-08: pastel quilt on typewriter chrome.
+ */
+// Softened twice at the user's direction (2026-07-08): "much much more
+// pastel". Even intensity 4 stays a whisper; the texture thread carries the
+// hue's identity, in a muted mid-tone rather than a deep one.
+export const familyPalette: Record<EmotionFamilyId, FamilyPalette> = {
+  anger: {
+    shades: { 1: '#FAEDEA', 2: '#F6DFDA', 3: '#F1CCC4', 4: '#EAB6AB' },
+    thread: '#B07A6C',
+  },
+  fear: {
+    shades: { 1: '#F2EFF8', 2: '#E9E3F2', 3: '#DBD0EA', 4: '#C9BADF' },
+    thread: '#8D7DB0',
+  },
+  sadness: {
+    shades: { 1: '#ECF1F7', 2: '#DFE8F1', 3: '#CCDAE9', 4: '#B4C8DE' },
+    thread: '#7793B4',
+  },
+  disgust: {
+    shades: { 1: '#EDF4EC', 2: '#E0EDDF', 3: '#CDE1CC', 4: '#B5D2B4' },
+    thread: '#7BA37A',
+  },
+  enjoyment: {
+    shades: { 1: '#FBF4E3', 2: '#F8ECCD', 3: '#F3E0AF', 4: '#ECD28F' },
+    thread: '#B99B54',
+  },
+  surprise: {
+    shades: { 1: '#FBF0E7', 2: '#F8E4D3', 3: '#F3D3B8', 4: '#ECBF99' },
+    thread: '#BE8B60',
+  },
+  contempt: {
+    shades: { 1: '#F4EEF2', 2: '#ECE2E9', 3: '#DFCFDA', 4: '#CFB8C7' },
+    thread: '#A18397',
+  },
 };
 
 export const spacing = {

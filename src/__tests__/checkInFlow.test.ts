@@ -39,7 +39,7 @@ describe('checkInFlow reducer', () => {
     expect(prevStep(f).step).toBe('feel');
   });
 
-  it('lets you proceed from feel once an emotion or masking state is chosen', () => {
+  it('needs a named emotion to proceed — a masking state alone is a doorway', () => {
     let s = initialFlowState('manual');
     expect(canProceed(s)).toBe(false);
     s = toggleEmotion(s, 'sad', 'sadness');
@@ -47,7 +47,11 @@ describe('checkInFlow reducer', () => {
     s = toggleEmotion(s, 'sad', 'sadness'); // toggle off
     expect(s.selections).toHaveLength(0);
     expect(canProceed(s)).toBe(false);
+    // Masking alone does NOT unlock Continue — it opens the "look underneath"
+    // panel so the user names the feeling beneath the surface word.
     s = toggleMasking(s, 'fine');
+    expect(canProceed(s)).toBe(false);
+    s = toggleEmotion(s, 'sad', 'sadness');
     expect(canProceed(s)).toBe(true);
   });
 

@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Line } from 'react-native-svg';
 
 import { borderRadius, colors, hitTarget, motion, spacing, typography } from '@/constants/theme';
+import PaperTexture from '@/components/PaperTexture';
 import { useMotion } from '@/hooks/useMotion';
 import { useCheckInStore } from '@/store/checkInStore';
 import { useExperimentStore } from '@/store/experimentStore';
@@ -110,6 +111,7 @@ export default function InsightsScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-insights">
+      <PaperTexture />
       <Text style={typography.title}>Patterns</Text>
 
       {visible.length === 0 ? (

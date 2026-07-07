@@ -59,10 +59,11 @@ export interface JudgmentEntry {
   freeWriting?: string;
 }
 
-/** Settings for the "name it" random prompts during waking hours. */
+/** Settings for the "name it" prompts during waking hours. */
 export interface NameItSettings {
   enabled: boolean;
-  timesPerDay: 1 | 2 | 3 | 4 | 5;
+  /** Clamped to 1–10 (utils/notificationPlanner MIN/MAX_TIMES_PER_DAY). */
+  timesPerDay: number;
   /** Waking window, hours 0–23 local. */
   wakeStart: number;
   wakeEnd: number;

@@ -11,13 +11,18 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import ModalHeader from '@/components/ModalHeader';
 import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
+import PaperTexture from '@/components/PaperTexture';
 import { rescheduleNameIt, ensurePermissions } from '@/services/notifications';
 import { useExperimentStore } from '@/store/experimentStore';
 import type { NameItSettings } from '@/types/models';
-import { planDailyTimes } from '@/utils/notificationPlanner';
+import {
+  MAX_TIMES_PER_DAY,
+  MIN_TIMES_PER_DAY,
+  planDailyTimes,
+} from '@/utils/notificationPlanner';
 
-const MIN_FREQ = 1;
-const MAX_FREQ = 5;
+const MIN_FREQ = MIN_TIMES_PER_DAY;
+const MAX_FREQ = MAX_TIMES_PER_DAY;
 // Waking-window guardrails: start stays morning-ish, end stays evening-ish,
 // and start must remain strictly before end.
 const WAKE_START_MIN = 6;
@@ -75,8 +80,7 @@ export default function NameItSetupScreen() {
   };
 
   const changeFreq = (delta: number) => {
-    const next = Math.min(MAX_FREQ, Math.max(MIN_FREQ, nameIt.timesPerDay + delta)) as
-      NameItSettings['timesPerDay'];
+    const next = Math.min(MAX_FREQ, Math.max(MIN_FREQ, nameIt.timesPerDay + delta));
     if (next !== nameIt.timesPerDay) void applyAndReschedule({ timesPerDay: next });
   };
 
@@ -96,6 +100,7 @@ export default function NameItSetupScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-name-it">
+      <PaperTexture />
       <ModalHeader title="Name it" closeTestID="name-it-close" onClose={() => navigation.goBack()} />
 
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">

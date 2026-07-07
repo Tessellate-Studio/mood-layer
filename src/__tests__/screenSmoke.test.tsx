@@ -11,7 +11,6 @@ import AppNavigator, { pickInitialRoute } from '@/navigation/AppNavigator';
 import ScreenErrorBoundary from '@/components/ScreenErrorBoundary';
 import ExperimentsScreen from '@/screens/ExperimentsScreen';
 import InsightsScreen from '@/screens/InsightsScreen';
-import JudgmentFlowScreen from '@/screens/JudgmentFlowScreen';
 import NameItSetupScreen from '@/screens/NameItSetupScreen';
 import OnboardingScreen from '@/screens/OnboardingScreen';
 import QuiltScreen from '@/screens/QuiltScreen';
@@ -83,14 +82,14 @@ describe('AppNavigator (real navigator)', () => {
 });
 
 describe('screen skeletons render their landmarks', () => {
-  // CheckInFlowScreen is intentionally absent: it reads route params via
-  // useRoute, which throws outside a real navigator screen. It's mounted
-  // through the actual navigator by the "opens the check-in modal" test above.
+  // CheckInFlowScreen and JudgmentFlowScreen are intentionally absent: both
+  // read route params via useRoute, which throws outside a real navigator
+  // screen. They're covered with route mocks in checkInFlowScreen.test.tsx /
+  // experiments.test.tsx / reflections.test.tsx.
   const cases: [string, React.ComponentType][] = [
     ['screen-quilt', QuiltScreen],
     ['screen-experiments', ExperimentsScreen],
     ['screen-insights', InsightsScreen],
-    ['screen-judgment', JudgmentFlowScreen],
     ['screen-name-it', NameItSetupScreen],
     ['screen-settings', SettingsScreen],
     ['screen-onboarding', OnboardingScreen],

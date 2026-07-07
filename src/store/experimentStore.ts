@@ -20,6 +20,8 @@ interface ExperimentState {
   judgmentEntries: JudgmentEntry[];
   nameIt: NameItSettings;
   addJudgmentEntry(input: Omit<JudgmentEntry, 'id' | 'createdAt'>): JudgmentEntry;
+  updateJudgmentEntry(id: string, patch: Partial<Omit<JudgmentEntry, 'id' | 'createdAt'>>): void;
+  removeJudgmentEntry(id: string): void;
   setNameIt(partial: Partial<NameItSettings>): void;
   clearAll(): void;
 }
@@ -38,6 +40,16 @@ export const useExperimentStore = create<ExperimentState>()(
         set((state) => ({ judgmentEntries: [entry, ...state.judgmentEntries] }));
         return entry;
       },
+      updateJudgmentEntry: (id, patch) =>
+        set((state) => ({
+          judgmentEntries: state.judgmentEntries.map((e) =>
+            e.id === id ? { ...e, ...patch, id: e.id, createdAt: e.createdAt } : e
+          ),
+        })),
+      removeJudgmentEntry: (id) =>
+        set((state) => ({
+          judgmentEntries: state.judgmentEntries.filter((e) => e.id !== id),
+        })),
       setNameIt: (partial) => set((state) => ({ nameIt: { ...state.nameIt, ...partial } })),
       clearAll: () => set({ judgmentEntries: [], nameIt: NAME_IT_DEFAULTS }),
     }),

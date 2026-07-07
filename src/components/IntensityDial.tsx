@@ -1,23 +1,25 @@
 // Four shade swatches for setting one emotion's intensity (1 light → 4 pressed
-// hard). The chosen swatch gets a dashed ink ring. Shade encodes intensity —
-// the same monochrome language the quilt patches speak.
+// hard). The chosen swatch gets a dashed ink ring. The ramp uses the emotion
+// family's Atlas-of-Emotions pastel — the same colour the patch will be sewn
+// in, so the dial doubles as a preview.
 
 import React from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { borderRadius, colors, hitTarget, shadeForIntensity, spacing } from '@/constants/theme';
-import type { Intensity } from '@/types/models';
+import { borderRadius, colors, familyPalette, hitTarget, spacing } from '@/constants/theme';
+import type { EmotionFamilyId, Intensity } from '@/types/models';
 
 interface Props {
   wordId: string;
   label: string;
+  family: EmotionFamilyId;
   value: Intensity;
   onChange(intensity: Intensity): void;
 }
 
 const LEVELS: Intensity[] = [1, 2, 3, 4];
 
-export function IntensityDial({ wordId, label, value, onChange }: Props) {
+export function IntensityDial({ wordId, label, family, value, onChange }: Props) {
   return (
     <View style={styles.row}>
       {LEVELS.map((level) => {
@@ -32,7 +34,9 @@ export function IntensityDial({ wordId, label, value, onChange }: Props) {
             style={styles.cell}
             onPress={() => onChange(level)}
           >
-            <View style={[styles.swatch, { backgroundColor: shadeForIntensity[level] }]} />
+            <View
+              style={[styles.swatch, { backgroundColor: familyPalette[family].shades[level] }]}
+            />
             {selected ? <View style={styles.ring} pointerEvents="none" /> : null}
           </Pressable>
         );

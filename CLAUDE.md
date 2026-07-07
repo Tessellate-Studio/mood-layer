@@ -195,9 +195,14 @@ between them.
   AsyncStorage). No accounts, no server, no analytics, no crash-reporting SDKs.
   Sending emotional data anywhere is an anti-pattern until the user explicitly
   decides otherwise (then it goes through the tracker + a privacy review).
-- **Monochrome only.** Every colour comes from `src/constants/theme.ts` ink/paper
-  tokens (`paper`, `ink`, `inkSoft`, `inkMuted`, `shade1..4`). No hardcoded hex
-  anywhere else; no colour beyond greys.
+- **Ink-on-paper chrome, Atlas pastels in the quilt (user-locked 2026-07-08).**
+  Every colour comes from `src/constants/theme.ts`. The chrome (text, lines,
+  buttons, chips, backgrounds) stays ink/paper greys on warm cream, with the
+  `PaperTexture` grain on screen surfaces. The ONLY hue lives in the quilt:
+  `familyPalette` — soft pastels per emotion family after Ekman & the Dalai
+  Lama's Atlas of Emotions (anger red, fear violet, sadness blue, disgust
+  green, enjoyment amber) — used solely for patch fills/swatches/dials. No
+  hardcoded hex anywhere else; never colour the chrome.
 - **Typewriter voice — Courier Prime everywhere.** The app reads like a page
   typed onto paper; monospace is the design, not a placeholder. Regular + Bold
   ship as separate families (`CourierPrime-Regular` / `CourierPrime-Bold`), each

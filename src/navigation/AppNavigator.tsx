@@ -25,7 +25,7 @@ export type RootStackParamList = {
   Main: undefined;
   Onboarding: undefined;
   CheckInFlow: { source: 'manual' | 'name-it' } | undefined;
-  JudgmentFlow: undefined;
+  JudgmentFlow: { editId?: string } | undefined;
   NameItSetup: undefined;
   Settings: undefined;
 };

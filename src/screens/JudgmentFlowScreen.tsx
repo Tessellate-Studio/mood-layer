@@ -6,7 +6,7 @@
 
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Line } from 'react-native-svg';
 
@@ -14,8 +14,10 @@ import EmotionChip from '@/components/EmotionChip';
 import IntensityDial from '@/components/IntensityDial';
 import ModalHeader from '@/components/ModalHeader';
 import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
+import PaperTexture from '@/components/PaperTexture';
 import { EMOTION_FAMILIES, findEmotionWord } from '@/content/emotions';
 import { JUDGMENT_EXAMPLES } from '@/content/judgmentExamples';
+import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { useExperimentStore } from '@/store/experimentStore';
 import type { EmotionSelection, Intensity } from '@/types/models';
 
@@ -27,13 +29,24 @@ const EXAMPLES = JUDGMENT_EXAMPLES.slice(0, 4);
 export default function JudgmentFlowScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
+  const route = useRoute<RouteProp<RootStackParamList, 'JudgmentFlow'>>();
   const addJudgmentEntry = useExperimentStore((s) => s.addJudgmentEntry);
+  const updateJudgmentEntry = useExperimentStore((s) => s.updateJudgmentEntry);
+
+  // Edit mode: opened from a reflection's swipe action — prefill from the
+  // entry and update it on save instead of adding a new one.
+  const editId = route.params?.editId;
+  const editing = editId
+    ? useExperimentStore.getState().judgmentEntries.find((e) => e.id === editId)
+    : undefined;
 
   const [step, setStep] = React.useState(0);
-  const [target, setTarget] = React.useState('');
-  const [judgment, setJudgment] = React.useState('');
-  const [feeling, setFeeling] = React.useState<EmotionSelection | null>(null);
-  const [freeWriting, setFreeWriting] = React.useState('');
+  const [target, setTarget] = React.useState(editing?.target ?? '');
+  const [judgment, setJudgment] = React.useState(editing?.judgment ?? '');
+  const [feeling, setFeeling] = React.useState<EmotionSelection | null>(
+    editing?.uncoveredFeeling ?? null
+  );
+  const [freeWriting, setFreeWriting] = React.useState(editing?.freeWriting ?? '');
 
   const example = EXAMPLES[0];
 
@@ -47,12 +60,17 @@ export default function JudgmentFlowScreen() {
   const goBack = () => setStep((s) => Math.max(0, s - 1));
 
   const save = () => {
-    addJudgmentEntry({
+    const input = {
       target: target.trim(),
       judgment: judgment.trim(),
       uncoveredFeeling: feeling,
       freeWriting: freeWriting.trim() || undefined,
-    });
+    };
+    if (editId) {
+      updateJudgmentEntry(editId, input);
+    } else {
+      addJudgmentEntry(input);
+    }
     navigation.goBack();
   };
 
@@ -65,6 +83,7 @@ export default function JudgmentFlowScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-judgment">
+      <PaperTexture />
       <ModalHeader
         title="Under the judgment"
         closeTestID="judgment-close"
@@ -163,6 +182,7 @@ export default function JudgmentFlowScreen() {
                 <IntensityDial
                   wordId={feeling.emotionId}
                   label={findEmotionWord(feeling.emotionId)?.word.label ?? feeling.emotionId}
+                  family={feeling.family}
                   value={feeling.intensity}
                   onChange={(intensity: Intensity) =>
                     setFeeling((prev) => (prev ? { ...prev, intensity } : prev))
