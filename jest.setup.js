@@ -128,6 +128,13 @@ jest.mock('expo-notifications', () => ({
   SchedulableTriggerInputTypes: { DAILY: 'daily', DATE: 'date', TIME_INTERVAL: 'timeInterval' },
 }));
 
+// Safe-area insets: the real SafeAreaProvider measures natively and never
+// resolves under jest, so useSafeAreaInsets would throw on every screen — use
+// the package's official jest mock (zero insets, 320x640 frame).
+jest.mock('react-native-safe-area-context', () =>
+  require('react-native-safe-area-context/jest/mock').default
+);
+
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock')
