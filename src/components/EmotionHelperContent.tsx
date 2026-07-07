@@ -14,7 +14,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Circle, Line } from 'react-native-svg';
 
-import { borderRadius, colors, motion, spacing, typography } from '@/constants/theme';
+import { borderRadius, colors, familyPalette, motion, spacing, typography } from '@/constants/theme';
 import { EMOTION_FAMILIES } from '@/content/emotions';
 import { EMOTION_HELPERS } from '@/content/helpers';
 import { useMotion } from '@/hooks/useMotion';
@@ -36,6 +36,9 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 export function EmotionHelperContent({ family }: Props) {
   const helper = EMOTION_HELPERS[family];
   const label = EMOTION_FAMILIES[family].label;
+  // The family's Atlas pastel carries through the card: pale tint on the
+  // invitation, muted same-hue thread on dots and stitching (user-requested).
+  const palette = familyPalette[family];
 
   // When reduced, the invitation card sits still at scale 1.
   const { reduced: reduceMotion } = useMotion();
@@ -78,7 +81,7 @@ export function EmotionHelperContent({ family }: Props) {
                 first line instead of floating above it (device finding). */}
             <View style={styles.bodyDotBox}>
               <Svg width={8} height={8} viewBox="0 0 8 8">
-                <Circle cx={4} cy={4} r={2} fill={colors.ink} />
+                <Circle cx={4} cy={4} r={2} fill={palette.thread} />
               </Svg>
             </View>
             <Text style={[typography.body, styles.bodyRowText]}>{line}</Text>
@@ -99,7 +102,7 @@ export function EmotionHelperContent({ family }: Props) {
             y1={2}
             x2="100%"
             y2={2}
-            stroke={colors.inkFaint}
+            stroke={palette.thread}
             strokeWidth={1}
             strokeDasharray={[3, 3]}
           />
@@ -110,7 +113,13 @@ export function EmotionHelperContent({ family }: Props) {
       </Section>
 
       <Section label="An invitation">
-        <Animated.View style={[styles.invitationCard, breatheStyle]}>
+        <Animated.View
+          style={[
+            styles.invitationCard,
+            { backgroundColor: palette.shades[1], borderColor: palette.thread },
+            breatheStyle,
+          ]}
+        >
           {helper.invitationToFeel.map((line) => (
             <Text key={line} style={[typography.body, styles.invitationLine]}>
               {line}

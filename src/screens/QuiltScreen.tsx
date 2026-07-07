@@ -171,9 +171,9 @@ export default function QuiltScreen() {
         style={[styles.fab, { bottom: insets.bottom + spacing.lg }]}
         onPress={() => navigation.navigate('CheckInFlow', { source: 'manual' })}
       >
-        <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-          <Line x1={12} y1={5} x2={12} y2={19} stroke={colors.paper} strokeWidth={2} strokeLinecap="round" />
-          <Line x1={5} y1={12} x2={19} y2={12} stroke={colors.paper} strokeWidth={2} strokeLinecap="round" />
+        <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+          <Line x1={12} y1={5} x2={12} y2={19} stroke={colors.ink} strokeWidth={2} strokeLinecap="round" />
+          <Line x1={5} y1={12} x2={19} y2={12} stroke={colors.ink} strokeWidth={2} strokeLinecap="round" />
         </Svg>
       </Pressable>
 
@@ -295,11 +295,16 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    alignSelf: 'center',
+    // Tucked to the bottom-right so it doesn't dominate the centre of the
+    // quilt; a quiet paper button with a stitched ink outline, not a solid
+    // black disc (device feedback 2026-07-08).
+    right: spacing.lg,
     width: FAB_SIZE,
     height: FAB_SIZE,
     borderRadius: FAB_SIZE / 2,
-    backgroundColor: colors.ink,
+    backgroundColor: colors.paperRaised,
+    borderWidth: 1,
+    borderColor: colors.ink,
     alignItems: 'center',
     justifyContent: 'center',
   },

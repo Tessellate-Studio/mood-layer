@@ -55,34 +55,37 @@ export interface FamilyPalette {
  * on cream paper. Decorative fills (a11y-exempt); all TEXT stays ink tiers.
  * User-locked 2026-07-08: pastel quilt on typewriter chrome.
  */
+// Softened twice at the user's direction (2026-07-08): "much much more
+// pastel". Even intensity 4 stays a whisper; the texture thread carries the
+// hue's identity, in a muted mid-tone rather than a deep one.
 export const familyPalette: Record<EmotionFamilyId, FamilyPalette> = {
   anger: {
-    shades: { 1: '#F6DCD8', 2: '#F0C2BA', 3: '#E39C90', 4: '#D4705F' },
-    thread: '#8C3B2E',
+    shades: { 1: '#FAEDEA', 2: '#F6DFDA', 3: '#F1CCC4', 4: '#EAB6AB' },
+    thread: '#B07A6C',
   },
   fear: {
-    shades: { 1: '#E6DFF0', 2: '#D4C7E6', 3: '#B49DD4', 4: '#8F6FBD' },
-    thread: '#4F3B75',
+    shades: { 1: '#F2EFF8', 2: '#E9E3F2', 3: '#DBD0EA', 4: '#C9BADF' },
+    thread: '#8D7DB0',
   },
   sadness: {
-    shades: { 1: '#DAE4EE', 2: '#BFD2E4', 3: '#93B2D0', 4: '#6389B4' },
-    thread: '#2F5379',
+    shades: { 1: '#ECF1F7', 2: '#DFE8F1', 3: '#CCDAE9', 4: '#B4C8DE' },
+    thread: '#7793B4',
   },
   disgust: {
-    shades: { 1: '#DDE9DC', 2: '#C4DCC2', 3: '#9CC29A', 4: '#6FA36F' },
-    thread: '#3B6B3E',
+    shades: { 1: '#EDF4EC', 2: '#E0EDDF', 3: '#CDE1CC', 4: '#B5D2B4' },
+    thread: '#7BA37A',
   },
   enjoyment: {
-    shades: { 1: '#F7EDD2', 2: '#F2DFAC', 3: '#E7C877', 4: '#D4A945' },
-    thread: '#8A6A1E',
+    shades: { 1: '#FBF4E3', 2: '#F8ECCD', 3: '#F3E0AF', 4: '#ECD28F' },
+    thread: '#B99B54',
   },
   surprise: {
-    shades: { 1: '#F9E4D4', 2: '#F4CFB2', 3: '#E8AC7F', 4: '#D68550' },
-    thread: '#92552B',
+    shades: { 1: '#FBF0E7', 2: '#F8E4D3', 3: '#F3D3B8', 4: '#ECBF99' },
+    thread: '#BE8B60',
   },
   contempt: {
-    shades: { 1: '#EADEE6', 2: '#DCC6D4', 3: '#C29FB4', 4: '#A4738F' },
-    thread: '#6B4258',
+    shades: { 1: '#F4EEF2', 2: '#ECE2E9', 3: '#DFCFDA', 4: '#CFB8C7' },
+    thread: '#A18397',
   },
 };
 
