@@ -1,0 +1,79 @@
+// P8 — check-in flow screen. Step logic is covered in checkInFlow.test.ts;
+// these tests assert the rendered wiring: chips gate Continue, a full walk
+// writes one check-in to the store, and the name-it variant differs.
+
+import React from 'react';
+import { fireEvent, render, screen } from '@testing-library/react-native';
+import { NavigationContainer } from '@react-navigation/native';
+
+import CheckInFlowScreen from '@/screens/CheckInFlowScreen';
+import { useCheckInStore } from '@/store/checkInStore';
+import { useSettingsStore } from '@/store/settingsStore';
+
+// Mutable route params — flipped per test to exercise manual vs name-it.
+let mockParams: { source: 'manual' | 'name-it' } = { source: 'manual' };
+const mockGoBack = jest.fn();
+
+jest.mock('@react-navigation/native', () => ({
+  ...jest.requireActual('@react-navigation/native'),
+  useRoute: () => ({ params: mockParams }),
+  useNavigation: () => ({ goBack: mockGoBack, navigate: jest.fn() }),
+}));
+
+const initialCheckIns = useCheckInStore.getState();
+const initialSettings = useSettingsStore.getState();
+
+beforeEach(() => {
+  mockParams = { source: 'manual' };
+  mockGoBack.mockClear();
+  useCheckInStore.setState(initialCheckIns, true);
+  useSettingsStore.setState(initialSettings, true);
+});
+
+const renderScreen = () =>
+  render(
+    <NavigationContainer>
+      <CheckInFlowScreen />
+    </NavigationContainer>
+  );
+
+describe('CheckInFlowScreen', () => {
+  it('keeps Continue disabled until an emotion is chosen', () => {
+    renderScreen();
+    expect(screen.getByTestId('flow-next').props.accessibilityState.disabled).toBe(true);
+    fireEvent.press(screen.getByTestId('chip-sad'));
+    expect(screen.getByTestId('flow-next').props.accessibilityState.disabled).toBe(false);
+  });
+
+  it('walks feel → stitch and writes one check-in with the right emotion', () => {
+    renderScreen();
+    fireEvent.press(screen.getByTestId('chip-sad'));
+    fireEvent.press(screen.getByTestId('flow-next')); // → intensity
+    fireEvent.press(screen.getByTestId('dial-sad-3')); // set intensity 3
+    fireEvent.press(screen.getByTestId('flow-next')); // → body
+    fireEvent.press(screen.getByTestId('flow-skip')); // skip body → resistance
+    fireEvent.press(screen.getByTestId('flow-skip')); // skip resistance → note
+    fireEvent.press(screen.getByTestId('flow-skip')); // skip note → stitch
+    fireEvent.press(screen.getByTestId('flow-stitch'));
+
+    const { checkIns } = useCheckInStore.getState();
+    expect(checkIns).toHaveLength(1);
+    expect(checkIns[0].emotions).toEqual([{ emotionId: 'sad', family: 'sadness', intensity: 3 }]);
+    expect(checkIns[0].source).toBe('manual');
+    expect(mockGoBack).toHaveBeenCalled();
+  });
+
+  it('shows the name-it heading and a finish-early affordance', () => {
+    mockParams = { source: 'name-it' };
+    renderScreen();
+    expect(screen.getByText('Can you name it?')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('chip-afraid'));
+    fireEvent.press(screen.getByTestId('flow-next')); // → intensity
+    fireEvent.press(screen.getByTestId('flow-next')); // → body
+    // From body, a name-it flow can finish early straight to stitch.
+    expect(screen.getByTestId('flow-finish-early')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('flow-finish-early'));
+    fireEvent.press(screen.getByTestId('flow-stitch'));
+    expect(useCheckInStore.getState().checkIns[0].source).toBe('name-it');
+  });
+});

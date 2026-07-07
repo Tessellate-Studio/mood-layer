@@ -9,7 +9,6 @@ import { Text } from 'react-native';
 
 import AppNavigator, { pickInitialRoute } from '@/navigation/AppNavigator';
 import ScreenErrorBoundary from '@/components/ScreenErrorBoundary';
-import CheckInFlowScreen from '@/screens/CheckInFlowScreen';
 import ExperimentsScreen from '@/screens/ExperimentsScreen';
 import InsightsScreen from '@/screens/InsightsScreen';
 import JudgmentFlowScreen from '@/screens/JudgmentFlowScreen';
@@ -84,11 +83,13 @@ describe('AppNavigator (real navigator)', () => {
 });
 
 describe('screen skeletons render their landmarks', () => {
+  // CheckInFlowScreen is intentionally absent: it reads route params via
+  // useRoute, which throws outside a real navigator screen. It's mounted
+  // through the actual navigator by the "opens the check-in modal" test above.
   const cases: [string, React.ComponentType][] = [
     ['screen-quilt', QuiltScreen],
     ['screen-experiments', ExperimentsScreen],
     ['screen-insights', InsightsScreen],
-    ['screen-checkin', CheckInFlowScreen],
     ['screen-judgment', JudgmentFlowScreen],
     ['screen-name-it', NameItSetupScreen],
     ['screen-settings', SettingsScreen],
