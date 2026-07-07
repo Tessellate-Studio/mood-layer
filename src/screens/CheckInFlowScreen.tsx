@@ -131,6 +131,12 @@ export default function CheckInFlowScreen() {
         {state.step === 'stitch' && <StitchStep state={state} />}
       </ScrollView>
 
+      {state.step === 'feel' && state.masking.length > 0 && state.selections.length === 0 ? (
+        <Text style={styles.continueHint} testID="masking-continue-hint">
+          Name what&apos;s underneath to continue.
+        </Text>
+      ) : null}
+
       <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
         {stepIndex > 0 && state.step !== 'stitch' ? (
           <Pressable testID="flow-back" accessibilityRole="button" style={styles.backBtn} onPress={goBack}>
@@ -222,10 +228,48 @@ function FeelStep({ state, setState }: StepProps) {
           />
         ))}
       </View>
+
+      {/* Look underneath: a surface word (stressed, fine, numb…) is a cover,
+          not a feeling. Selecting one opens this panel — the prompt plus the
+          emotions it usually hides — so someone still learning to name what
+          they feel has a guided way in, instead of a dead-end Continue. */}
       {selectedMasking.map((m) => (
-        <Text key={m.id} style={styles.maskingPrompt}>
-          {m.prompt}
-        </Text>
+        <View key={m.id} style={styles.underneathPanel} testID={`underneath-${m.id}`}>
+          <Text style={styles.underneathPrompt}>{m.prompt}</Text>
+          {m.unpacksTo.map((familyId) => {
+            const family = EMOTION_FAMILIES[familyId];
+            return (
+              <View key={familyId} style={styles.familyGroup}>
+                <View style={styles.underneathHeader}>
+                  <Text style={styles.overline}>{family.label}</Text>
+                  <Pressable
+                    testID={`underneath-learn-${familyId}`}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Learn about ${family.label}`}
+                    hitSlop={8}
+                    onPress={() => useHelperSheetStore.getState().open(familyId)}
+                  >
+                    <Text style={styles.learnLink}>learn →</Text>
+                  </Pressable>
+                </View>
+                <View style={styles.chipWrap}>
+                  {family.gradient.map((word) => (
+                    <EmotionChip
+                      key={word.id}
+                      id={`under-${word.id}`}
+                      label={word.label}
+                      selected={state.selections.some((x) => x.emotionId === word.id)}
+                      onPress={() => setState((s) => toggleEmotion(s, word.id, familyId))}
+                    />
+                  ))}
+                </View>
+              </View>
+            );
+          })}
+          <Text style={styles.underneathHint}>
+            Naming even one is enough — or open “learn” to feel your way in.
+          </Text>
+        </View>
       ))}
     </View>
   );
@@ -390,9 +434,37 @@ const styles = StyleSheet.create({
     ...typography.caption,
     marginTop: spacing.sm,
   },
-  maskingPrompt: {
+  underneathPanel: {
+    backgroundColor: colors.paperRaised,
+    borderRadius: borderRadius.lg,
+    borderWidth: 0.5,
+    borderColor: colors.inkFaint,
+    padding: spacing.md,
+    gap: spacing.md,
+  },
+  underneathPrompt: {
+    ...typography.body,
+    color: colors.inkSoft,
+  },
+  underneathHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  learnLink: {
+    ...typography.caption,
+    color: colors.inkSoft,
+  },
+  underneathHint: {
     ...typography.caption,
     color: colors.inkMuted,
+  },
+  continueHint: {
+    ...typography.caption,
+    color: colors.inkMuted,
+    textAlign: 'center',
+    paddingBottom: spacing.xs,
   },
   card: {
     backgroundColor: colors.paperRaised,

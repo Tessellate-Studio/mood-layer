@@ -42,10 +42,15 @@ export function initialFlowState(source: 'manual' | 'name-it'): FlowState {
   };
 }
 
-/** The feel step needs at least one named emotion or masking state; the rest
- *  are always optional, so proceeding is always allowed past feel. */
+/**
+ * The feel step needs at least one NAMED emotion — a masking state alone is a
+ * doorway, not a destination (picking one opens the "look underneath" panel so
+ * the surface word can be unpacked into a real feeling). This is what makes a
+ * masking-only check-in stop being a dead end. The rest of the steps are
+ * optional, so proceeding is always allowed past feel.
+ */
 export function canProceed(s: FlowState): boolean {
-  if (s.step === 'feel') return s.selections.length >= 1 || s.masking.length >= 1;
+  if (s.step === 'feel') return s.selections.length >= 1;
   return true;
 }
 
