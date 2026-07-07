@@ -1,0 +1,93 @@
+// Core data model for The Mood Layer. Everything here is local-only —
+// persisted via zustand + AsyncStorage, never sent anywhere (hard rule,
+// CLAUDE.md "Local-only data").
+
+/** Ekman's seven universal emotion families (contempt included per his later work). */
+export type EmotionFamilyId =
+  | 'anger'
+  | 'fear'
+  | 'sadness'
+  | 'disgust'
+  | 'enjoyment'
+  | 'surprise'
+  | 'contempt';
+
+/** How strongly a feeling is present, 1 (a light touch) to 4 (pressed hard). */
+export type Intensity = 1 | 2 | 3 | 4;
+
+/** Joe Hudson's four tells that an emotion is being resisted rather than felt. */
+export type ResistanceTellId =
+  | 'looping-thoughts'
+  | 'harsh-judgment'
+  | 'binary-stuckness'
+  | 'comparison';
+
+/** One named emotion inside a check-in's quilt patch. */
+export interface EmotionSelection {
+  emotionId: string;
+  family: EmotionFamilyId;
+  intensity: Intensity;
+}
+
+/** One check-in = one quilt patch: 1–5 co-occurring emotions plus context. */
+export interface CheckIn {
+  id: string;
+  createdAt: string;
+  /** Local-time 'YYYY-MM-DD' derived from createdAt (see utils/dates). */
+  dayKey: string;
+  emotions: EmotionSelection[];
+  bodySensations?: string[];
+  resistanceFlags: ResistanceTellId[];
+  /**
+   * Masking-state ids ('stressed', 'fine', …) the user started from before
+   * unpacking to real emotions. Tracked separately from emotions because
+   * masking states are covers, not feelings — insights count them to spot
+   * numbing weeks.
+   */
+  maskingUsed?: string[];
+  note?: string;
+  source: 'manual' | 'name-it';
+}
+
+/** One entry from the judgment experiment (judgments point at unfelt feelings). */
+export interface JudgmentEntry {
+  id: string;
+  createdAt: string;
+  target: string;
+  judgment: string;
+  uncoveredFeeling: EmotionSelection | null;
+  freeWriting?: string;
+}
+
+/** Settings for the "name it" random prompts during waking hours. */
+export interface NameItSettings {
+  enabled: boolean;
+  timesPerDay: 1 | 2 | 3 | 4 | 5;
+  /** Waking window, hours 0–23 local. */
+  wakeStart: number;
+  wakeEnd: number;
+  /** Notification ids currently scheduled (so they can be cancelled). */
+  scheduledIds: string[];
+}
+
+/** A generated weekly insight card. */
+export interface InsightCardState {
+  id: string;
+  weekKey: string;
+  templateId: string;
+  title: string;
+  body: string;
+  dismissedAt?: string;
+}
+
+/** Aggregated stats for one ISO week — the input insight templates match on. */
+export interface WeekStats {
+  weekKey: string;
+  checkInCount: number;
+  familyCounts: Record<EmotionFamilyId, number>;
+  resistanceCounts: Record<ResistanceTellId, number>;
+  /** Check-ins that started from a masking state ('stressed', 'fine', …). */
+  maskingCount: number;
+  distinctEmotionIds: string[];
+  judgmentEntryCount: number;
+}
