@@ -24,6 +24,7 @@ import { EMOTION_FAMILIES, findEmotionWord } from '@/content/emotions';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import QuiltWeek from '@/components/QuiltWeek';
 import { useCheckInStore } from '@/store/checkInStore';
+import { useHelperSheetStore } from '@/store/helperSheetStore';
 import type { CheckIn, EmotionFamilyId } from '@/types/models';
 import { computeQuiltLayout } from '@/utils/quiltLayout';
 
@@ -213,8 +214,12 @@ export default function QuiltScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={`About ${EMOTION_FAMILIES[fam].label}`}
                     style={styles.aboutLink}
-                    // TODO(P9): open EmotionHelper sheet for this family.
-                    onPress={() => {}}
+                    // Close the detail sheet first, then open the family's
+                    // helper — two stacked modals fight for the backdrop.
+                    onPress={() => {
+                      setSelectedId(null);
+                      useHelperSheetStore.getState().open(fam);
+                    }}
                   >
                     <Text style={styles.aboutText}>about {EMOTION_FAMILIES[fam].label} →</Text>
                   </Pressable>

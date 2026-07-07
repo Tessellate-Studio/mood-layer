@@ -27,6 +27,7 @@ import { EMOTION_FAMILIES, findEmotionWord, MASKING_STATES } from '@/content/emo
 import { RESISTANCE_TELLS } from '@/content/resistance';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { useCheckInStore } from '@/store/checkInStore';
+import { useHelperSheetStore } from '@/store/helperSheetStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { Intensity } from '@/types/models';
 import {
@@ -235,7 +236,16 @@ function IntensityStep({ state, setState }: StepProps) {
         const label = findEmotionWord(sel.emotionId)?.word.label ?? sel.emotionId;
         return (
           <View key={sel.emotionId} style={styles.card}>
-            <Text style={typography.heading}>{label}</Text>
+            {/* Long-press the word to open its family's helper — an
+                unobtrusive doorway to the "why" without cluttering the step. */}
+            <Pressable
+              testID={`intensity-label-${sel.emotionId}`}
+              accessibilityRole="button"
+              accessibilityLabel={`${label}. Long press to learn about ${sel.family}.`}
+              onLongPress={() => useHelperSheetStore.getState().open(sel.family)}
+            >
+              <Text style={typography.heading}>{label}</Text>
+            </Pressable>
             <IntensityDial
               wordId={sel.emotionId}
               label={label}
