@@ -13,6 +13,13 @@ jest.mock('@/services/notifications', () => ({
   ensureChannel: jest.fn(() => Promise.resolve()),
 }));
 
+// JudgmentFlowScreen reads route params (edit mode); provide an empty route so
+// bare renders behave as "add" mode.
+jest.mock('@react-navigation/native', () => ({
+  ...jest.requireActual('@react-navigation/native'),
+  useRoute: () => ({ params: {} }),
+}));
+
 import * as notifications from '@/services/notifications';
 import ExperimentsScreen from '@/screens/ExperimentsScreen';
 import JudgmentFlowScreen from '@/screens/JudgmentFlowScreen';

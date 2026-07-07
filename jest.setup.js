@@ -98,6 +98,23 @@ jest.mock('react-native-gesture-handler', () => {
   };
 });
 
+// Swipeable rows: render the child content AND the right-actions inline so
+// tests can press the edit/remove buttons without simulating a pan gesture.
+jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    __esModule: true,
+    default: ({ children, renderRightActions }) =>
+      React.createElement(
+        View,
+        null,
+        children,
+        renderRightActions ? renderRightActions() : null
+      ),
+  };
+});
+
 // Mock expo modules
 jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(),
