@@ -1,5 +1,29 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(git status*)",
+      "Bash(git log *)",
+      "Bash(git branch *)",
+      "Bash(git diff *)",
+      "Bash(git show *)",
+      "Bash(git ls-files*)",
+      "Bash(git rev-parse *)",
+      "Bash(gh repo view *)",
+      "Bash(npx jest --no-coverage *)",
+      "Bash(npx tsc --noEmit *)",
+      "Bash(ls *)"
+    ]
+  },
+  "extraKnownMarketplaces": {
+    "tessellate-forge": {
+      "source": {
+        "source": "github",
+        "repo": "Tessellate-Studio/forge"
+      }
+    }
+  },
   "enabledPlugins": {
+    "forge@tessellate-forge": true,
     "expo@claude-plugins-official": true
   }
 }

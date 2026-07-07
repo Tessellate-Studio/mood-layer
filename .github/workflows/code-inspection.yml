@@ -1,0 +1,13 @@
+# Advisory code-inspection gate (shared reusable workflow from code-standards).
+# fail_on_error stays false until the config is proven on this app; the app's
+# own tsc + jest gate is the blocking check (run locally pre-commit).
+name: code-inspection
+
+on:
+  pull_request:
+
+jobs:
+  inspect:
+    uses: Tessellate-Studio/code-standards/.github/workflows/code-inspection.yml@main
+    with:
+      fail_on_error: false
