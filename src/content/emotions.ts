@@ -14,24 +14,11 @@ export interface EmotionWord {
 export interface EmotionFamily {
   id: EmotionFamilyId;
   label: string;
-  /** Which monochrome quilt pattern renders this family's patch segment. */
-  patternId: string;
   /** One line on what this family is about — messenger framing. */
   essence: string;
   /** Mild → intense. Word ids are unique across ALL families. */
   gradient: EmotionWord[];
 }
-
-/** The 7 quilt patch pattern ids, one per family (generated SVG primitives). */
-export const PATCH_PATTERN_IDS: string[] = [
-  'hatch',
-  'vertical',
-  'wave',
-  'crosshatch',
-  'dots',
-  'spokes',
-  'chevron',
-];
 
 // NOTE: 'anxious' is deliberately absent from fear's gradient — anxiety is
 // what resisted fear becomes (see helpers.ts), not a flavour of fear itself.
@@ -39,7 +26,6 @@ export const EMOTION_FAMILIES: Record<EmotionFamilyId, EmotionFamily> = {
   anger: {
     id: 'anger',
     label: 'Anger',
-    patternId: 'hatch',
     essence: 'Something you care about is being stepped on.',
     gradient: [
       { id: 'irritated', label: 'Irritated', intensityHint: 1 },
@@ -53,7 +39,6 @@ export const EMOTION_FAMILIES: Record<EmotionFamilyId, EmotionFamily> = {
   fear: {
     id: 'fear',
     label: 'Fear',
-    patternId: 'vertical',
     essence: 'Something matters to you and its outcome is uncertain.',
     gradient: [
       { id: 'uneasy', label: 'Uneasy', intensityHint: 1 },
@@ -67,7 +52,6 @@ export const EMOTION_FAMILIES: Record<EmotionFamilyId, EmotionFamily> = {
   sadness: {
     id: 'sadness',
     label: 'Sadness',
-    patternId: 'wave',
     essence: 'Something you love is missing, lost, or out of reach.',
     gradient: [
       { id: 'wistful', label: 'Wistful', intensityHint: 1 },
@@ -81,7 +65,6 @@ export const EMOTION_FAMILIES: Record<EmotionFamilyId, EmotionFamily> = {
   disgust: {
     id: 'disgust',
     label: 'Disgust',
-    patternId: 'crosshatch',
     essence: 'Something does not sit right with you, and your body knows it.',
     gradient: [
       { id: 'put-off', label: 'Put off', intensityHint: 1 },
@@ -93,7 +76,6 @@ export const EMOTION_FAMILIES: Record<EmotionFamilyId, EmotionFamily> = {
   enjoyment: {
     id: 'enjoyment',
     label: 'Enjoyment',
-    patternId: 'dots',
     essence: 'Something is nourishing you, right here, right now.',
     gradient: [
       { id: 'content', label: 'Content', intensityHint: 1 },
@@ -107,7 +89,6 @@ export const EMOTION_FAMILIES: Record<EmotionFamilyId, EmotionFamily> = {
   surprise: {
     id: 'surprise',
     label: 'Surprise',
-    patternId: 'spokes',
     essence: 'Something new just landed, and you have not sorted it yet.',
     gradient: [
       { id: 'curious', label: 'Curious', intensityHint: 1 },
@@ -119,7 +100,6 @@ export const EMOTION_FAMILIES: Record<EmotionFamilyId, EmotionFamily> = {
   contempt: {
     id: 'contempt',
     label: 'Contempt',
-    patternId: 'chevron',
     essence: 'You have placed yourself above someone — often to protect something tender.',
     gradient: [
       { id: 'dismissive', label: 'Dismissive', intensityHint: 1 },

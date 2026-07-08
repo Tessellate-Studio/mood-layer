@@ -7,7 +7,6 @@ import type { EmotionFamilyId, ResistanceTellId, WeekStats } from '@/types/model
 import {
   EMOTION_FAMILIES,
   MASKING_STATES,
-  PATCH_PATTERN_IDS,
   findEmotionWord,
 } from '@/content/emotions';
 import { EMOTION_HELPERS } from '@/content/helpers';
@@ -163,14 +162,6 @@ describe('emotion families', () => {
       for (const word of EMOTION_FAMILIES[familyId].gradient) {
         expect(word.label.length).toBeGreaterThan(0);
       }
-    }
-  });
-
-  it('exposes exactly 7 unique patch pattern ids and every family uses one', () => {
-    expect(PATCH_PATTERN_IDS).toHaveLength(7);
-    expect(new Set(PATCH_PATTERN_IDS).size).toBe(7);
-    for (const familyId of FAMILY_IDS) {
-      expect(PATCH_PATTERN_IDS).toContain(EMOTION_FAMILIES[familyId].patternId);
     }
   });
 

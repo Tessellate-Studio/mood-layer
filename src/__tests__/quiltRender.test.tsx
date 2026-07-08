@@ -14,7 +14,7 @@ import QuiltScreen from '@/screens/QuiltScreen';
 import { useCheckInStore } from '@/store/checkInStore';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { CheckIn, EmotionSelection } from '@/types/models';
-import { computeQuiltLayout, subdividePatch } from '@/utils/quiltLayout';
+import { clothPieces, computeQuiltLayout } from '@/utils/quiltLayout';
 import { dayKey } from '@/utils/dates';
 
 const sel = (
@@ -45,7 +45,7 @@ beforeEach(() => {
 });
 
 describe('QuiltPatch', () => {
-  it('renders a patch with segments inside a host Svg', () => {
+  it('renders a cluster of cloth pieces inside a host Svg', () => {
     const [patch] = computeQuiltLayout(
       [checkIn({ id: 'p1', createdAt: '2026-07-07T09:30:00', emotions: [sel('sad', 'sadness', 3), sel('glad', 'enjoyment', 2)] })],
       300,
@@ -73,12 +73,12 @@ describe('PatchPreview', () => {
     expect(screen.getByLabelText('sad 3, uneasy 1')).toBeTruthy();
   });
 
-  it('subdivides the same way the layout engine does (one segment per emotion)', () => {
-    // Sanity: preview and engine share subdividePatch, so a 3-emotion preview
-    // means 3 segments — asserted at the data level since SVG nodes carry no
+  it('lays cloth the same way the layout engine does (one piece per emotion)', () => {
+    // Sanity: preview and engine share clothPieces, so a 3-emotion preview
+    // means 3 pieces — asserted at the data level since SVG nodes carry no
     // testIDs.
     expect(
-      subdividePatch([sel('sad', 'sadness', 2), sel('glad', 'enjoyment', 2), sel('uneasy', 'fear', 2)], 160, 160)
+      clothPieces([sel('sad', 'sadness', 2), sel('glad', 'enjoyment', 2), sel('uneasy', 'fear', 2)], 160, 160)
     ).toHaveLength(3);
   });
 });
