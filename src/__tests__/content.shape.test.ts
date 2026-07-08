@@ -36,6 +36,7 @@ function emptyStats(overrides: Partial<WeekStats> = {}): WeekStats {
   return {
     weekKey: '2026-W28',
     checkInCount: 0,
+    activeDayCount: 0,
     familyCounts: {
       anger: 0,
       fear: 0,
@@ -53,6 +54,7 @@ function emptyStats(overrides: Partial<WeekStats> = {}): WeekStats {
     },
     maskingCount: 0,
     distinctEmotionIds: [],
+    coOccurringFamilies: null,
     judgmentEntryCount: 0,
     ...overrides,
   };
@@ -89,10 +91,15 @@ const maxedStats: WeekStats = emptyStats({
     'curious',
   ],
   judgmentEntryCount: 5,
+  coOccurringFamilies: ['enjoyment', 'sadness'],
 });
 
 /** Per-template fixtures: each satisfies ONLY that template's own condition. */
 const TEMPLATE_FIXTURES: Record<string, WeekStats> = {
+  'co-occurrence': emptyStats({
+    checkInCount: 4,
+    coOccurringFamilies: ['sadness', 'enjoyment'],
+  }),
   'stuck-decisions': emptyStats({
     checkInCount: 4,
     resistanceCounts: {
@@ -244,9 +251,10 @@ describe('resistance tells', () => {
 });
 
 describe('insight templates', () => {
-  it('has the six templates with unique ids', () => {
+  it('has the seven templates with unique ids', () => {
     const ids = INSIGHT_TEMPLATES.map((t) => t.id).sort();
     expect(ids).toEqual([
+      'co-occurrence',
       'fluid-week',
       'judgment-heavy',
       'looping-week',
@@ -254,6 +262,13 @@ describe('insight templates', () => {
       'numb-cluster',
       'stuck-decisions',
     ]);
+  });
+
+  it('tags each template with a pattern/resistance kind', () => {
+    const RESISTANCE = new Set(['stuck-decisions', 'looping-week', 'judgment-heavy']);
+    for (const template of INSIGHT_TEMPLATES) {
+      expect(template.kind).toBe(RESISTANCE.has(template.id) ? 'resistance' : 'pattern');
+    }
   });
 
   it('every template matches the maxed-out week and renders non-empty copy', () => {

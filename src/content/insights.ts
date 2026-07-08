@@ -4,20 +4,42 @@
 // invitation, never a directive. Cards cap at 2 per week — the insight store
 // takes the top 2 by priority (higher number wins).
 
+import { EMOTION_FAMILIES } from '@/content/emotions';
 import type { WeekStats } from '@/types/models';
 
 export interface InsightTemplate {
   id: string;
   /** Higher wins when more than 2 templates match a week. */
   priority: number;
+  /** Which shelf the card sits on — drives its overline (see InsightCardState). */
+  kind: 'pattern' | 'resistance';
   matches(stats: WeekStats): boolean;
   render(stats: WeekStats): { title: string; body: string };
 }
 
 export const INSIGHT_TEMPLATES: InsightTemplate[] = [
   {
+    // Two families that keep arriving in the same check-in — the quilt holding
+    // both at once. The signature "depth" pattern of the redesign.
+    id: 'co-occurrence',
+    priority: 85,
+    kind: 'pattern',
+    matches: (stats) => Array.isArray(stats.coOccurringFamilies),
+    render: (stats) => {
+      const [a, b] = stats.coOccurringFamilies!;
+      const first = EMOTION_FAMILIES[a].label;
+      const second = EMOTION_FAMILIES[b].label.toLowerCase();
+      return {
+        title: `${first} and ${second} keep arriving together`,
+        body:
+          `More than once this week you named something ${first.toLowerCase()} and something ${second} in the same check-in. They are not opposites — your quilt is holding both at once. That is the whole point of a quilt; nothing here needs fixing.`,
+      };
+    },
+  },
+  {
     id: 'stuck-decisions',
     priority: 60,
+    kind: 'resistance',
     matches: (stats) => stats.resistanceCounts['binary-stuckness'] >= 3,
     render: () => ({
       title: 'A week of either-or',
@@ -28,6 +50,7 @@ export const INSIGHT_TEMPLATES: InsightTemplate[] = [
   {
     id: 'looping-week',
     priority: 70,
+    kind: 'resistance',
     matches: (stats) => stats.resistanceCounts['looping-thoughts'] >= 3,
     render: () => ({
       title: 'Thoughts on a loop',
@@ -38,6 +61,7 @@ export const INSIGHT_TEMPLATES: InsightTemplate[] = [
   {
     id: 'judgment-heavy',
     priority: 50,
+    kind: 'resistance',
     matches: (stats) =>
       stats.resistanceCounts['harsh-judgment'] >= 3 || stats.judgmentEntryCount >= 3,
     render: () => ({
@@ -49,6 +73,7 @@ export const INSIGHT_TEMPLATES: InsightTemplate[] = [
   {
     id: 'numb-cluster',
     priority: 80,
+    kind: 'pattern',
     matches: (stats) => stats.maskingCount >= 3,
     render: () => ({
       title: 'A muffled week',
@@ -59,6 +84,7 @@ export const INSIGHT_TEMPLATES: InsightTemplate[] = [
   {
     id: 'masking-fine',
     priority: 40,
+    kind: 'pattern',
     matches: (stats) => stats.maskingCount >= 2 && stats.checkInCount >= 4,
     render: () => ({
       title: 'Checking in from behind a cover',
@@ -69,6 +95,7 @@ export const INSIGHT_TEMPLATES: InsightTemplate[] = [
   {
     id: 'fluid-week',
     priority: 90,
+    kind: 'pattern',
     matches: (stats) => stats.distinctEmotionIds.length >= 8,
     render: (stats) => ({
       title: 'A fluid week',

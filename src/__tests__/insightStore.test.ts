@@ -11,6 +11,7 @@ function stats(overrides: Partial<WeekStats> = {}): WeekStats {
   return {
     weekKey: '2026-W28',
     checkInCount: 5,
+    activeDayCount: 1,
     familyCounts: {
       anger: 0,
       fear: 0,
@@ -28,6 +29,7 @@ function stats(overrides: Partial<WeekStats> = {}): WeekStats {
     },
     maskingCount: 0,
     distinctEmotionIds: [],
+    coOccurringFamilies: null,
     judgmentEntryCount: 0,
     ...overrides,
   };

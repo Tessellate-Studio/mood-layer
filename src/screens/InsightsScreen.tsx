@@ -1,8 +1,9 @@
-// Insights tab: weekly pattern cards. On every focus it checks whether LAST
-// ISO week has been generated yet (idempotent — the store marks the week) and,
-// if not, aggregates that week's check-ins + judgment entries and asks the
-// store for cards. Cards are paper notes with a dashed stitch border; each can
-// be dismissed. Entry is a staggered fade/slide — static under reduce-motion.
+// Insights tab — "the depth". On every focus it checks whether LAST ISO week
+// has been generated yet (idempotent — the store marks the week) and, if not,
+// aggregates that week's check-ins + judgment entries and asks the store for
+// cards. Cards are gentle paper notes, each with a category overline; a
+// resistance card also shows the four resistance tells, the ones that fired
+// emphasised. Capped at two a week — an invitation, never a diagnosis.
 
 import React from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -18,24 +19,58 @@ import Svg, { Line } from 'react-native-svg';
 
 import { borderRadius, colors, hitTarget, motion, spacing, typography } from '@/constants/theme';
 import PaperTexture from '@/components/PaperTexture';
+import { RESISTANCE_TELLS } from '@/content/resistance';
 import { useMotion } from '@/hooks/useMotion';
 import { useCheckInStore } from '@/store/checkInStore';
 import { useExperimentStore } from '@/store/experimentStore';
 import { useInsightStore } from '@/store/insightStore';
-import type { InsightCardState } from '@/types/models';
-import { previousWeekKey } from '@/utils/dates';
+import type { InsightCardState, WeekStats } from '@/types/models';
+import { previousWeekKey, weekRangeLabel } from '@/utils/dates';
 import { computeStatsForWeek } from '@/utils/insightEngine';
 
 /** Stagger step between card entrances. */
 const STAGGER_MS = 90;
 
+const OVERLINE: Record<InsightCardState['kind'], string> = {
+  pattern: 'This week · Pattern',
+  resistance: 'Gentle notice · Resistance',
+};
+
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/** The four resistance tells, shown as chips on a resistance card. */
+function ResistanceTells({ fired }: { fired: Set<string> }) {
+  return (
+    <View style={styles.tellRow}>
+      {Object.values(RESISTANCE_TELLS).map((tell) => {
+        const on = fired.has(tell.id);
+        return (
+          <View
+            key={tell.id}
+            testID={`insight-tell-${tell.id}`}
+            accessibilityRole="text"
+            accessibilityState={{ selected: on }}
+            style={[styles.tellChip, on ? styles.tellChipOn : styles.tellChipOff]}
+          >
+            <Text style={[styles.tellText, on ? styles.tellTextOn : styles.tellTextOff]}>
+              {tell.label}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
 function InsightCard({
   card,
+  stats,
   index,
   reduceMotion,
   onDismiss,
 }: {
   card: InsightCardState;
+  stats: WeekStats | undefined;
   index: number;
   reduceMotion: boolean;
   onDismiss: () => void;
@@ -59,10 +94,19 @@ function InsightCard({
     transform: [{ translateY: translateY.value }],
   }));
 
+  const fired = React.useMemo(() => {
+    if (!stats) return new Set<string>();
+    return new Set(
+      Object.entries(stats.resistanceCounts)
+        .filter(([, count]) => count > 0)
+        .map(([id]) => id)
+    );
+  }, [stats]);
+
   return (
     <Animated.View style={[styles.card, entryStyle]}>
       <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle}>{card.title}</Text>
+        <Text style={styles.overline}>{OVERLINE[card.kind]}</Text>
         <Pressable
           testID={`insight-dismiss-${card.id}`}
           accessibilityRole="button"
@@ -76,6 +120,8 @@ function InsightCard({
           </Svg>
         </Pressable>
       </View>
+      <Text style={styles.cardTitle}>{card.title}</Text>
+      {card.kind === 'resistance' ? <ResistanceTells fired={fired} /> : null}
       <Text style={styles.cardBody}>{card.body}</Text>
     </Animated.View>
   );
@@ -85,6 +131,8 @@ export default function InsightsScreen() {
   const insets = useSafeAreaInsets();
   const cards = useInsightStore((s) => s.cards);
   const dismissCard = useInsightStore((s) => s.dismissCard);
+  const checkIns = useCheckInStore((s) => s.checkIns);
+  const judgmentEntries = useExperimentStore((s) => s.judgmentEntries);
 
   const { reduced: reduceMotion } = useMotion();
 
@@ -109,10 +157,28 @@ export default function InsightsScreen() {
     .filter((card) => !card.dismissedAt)
     .sort((a, b) => b.weekKey.localeCompare(a.weekKey));
 
+  // Stats for each week that has a visible card — the header summary reads the
+  // newest, and resistance cards read theirs for the fired-tell emphasis.
+  const statsByWeek = React.useMemo(() => {
+    const weeks = new Set(visible.map((c) => c.weekKey));
+    const map: Record<string, WeekStats> = {};
+    for (const wk of weeks) map[wk] = computeStatsForWeek(checkIns, judgmentEntries, wk);
+    return map;
+  }, [visible, checkIns, judgmentEntries]);
+
+  const newestWeek = visible[0]?.weekKey;
+  const summaryStats = newestWeek ? statsByWeek[newestWeek] : undefined;
+
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-insights">
       <PaperTexture />
-      <Text style={typography.title}>Patterns</Text>
+      <Text style={typography.title}>This week</Text>
+      {summaryStats ? (
+        <Text style={styles.summary} testID="insights-summary">
+          {weekRangeLabel(newestWeek!)} · {plural(summaryStats.checkInCount, 'check-in', 'check-ins')}{' '}
+          across {plural(summaryStats.activeDayCount, 'day', 'days')}
+        </Text>
+      ) : null}
 
       {visible.length === 0 ? (
         <View style={styles.empty}>
@@ -131,11 +197,18 @@ export default function InsightsScreen() {
           renderItem={({ item, index }) => (
             <InsightCard
               card={item}
+              stats={statsByWeek[item.weekKey]}
               index={index}
               reduceMotion={reduceMotion}
               onDismiss={() => dismissCard(item.id)}
             />
           )}
+          ListFooterComponent={
+            <Text style={styles.footer} testID="insights-footer">
+              Insights stay gentle. Two a week, at most — the rest is just your quilt, quietly
+              growing.
+            </Text>
+          }
         />
       )}
     </View>
@@ -147,6 +220,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.paper,
     paddingHorizontal: spacing.md,
+  },
+  summary: {
+    ...typography.caption,
+    marginTop: spacing.xs,
   },
   empty: {
     flex: 1,
@@ -179,14 +256,17 @@ const styles = StyleSheet.create({
   },
   cardHeader: {
     flexDirection: 'row',
-    // Top-aligned, not centred: the title wraps next to a fixed control
+    // Top-aligned, not centred: the overline wraps next to a fixed control
     // (elastic-layout rule, forge AP#22).
     alignItems: 'flex-start',
     gap: spacing.sm,
   },
+  overline: {
+    ...typography.overline,
+    flex: 1,
+  },
   cardTitle: {
     ...typography.heading,
-    flex: 1,
   },
   dismiss: {
     minWidth: hitTarget,
@@ -199,5 +279,39 @@ const styles = StyleSheet.create({
   },
   cardBody: {
     ...typography.body,
+  },
+  tellRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  tellChip: {
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  tellChipOn: {
+    borderColor: colors.ink,
+    backgroundColor: colors.paper,
+  },
+  tellChipOff: {
+    borderColor: colors.inkFaint,
+    borderStyle: 'dashed',
+  },
+  tellText: {
+    ...typography.caption,
+  },
+  tellTextOn: {
+    color: colors.ink,
+  },
+  tellTextOff: {
+    color: colors.inkMuted,
+  },
+  footer: {
+    ...typography.caption,
+    marginTop: spacing.md,
+    textAlign: 'center',
   },
 });
