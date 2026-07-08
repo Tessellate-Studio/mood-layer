@@ -4,7 +4,7 @@
 // judgment entries that expand on tap and swipe open to edit or remove.
 
 import React from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
@@ -36,6 +36,7 @@ export default function ExperimentsScreen() {
       <PaperTexture />
       <ScrollView
         contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.md }]}
+        keyboardShouldPersistTaps="handled"
         testID="screen-experiments"
       >
         <Text style={typography.title}>Experiments</Text>
@@ -111,29 +112,50 @@ function PracticeCard({
   open: boolean;
   onToggle(): void;
 }) {
+  // Scratch pad: each step gets a place to actually write, saved locally so a
+  // practice is something you work through, not just read (device feedback).
+  const notes = useExperimentStore((s) => s.practiceNotes[practice.id]);
+  const setPracticeNote = useExperimentStore((s) => s.setPracticeNote);
+
   return (
-    <Pressable
-      testID={`practice-${practice.id}`}
-      accessibilityRole="button"
-      accessibilityState={{ expanded: open }}
-      accessibilityLabel={`${practice.title}. ${practice.whenFor}`}
-      style={styles.card}
-      onPress={onToggle}
-    >
-      <Text style={typography.heading}>{practice.title}</Text>
-      <Text style={styles.cardSub}>{practice.whenFor}</Text>
+    // Only the header toggles — the steps hold text inputs, so wrapping the
+    // whole card in a Pressable would collapse it every time you tapped to type.
+    <View style={styles.card}>
+      <Pressable
+        testID={`practice-${practice.id}`}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        accessibilityLabel={`${practice.title}. ${practice.whenFor}`}
+        onPress={onToggle}
+      >
+        <Text style={typography.heading}>{practice.title}</Text>
+        <Text style={styles.cardSub}>{practice.whenFor}</Text>
+      </Pressable>
       {open ? (
         <View style={styles.practiceSteps}>
           {practice.steps.map((step, i) => (
-            <View key={i} style={styles.stepRow}>
-              <Text style={styles.stepNumber}>{i + 1}</Text>
-              <Text style={[typography.body, styles.stepText]}>{step}</Text>
+            <View key={i} style={styles.stepBlock}>
+              <View style={styles.stepRow}>
+                <Text style={styles.stepNumber}>{i + 1}</Text>
+                <Text style={[typography.body, styles.stepText]}>{step}</Text>
+              </View>
+              <TextInput
+                testID={`practice-${practice.id}-note-${i}`}
+                style={styles.stepInput}
+                multiline
+                placeholder="write here…"
+                placeholderTextColor={colors.inkMuted}
+                value={notes?.[i] ?? ''}
+                onChangeText={(text) => setPracticeNote(practice.id, i, text)}
+                textAlignVertical="top"
+                accessibilityLabel={`Your notes for step ${i + 1}`}
+              />
             </View>
           ))}
           <Text style={styles.practiceClosing}>{practice.closing}</Text>
         </View>
       ) : null}
-    </Pressable>
+    </View>
   );
 }
 
@@ -151,10 +173,12 @@ function ReflectionRow({
   onEdit(): void;
 }) {
   const removeJudgmentEntry = useExperimentStore((s) => s.removeJudgmentEntry);
-  const feelingLabel = entry.uncoveredFeeling
-    ? findEmotionWord(entry.uncoveredFeeling.emotionId)?.word.label ??
-      entry.uncoveredFeeling.emotionId
-    : null;
+  const feelingLabel =
+    entry.uncoveredFeelings.length > 0
+      ? entry.uncoveredFeelings
+          .map((f) => findEmotionWord(f.emotionId)?.word.label ?? f.emotionId)
+          .join(', ')
+      : null;
 
   const confirmRemove = () => {
     Alert.alert('Remove this reflection?', 'It will be gone from this phone.', [
@@ -248,10 +272,25 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     gap: spacing.md,
   },
+  stepBlock: {
+    gap: spacing.sm,
+  },
   stepRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.md,
+  },
+  stepInput: {
+    ...typography.body,
+    color: colors.ink,
+    minHeight: 64,
+    backgroundColor: colors.paper,
+    borderRadius: borderRadius.md,
+    borderWidth: 0.5,
+    borderColor: colors.inkFaint,
+    padding: spacing.sm,
+    // Indent the writing box under the step text, clear of the number gutter.
+    marginLeft: spacing.md + 22,
   },
   stepNumber: {
     ...typography.title,

@@ -113,7 +113,7 @@ export function seedMonth(now: Date = new Date()): number {
     createdAt: new Date(now.getFullYear(), now.getMonth(), now.getDate() - (4 + i * 3), 20, 0).toISOString(),
     target: j.target,
     judgment: j.judgment,
-    uncoveredFeeling: j.feeling,
+    uncoveredFeelings: [j.feeling],
   }));
 
   useCheckInStore.setState({ checkIns });

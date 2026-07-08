@@ -73,7 +73,7 @@ describe('NameItSetupScreen', () => {
 });
 
 describe('JudgmentFlowScreen', () => {
-  it('walks the 4 steps and saves one entry', async () => {
+  it('walks the 4 steps and saves more than one feeling', async () => {
     renderScreen(<JudgmentFlowScreen />);
     expect(await screen.findByTestId('screen-judgment')).toBeTruthy();
 
@@ -85,10 +85,17 @@ describe('JudgmentFlowScreen', () => {
     fireEvent.changeText(await screen.findByTestId('judgment-judgment'), 'being disorganized');
     fireEvent.press(screen.getByTestId('judgment-next'));
 
-    // Step 3 — pick a feeling + intensity. EmotionChip stamps `chip-${id}`,
-    // so the composite id `judgment-feeling-worried` renders as
-    // `chip-judgment-feeling-worried`.
-    fireEvent.press(await screen.findByTestId('chip-judgment-feeling-worried'));
+    // Step 3 — the feeling step carries the previous two answers forward so
+    // "who" + "why" stay in view.
+    const stitch = await screen.findByTestId('judgment-stitch');
+    // Regex so the match searches across the nested <Text> spans (target +
+    // judgment are emphasised inline).
+    expect(stitch).toHaveTextContent(/my coworker.*being disorganized/);
+
+    // Multi-select: name two feelings, not one. EmotionChip stamps `chip-${id}`,
+    // so `judgment-feeling-worried` renders as `chip-judgment-feeling-worried`.
+    fireEvent.press(screen.getByTestId('chip-judgment-feeling-worried'));
+    fireEvent.press(screen.getByTestId('chip-judgment-feeling-hurt'));
     fireEvent.press(screen.getByTestId('judgment-next'));
 
     // Step 4 — optional free-writing, then save
@@ -99,9 +106,25 @@ describe('JudgmentFlowScreen', () => {
     const entry = useExperimentStore.getState().judgmentEntries[0];
     expect(entry.target).toBe('my coworker');
     expect(entry.judgment).toBe('being disorganized');
-    expect(entry.uncoveredFeeling?.emotionId).toBe('worried');
-    expect(entry.uncoveredFeeling?.family).toBe('fear');
+    expect(entry.uncoveredFeelings.map((f) => f.emotionId)).toEqual(['worried', 'hurt']);
+    expect(entry.uncoveredFeelings.map((f) => f.family)).toEqual(['fear', 'sadness']);
     expect(entry.freeWriting).toBe('the deadline scares me');
+  });
+
+  it('deselects a feeling when its chip is tapped again', async () => {
+    renderScreen(<JudgmentFlowScreen />);
+    fireEvent.changeText(await screen.findByTestId('judgment-target'), 'myself');
+    fireEvent.press(screen.getByTestId('judgment-next'));
+    fireEvent.changeText(await screen.findByTestId('judgment-judgment'), 'being slow');
+    fireEvent.press(screen.getByTestId('judgment-next'));
+
+    fireEvent.press(await screen.findByTestId('chip-judgment-feeling-worried'));
+    fireEvent.press(screen.getByTestId('chip-judgment-feeling-worried'));
+    fireEvent.press(screen.getByTestId('judgment-next'));
+    fireEvent.press(await screen.findByTestId('judgment-save'));
+
+    await waitFor(() => expect(useExperimentStore.getState().judgmentEntries).toHaveLength(1));
+    expect(useExperimentStore.getState().judgmentEntries[0].uncoveredFeelings).toEqual([]);
   });
 
   it('cannot advance step 1 with an empty target', async () => {
@@ -117,7 +140,7 @@ describe('ExperimentsScreen past reflections', () => {
     useExperimentStore.getState().addJudgmentEntry({
       target: 'my friend',
       judgment: 'canceling',
-      uncoveredFeeling: { emotionId: 'hurt', family: 'sadness', intensity: 3 },
+      uncoveredFeelings: [{ emotionId: 'hurt', family: 'sadness', intensity: 3 }],
       freeWriting: 'I felt unimportant.',
     });
 
@@ -128,6 +151,21 @@ describe('ExperimentsScreen past reflections', () => {
     expect(screen.queryByText('I felt unimportant.')).toBeNull();
     fireEvent.press(entry);
     expect(await screen.findByText('I felt unimportant.')).toBeTruthy();
+  });
+
+  it('shows every named feeling under an expanded reflection', async () => {
+    useExperimentStore.getState().addJudgmentEntry({
+      target: 'my friend',
+      judgment: 'canceling',
+      uncoveredFeelings: [
+        { emotionId: 'hurt', family: 'sadness', intensity: 3 },
+        { emotionId: 'worried', family: 'fear', intensity: 2 },
+      ],
+    });
+
+    renderScreen(<ExperimentsScreen />);
+    fireEvent.press(await screen.findByTestId('judgment-entry-0'));
+    expect(await screen.findByText('Underneath: Hurt, Worried')).toBeTruthy();
   });
 
   it('shows no reflections section when the store is empty', async () => {

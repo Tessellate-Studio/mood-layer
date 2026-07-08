@@ -55,7 +55,12 @@ export interface JudgmentEntry {
   createdAt: string;
   target: string;
   judgment: string;
-  uncoveredFeeling: EmotionSelection | null;
+  /**
+   * The feeling(s) sitting under the judgment — a judgment rarely hides just
+   * one. Empty when nothing was named. (Migrated from a single
+   * `uncoveredFeeling` field; store migration v1 wraps the old value.)
+   */
+  uncoveredFeelings: EmotionSelection[];
   freeWriting?: string;
 }
 

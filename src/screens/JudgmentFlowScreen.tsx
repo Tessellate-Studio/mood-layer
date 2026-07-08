@@ -1,8 +1,12 @@
 // "Under the judgment" — a judgment, followed home to the feeling it carries.
 // Four gentle steps: who/what you're judging → what the judgment is → what you
-// would feel underneath (single-select emotion + intensity) → optional
-// free-writing. Saves a JudgmentEntry locally, then closes. Tone: kind to the
-// judge, never a correction.
+// would feel underneath (multi-select emotions, each with its own intensity) →
+// optional free-writing. Saves a JudgmentEntry locally, then closes. Tone: kind
+// to the judge, never a correction.
+//
+// The feeling step carries the previous two answers forward as a live sentence
+// ("If I couldn't judge X for Y, I would feel…") so you don't have to hold who
+// + why in your head across screens (device feedback, 2026-07-08).
 
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -13,7 +17,7 @@ import Svg, { Line } from 'react-native-svg';
 import EmotionChip from '@/components/EmotionChip';
 import IntensityDial from '@/components/IntensityDial';
 import ModalHeader from '@/components/ModalHeader';
-import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
+import { borderRadius, colors, fonts, hitTarget, spacing, typography } from '@/constants/theme';
 import PaperTexture from '@/components/PaperTexture';
 import { EMOTION_FAMILIES, findEmotionWord } from '@/content/emotions';
 import { JUDGMENT_EXAMPLES } from '@/content/judgmentExamples';
@@ -22,9 +26,23 @@ import { useExperimentStore } from '@/store/experimentStore';
 import type { EmotionSelection, Intensity } from '@/types/models';
 
 const STEP_COUNT = 4;
+// A judgment usually hides more than one feeling, but a wall of intensity dials
+// is its own kind of noise — cap the naming at four so the step stays light.
+const MAX_FEELINGS = 4;
+const DEFAULT_INTENSITY: Intensity = 2;
 // A rotating example seed so the placeholders + inline examples feel fresh but
 // stay deterministic within a session.
 const EXAMPLES = JUDGMENT_EXAMPLES.slice(0, 4);
+
+// Join named feelings into a lowercase phrase ("worried and hurt") for the
+// closing stitch line.
+function feelingSummary(feelings: EmotionSelection[]): string {
+  const labels = feelings.map(
+    (f) => (findEmotionWord(f.emotionId)?.word.label ?? f.emotionId).toLowerCase()
+  );
+  if (labels.length <= 1) return labels[0] ?? '';
+  return `${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}`;
+}
 
 export default function JudgmentFlowScreen() {
   const insets = useSafeAreaInsets();
@@ -43,8 +61,8 @@ export default function JudgmentFlowScreen() {
   const [step, setStep] = React.useState(0);
   const [target, setTarget] = React.useState(editing?.target ?? '');
   const [judgment, setJudgment] = React.useState(editing?.judgment ?? '');
-  const [feeling, setFeeling] = React.useState<EmotionSelection | null>(
-    editing?.uncoveredFeeling ?? null
+  const [feelings, setFeelings] = React.useState<EmotionSelection[]>(
+    editing?.uncoveredFeelings ?? []
   );
   const [freeWriting, setFreeWriting] = React.useState(editing?.freeWriting ?? '');
 
@@ -63,7 +81,7 @@ export default function JudgmentFlowScreen() {
     const input = {
       target: target.trim(),
       judgment: judgment.trim(),
-      uncoveredFeeling: feeling,
+      uncoveredFeelings: feelings,
       freeWriting: freeWriting.trim() || undefined,
     };
     if (editId) {
@@ -74,12 +92,27 @@ export default function JudgmentFlowScreen() {
     navigation.goBack();
   };
 
-  const pickFeeling = (emotionId: string, family: EmotionSelection['family']) => {
-    // Single-select: tapping the chosen one again clears it.
-    setFeeling((prev) =>
-      prev?.emotionId === emotionId ? null : { emotionId, family, intensity: prev?.intensity ?? 2 }
-    );
+  const toggleFeeling = (emotionId: string, family: EmotionSelection['family']) => {
+    // Multi-select: tap to add, tap again to clear. Capped at MAX_FEELINGS —
+    // extra taps beyond the cap are a no-op (the chip just won't select).
+    setFeelings((prev) => {
+      if (prev.some((f) => f.emotionId === emotionId)) {
+        return prev.filter((f) => f.emotionId !== emotionId);
+      }
+      if (prev.length >= MAX_FEELINGS) return prev;
+      return [...prev, { emotionId, family, intensity: DEFAULT_INTENSITY }];
+    });
   };
+
+  const setFeelingIntensity = (emotionId: string, intensity: Intensity) =>
+    setFeelings((prev) =>
+      prev.map((f) => (f.emotionId === emotionId ? { ...f, intensity } : f))
+    );
+
+  // The sentence built so far — shown on the feeling + note steps so the two
+  // earlier answers stay in view instead of living only in memory.
+  const stitchTarget = target.trim();
+  const stitchJudgment = judgment.trim();
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-judgment">
@@ -154,7 +187,12 @@ export default function JudgmentFlowScreen() {
 
         {step === 2 && (
           <View style={styles.stepGap}>
-            <Text style={typography.heading}>…I would feel…</Text>
+            {/* Stitch the previous two answers into a living sentence so the
+                "who" and "why" don't have to be held in memory. */}
+            <Text style={styles.stitch} testID="judgment-stitch">
+              If I couldn&apos;t judge <Text style={styles.stitchStrong}>{stitchTarget}</Text> for{' '}
+              <Text style={styles.stitchStrong}>{stitchJudgment}</Text>, I would feel…
+            </Text>
             {Object.values(EMOTION_FAMILIES).map((family) => (
               <View key={family.id} style={styles.familyGroup}>
                 <Text style={styles.overline}>{family.label}</Text>
@@ -167,31 +205,36 @@ export default function JudgmentFlowScreen() {
                       key={word.id}
                       id={`judgment-feeling-${word.id}`}
                       label={word.label}
-                      selected={feeling?.emotionId === word.id}
-                      onPress={() => pickFeeling(word.id, family.id)}
+                      selected={feelings.some((f) => f.emotionId === word.id)}
+                      onPress={() => toggleFeeling(word.id, family.id)}
                     />
                   ))}
                 </View>
               </View>
             ))}
-            {feeling ? (
-              <View style={styles.card}>
-                <Text style={typography.heading}>
-                  {findEmotionWord(feeling.emotionId)?.word.label ?? feeling.emotionId}
-                </Text>
-                <IntensityDial
-                  wordId={feeling.emotionId}
-                  label={findEmotionWord(feeling.emotionId)?.word.label ?? feeling.emotionId}
-                  family={feeling.family}
-                  value={feeling.intensity}
-                  onChange={(intensity: Intensity) =>
-                    setFeeling((prev) => (prev ? { ...prev, intensity } : prev))
-                  }
-                />
-              </View>
+            {feelings.length > 0 ? (
+              // One card per named feeling — the same word-plus-shade-dial the
+              // check-in uses, so several feelings read as a set, not a count.
+              feelings.map((feeling) => {
+                const label = findEmotionWord(feeling.emotionId)?.word.label ?? feeling.emotionId;
+                return (
+                  <View key={feeling.emotionId} style={styles.card}>
+                    <Text style={typography.heading}>{label}</Text>
+                    <IntensityDial
+                      wordId={feeling.emotionId}
+                      label={label}
+                      family={feeling.family}
+                      value={feeling.intensity}
+                      onChange={(intensity: Intensity) =>
+                        setFeelingIntensity(feeling.emotionId, intensity)
+                      }
+                    />
+                  </View>
+                );
+              })
             ) : (
               <Text style={typography.caption}>
-                Pick the one that fits — or move on if nothing does.
+                Name as many as fit — or move on if nothing does.
               </Text>
             )}
           </View>
@@ -199,6 +242,18 @@ export default function JudgmentFlowScreen() {
 
         {step === 3 && (
           <View style={styles.stepGap}>
+            <Text style={styles.stitch}>
+              Under judging <Text style={styles.stitchStrong}>{stitchTarget}</Text>
+              {feelings.length > 0 ? (
+                <>
+                  {' '}
+                  you found{' '}
+                  <Text style={styles.stitchStrong}>{feelingSummary(feelings)}</Text>.
+                </>
+              ) : (
+                '.'
+              )}
+            </Text>
             <Text style={typography.heading}>Anything else? (optional)</Text>
             <TextInput
               testID="judgment-freewriting"
@@ -281,6 +336,16 @@ const styles = StyleSheet.create({
   },
   exampleLine: {
     ...typography.caption,
+  },
+  stitch: {
+    ...typography.body,
+    color: colors.inkSoft,
+  },
+  stitchStrong: {
+    // Emphasis is the bold Courier family, never a synthetic weight — asking
+    // Android for 600 on the regular face silently falls back (anti-pattern #12).
+    fontFamily: fonts.displayEmphasis,
+    color: colors.ink,
   },
   familyGroup: {
     gap: spacing.sm,
