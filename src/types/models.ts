@@ -59,6 +59,26 @@ export interface JudgmentEntry {
   freeWriting?: string;
 }
 
+/** How much of the quilt a circle person is shown. */
+export type CircleSeesLevel = 'colours-words' | 'colours' | 'count';
+/** How often the user intends to share with a circle person ('paused' = off). */
+export type CircleFrequency = 'evening' | 'weekly' | 'paused';
+
+/**
+ * One trusted person in the user's circle. LOCAL ONLY — this is a sharing
+ * *preference*, not a channel: nothing is stored off-device and nothing sends
+ * on its own. When the user chooses to share, a summary is generated on the
+ * spot (respecting `sees`) and handed to the OS share sheet.
+ */
+export interface CirclePerson {
+  id: string;
+  name: string;
+  /** Free text — 'Partner', 'Mum', 'Close friend'. */
+  relationship: string;
+  sees: CircleSeesLevel;
+  frequency: CircleFrequency;
+}
+
 /** Settings for the "name it" prompts during waking hours. */
 export interface NameItSettings {
   enabled: boolean;

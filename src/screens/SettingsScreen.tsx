@@ -24,6 +24,7 @@ import PaperTexture from '@/components/PaperTexture';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { rescheduleNameIt } from '@/services/notifications';
 import { useCheckInStore } from '@/store/checkInStore';
+import { useCircleStore } from '@/store/circleStore';
 import { useExperimentStore } from '@/store/experimentStore';
 import { useInsightStore } from '@/store/insightStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -100,6 +101,7 @@ export default function SettingsScreen() {
             useCheckInStore.getState().clearAll();
             useExperimentStore.getState().clearAll();
             useInsightStore.getState().clearAll();
+            useCircleStore.getState().clearAll();
             // resetAll() clears onboardingCompletedAt too, so the user
             // re-onboards — intentional: delete-everything is a factory reset.
             useSettingsStore.getState().resetAll();

@@ -8,10 +8,11 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import ScreenErrorBoundary from '@/components/ScreenErrorBoundary';
-import { ExperimentsIcon, InsightsIcon, QuiltIcon, type TabIconProps } from '@/components/TabIcon';
+import { CircleIcon, ExperimentsIcon, InsightsIcon, QuiltIcon, type TabIconProps } from '@/components/TabIcon';
 import { colors, fonts } from '@/constants/theme';
 import { navigationRef } from '@/navigation/navigationRef';
 import CheckInFlowScreen from '@/screens/CheckInFlowScreen';
+import CircleScreen from '@/screens/CircleScreen';
 import ExperimentsScreen from '@/screens/ExperimentsScreen';
 import InsightsScreen from '@/screens/InsightsScreen';
 import JudgmentFlowScreen from '@/screens/JudgmentFlowScreen';
@@ -34,6 +35,7 @@ export type MainTabParamList = {
   QuiltTab: undefined;
   ExperimentsTab: undefined;
   InsightsTab: undefined;
+  CircleTab: undefined;
 };
 
 /** Pure so tests can cover the routing decision without rendering. */
@@ -58,6 +60,7 @@ function withBoundary(name: string, Screen: React.ComponentType): React.Componen
 const SafeQuiltScreen = withBoundary('Quilt', QuiltScreen);
 const SafeExperimentsScreen = withBoundary('Experiments', ExperimentsScreen);
 const SafeInsightsScreen = withBoundary('Insights', InsightsScreen);
+const SafeCircleScreen = withBoundary('Circle', CircleScreen);
 const SafeOnboardingScreen = withBoundary('Onboarding', OnboardingScreen);
 const SafeCheckInFlowScreen = withBoundary('CheckInFlow', CheckInFlowScreen);
 const SafeJudgmentFlowScreen = withBoundary('JudgmentFlow', JudgmentFlowScreen);
@@ -70,6 +73,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const renderQuiltIcon = (props: TabIconProps) => <QuiltIcon {...props} />;
 const renderExperimentsIcon = (props: TabIconProps) => <ExperimentsIcon {...props} />;
 const renderInsightsIcon = (props: TabIconProps) => <InsightsIcon {...props} />;
+const renderCircleIcon = (props: TabIconProps) => <CircleIcon {...props} />;
 
 function MainTabs() {
   return (
@@ -99,6 +103,11 @@ function MainTabs() {
         name="InsightsTab"
         component={SafeInsightsScreen}
         options={{ title: 'Insights', tabBarIcon: renderInsightsIcon }}
+      />
+      <Tab.Screen
+        name="CircleTab"
+        component={SafeCircleScreen}
+        options={{ title: 'Circle', tabBarIcon: renderCircleIcon }}
       />
     </Tab.Navigator>
   );

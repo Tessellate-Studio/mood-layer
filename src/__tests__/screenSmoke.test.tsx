@@ -9,6 +9,7 @@ import { Text } from 'react-native';
 
 import AppNavigator, { pickInitialRoute } from '@/navigation/AppNavigator';
 import ScreenErrorBoundary from '@/components/ScreenErrorBoundary';
+import CircleScreen from '@/screens/CircleScreen';
 import ExperimentsScreen from '@/screens/ExperimentsScreen';
 import InsightsScreen from '@/screens/InsightsScreen';
 import NameItSetupScreen from '@/screens/NameItSetupScreen';
@@ -90,6 +91,7 @@ describe('screen skeletons render their landmarks', () => {
     ['screen-quilt', QuiltScreen],
     ['screen-experiments', ExperimentsScreen],
     ['screen-insights', InsightsScreen],
+    ['screen-circle', CircleScreen],
     ['screen-name-it', NameItSetupScreen],
     ['screen-settings', SettingsScreen],
     ['screen-onboarding', OnboardingScreen],
