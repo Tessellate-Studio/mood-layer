@@ -135,6 +135,30 @@ describe('JudgmentFlowScreen', () => {
   });
 });
 
+describe('ExperimentsScreen layout', () => {
+  it('groups practices into overlined sections with a gentle intro and footer', async () => {
+    renderScreen(<ExperimentsScreen />);
+    await screen.findByTestId('screen-experiments');
+    expect(screen.getByText(/Small practices for meeting what/)).toBeTruthy();
+    expect(screen.getByText('Guided practices')).toBeTruthy();
+    expect(screen.getByText('Perspective practices')).toBeTruthy();
+    expect(screen.getByText(/Nothing here is a test/)).toBeTruthy();
+  });
+
+  it('shows the Past reflections section only once there is a reflection', async () => {
+    renderScreen(<ExperimentsScreen />);
+    await screen.findByTestId('screen-experiments');
+    expect(screen.queryByText('Past reflections')).toBeNull();
+
+    useExperimentStore.getState().addJudgmentEntry({
+      target: 'my friend',
+      judgment: 'canceling',
+      uncoveredFeelings: [],
+    });
+    expect(await screen.findByText('Past reflections')).toBeTruthy();
+  });
+});
+
 describe('ExperimentsScreen past reflections', () => {
   it('lists a past reflection and expands it on tap', async () => {
     useExperimentStore.getState().addJudgmentEntry({

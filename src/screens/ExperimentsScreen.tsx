@@ -1,7 +1,10 @@
-// Experiments tab: the two interactive practices (Name it, Under the
-// judgment), then the Atlas of Emotions perspective practices as sibling
-// cards (tap to unfold the steps in place), then "Past reflections" — saved
-// judgment entries that expand on tap and swipe open to edit or remove.
+// Experiments tab: small practices for meeting what's here. Grouped into
+// sections that echo the redesigned Quilt/Insights/Circle language — a gentle
+// intro line, overline-labelled sections, and a soft closing footer. Two
+// "Guided" practices (Name it, Under the judgment) open a flow; three
+// "Perspective" practices (Atlas of Emotions) unfold in place with a scratch
+// pad; "Past reflections" holds saved judgment entries (expand on tap, swipe to
+// edit or remove).
 
 import React from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -40,50 +43,67 @@ export default function ExperimentsScreen() {
         testID="screen-experiments"
       >
         <Text style={typography.title}>Experiments</Text>
-
-        <Pressable
-          testID="card-name-it"
-          accessibilityRole="button"
-          accessibilityLabel="Name it. Gentle reminders to name what's here."
-          style={styles.card}
-          onPress={() => navigation.navigate('NameItSetup')}
-        >
-          <Text style={typography.heading}>Name it</Text>
-          <Text style={styles.cardSub}>Gentle reminders to name what&apos;s here</Text>
-          <Text style={styles.cardStatus}>
-            {nameIt.enabled ? `${nameIt.timesPerDay}× a day` : 'Off'}
-          </Text>
-        </Pressable>
-
-        <Pressable
-          testID="card-judgment"
-          accessibilityRole="button"
-          accessibilityLabel="Under the judgment. What would you feel if you couldn't judge?"
-          style={styles.card}
-          onPress={() => navigation.navigate('JudgmentFlow')}
-        >
-          <Text style={typography.heading}>Under the judgment</Text>
-          <Text style={styles.cardSub}>What would you feel if you couldn&apos;t judge?</Text>
-        </Pressable>
-
-        {/* Perspective practices from the Atlas of Emotions — same card
-            language as the two above; they unfold in place. */}
-        {PRACTICES.map((practice) => (
-          <PracticeCard
-            key={practice.id}
-            practice={practice}
-            open={openPractice === practice.id}
-            onToggle={() =>
-              setOpenPractice((cur) => (cur === practice.id ? null : practice.id))
-            }
-          />
-        ))}
-        <Text style={styles.attribution}>
-          Practices adapted from the Atlas of Emotions.
+        <Text style={styles.intro}>
+          Small practices for meeting what&apos;s here. Take one when it calls — none are homework.
         </Text>
 
+        {/* Guided: these open a flow. A chevron marks that they lead somewhere,
+            unlike the perspective cards that unfold in place. */}
+        <View style={styles.section}>
+          <Text style={styles.overline}>Guided practices</Text>
+          <Pressable
+            testID="card-name-it"
+            accessibilityRole="button"
+            accessibilityLabel="Name it. Gentle reminders to name what's here."
+            style={styles.card}
+            onPress={() => navigation.navigate('NameItSetup')}
+          >
+            <View style={styles.cardTitleRow}>
+              <Text style={[typography.heading, styles.cardTitle]}>Name it</Text>
+              <Text style={styles.chevron}>→</Text>
+            </View>
+            <Text style={styles.cardSub}>Gentle reminders to name what&apos;s here</Text>
+            <Text style={styles.cardStatus}>
+              {nameIt.enabled ? `${nameIt.timesPerDay}× a day` : 'Off'}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            testID="card-judgment"
+            accessibilityRole="button"
+            accessibilityLabel="Under the judgment. What would you feel if you couldn't judge?"
+            style={styles.card}
+            onPress={() => navigation.navigate('JudgmentFlow')}
+          >
+            <View style={styles.cardTitleRow}>
+              <Text style={[typography.heading, styles.cardTitle]}>Under the judgment</Text>
+              <Text style={styles.chevron}>→</Text>
+            </View>
+            <Text style={styles.cardSub}>What would you feel if you couldn&apos;t judge?</Text>
+          </Pressable>
+        </View>
+
+        {/* Perspective practices from the Atlas of Emotions — they unfold in
+            place with a scratch pad rather than opening a flow. */}
+        <View style={styles.section}>
+          <Text style={styles.overline}>Perspective practices</Text>
+          {PRACTICES.map((practice) => (
+            <PracticeCard
+              key={practice.id}
+              practice={practice}
+              open={openPractice === practice.id}
+              onToggle={() =>
+                setOpenPractice((cur) => (cur === practice.id ? null : practice.id))
+              }
+            />
+          ))}
+          <Text style={styles.attribution}>
+            Practices adapted from the Atlas of Emotions.
+          </Text>
+        </View>
+
         {judgmentEntries.length > 0 ? (
-          <View style={styles.reflections}>
+          <View style={styles.section}>
             <Text style={styles.overline}>Past reflections</Text>
             <Text style={styles.swipeHint}>Swipe a reflection to edit or remove it.</Text>
             {judgmentEntries.map((entry, index) => (
@@ -98,6 +118,10 @@ export default function ExperimentsScreen() {
             ))}
           </View>
         ) : null}
+
+        <Text style={styles.footer}>
+          Nothing here is a test. Come back to a practice whenever it calls; the rest can wait.
+        </Text>
       </ScrollView>
     </View>
   );
@@ -248,14 +272,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingBottom: spacing.xl,
   },
+  intro: {
+    ...typography.body,
+    marginTop: spacing.xs,
+  },
+  section: {
+    marginTop: spacing.lg,
+    gap: spacing.sm,
+  },
   card: {
-    marginTop: spacing.md,
     backgroundColor: colors.paperRaised,
     borderRadius: borderRadius.lg,
     borderWidth: 0.5,
     borderColor: colors.inkFaint,
     padding: spacing.md,
     gap: spacing.xs,
+  },
+  cardTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  cardTitle: {
+    flex: 1,
+    flexWrap: 'wrap',
+  },
+  chevron: {
+    ...typography.heading,
+    color: colors.inkSoft,
   },
   cardSub: {
     ...typography.body,
@@ -305,15 +350,16 @@ const styles = StyleSheet.create({
     ...typography.caption,
     marginTop: spacing.xs,
   },
-  reflections: {
-    marginTop: spacing.xl,
-    gap: spacing.sm,
-  },
   overline: {
     ...typography.overline,
   },
   swipeHint: {
     ...typography.caption,
+  },
+  footer: {
+    ...typography.caption,
+    marginTop: spacing.xl,
+    textAlign: 'center',
   },
   entry: {
     backgroundColor: colors.paperRaised,
