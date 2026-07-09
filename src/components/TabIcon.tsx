@@ -2,7 +2,7 @@
 // Stroke colour comes from the tab bar's tint (theme ink/inkMuted); no fills.
 
 import React from 'react';
-import Svg, { Line, Rect } from 'react-native-svg';
+import Svg, { Circle, Line, Rect } from 'react-native-svg';
 
 import { textures } from '@/constants/theme';
 
@@ -47,6 +47,17 @@ export function ExperimentsIcon({ color, size }: TabIconProps) {
       <Line x1={12} y1={4} x2={12} y2={20} stroke={color} strokeWidth={STROKE_WIDTH} strokeLinecap="round" />
       <Line x1={5.1} y1={8} x2={18.9} y2={16} stroke={color} strokeWidth={STROKE_WIDTH} strokeLinecap="round" />
       <Line x1={18.9} y1={8} x2={5.1} y2={16} stroke={color} strokeWidth={STROKE_WIDTH} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+/** Three small rings clustered — a little circle of people. */
+export function CircleIcon({ color, size }: TabIconProps) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx={12} cy={7} r={3} stroke={color} strokeWidth={STROKE_WIDTH} />
+      <Circle cx={6.5} cy={16} r={3} stroke={color} strokeWidth={STROKE_WIDTH} />
+      <Circle cx={17.5} cy={16} r={3} stroke={color} strokeWidth={STROKE_WIDTH} />
     </Svg>
   );
 }
