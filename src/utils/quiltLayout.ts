@@ -1,30 +1,40 @@
 // Quilt layout engine — PURE functions, no React. Everything the quilt canvas
 // draws is computed here as plain data so it can be unit-tested exactly and
-// rendered by dumb components. Pattern textures are generated PRIMITIVES
-// (lines/circles/paths), never SVG <Pattern> defs — rnsvg's def support is
-// quirky across renderers and defs are untestable as data (CLAUDE.md hard
-// rule "SVG quilt patterns are generated primitives").
+// rendered by dumb components.
+//
+// Visual grammar (Mood Layers redesign, 2026-07-08): a check-in is NOT a
+// bordered, subdivided patch. It is a small cluster of translucent cloth
+// pieces — one per named emotion — that overlap so where feelings co-occur the
+// colour deepens. No grid, no borders, no texture: just light through layers
+// (design handoff "Mood Layers"). The week/day row structure below still
+// positions each cluster; only the piece geometry changed.
 
 import { findEmotionWord } from '@/content/emotions';
 import type { CheckIn, EmotionFamilyId, EmotionSelection, Intensity } from '@/types/models';
 import { dayKey, dayPartLabel, weekKey } from '@/utils/dates';
 
-export interface SegmentLayout {
+/** One translucent cloth piece — a single emotion inside a check-in cluster. */
+export interface ClothPiece {
   emotionId: string;
   family: EmotionFamilyId;
   intensity: Intensity;
-  /** Local to the patch: (0,0) is the patch's top-left corner. */
+  /** Local to the patch box: (0,0) is the box's top-left corner. */
   rect: { x: number; y: number; w: number; h: number };
+  /** Corner radius — soft, near-pill cloth (≈0.35 of the short side). */
+  rx: number;
+  /** Fill translucency, so stacked pieces deepen instead of covering. */
+  opacity: number;
 }
 
 export interface PatchLayout {
   checkInId: string;
-  /** Position within the week block's canvas (gutters already baked in). */
+  /** Position of the check-in's box within the week canvas (gutters baked in). */
   x: number;
   y: number;
   w: number;
   h: number;
-  segments: SegmentLayout[];
+  /** Overlapping cloth pieces, one per emotion, laid out inside the box. */
+  pieces: ClothPiece[];
   a11yLabel: string;
 }
 
@@ -46,17 +56,15 @@ export interface WeekBlock {
   totalHeight: number;
 }
 
-export type PatternElement =
-  | { kind: 'line'; x1: number; y1: number; x2: number; y2: number }
-  | { kind: 'circle'; cx: number; cy: number; r: number }
-  | { kind: 'path'; d: string };
-
-/** Seam gutter between patches and between rows (baked into x/y positions). */
+/** Seam gutter between clusters and between rows (baked into x/y positions). */
 export const QUILT_GUTTER = 6;
-/** Height of a day row that holds patches. */
+/** Height of a day row that holds check-in clusters. */
 export const DAY_ROW_HEIGHT = 72;
-/** Height of an empty-day strip (a thin dashed seam). */
+/** Height of an empty-day strip (breathing space, no drawn seam). */
 export const EMPTY_ROW_HEIGHT = 14;
+
+/** Cloth fill translucency — matches the "fill-opacity 0.66" in the handoff. */
+export const CLOTH_OPACITY = 0.66;
 
 const WEEKDAYS_FULL = [
   'Sunday',
@@ -83,97 +91,49 @@ const MONTHS_SHORT = [
   'Dec',
 ];
 
-type Rect = { x: number; y: number; w: number; h: number };
-
 /**
- * Split a 1-D span into consecutive sizes proportional to `weights`.
- * Positions come from cumulative sums so the pieces tile the span exactly
- * (no drift from summing rounded sizes).
+ * Fraction of the box a piece fills, by intensity. A stronger feeling is a
+ * larger piece of cloth (the handoff shows ~two scales); the ramp stays gentle
+ * so a cluster of mixed intensities still overlaps rather than one swallowing
+ * the rest.
  */
-function splitSpan(total: number, weights: number[]): Array<{ start: number; size: number }> {
-  const sum = weights.reduce((a, b) => a + b, 0);
-  const out: Array<{ start: number; size: number }> = [];
-  let cum = 0;
-  for (const weight of weights) {
-    const start = (total * cum) / sum;
-    cum += weight;
-    const end = (total * cum) / sum;
-    out.push({ start, size: end - start });
-  }
-  return out;
+function sizeFactor(intensity: Intensity): number {
+  return 0.62 + intensity * 0.08; // 1→0.70, 2→0.78, 3→0.86, 4→0.94
 }
 
-const mean = (values: number[]) => values.reduce((a, b) => a + b, 0) / values.length;
-
 /**
- * Subdivide a patch rect into one segment per emotion.
- * Canonical shapes at equal intensity (the quilt's visual grammar):
- *   k=1 full rect · k=2 vertical halves · k=3 left half + two stacked right
- *   quarters · k=4 2×2 grid · k=5 five vertical strips.
- * Along each cut axis, sizes are weighted by intensity (share = intensity /
- * sum of intensities in that cut group). Where a cut separates GROUPS of
- * segments (k=3's left-vs-right, k=4's columns) the group weight is the MEAN
- * of its members' intensities — that is what keeps the canonical shapes exact
- * when all intensities are equal (a sum-weight would make k=3's "left half"
- * a third). Deterministic; areas always tile w×h exactly.
+ * Lay a check-in's emotions out as overlapping cloth pieces inside a w×h box.
+ * Pieces are centred on the box and pushed onto a small ring so they overlap
+ * (co-occurring feelings deepen where they meet). Deterministic: the ring
+ * angle is a function of index only — same emotions → same layout, every time.
+ * Piece order follows selection order (first-named sits under the rest).
  */
-export function subdividePatch(
-  emotions: EmotionSelection[],
-  w: number,
-  h: number
-): SegmentLayout[] {
-  const seg = (e: EmotionSelection, rect: Rect): SegmentLayout => ({
-    emotionId: e.emotionId,
-    family: e.family,
-    intensity: e.intensity,
-    rect,
-  });
-
+export function clothPieces(emotions: EmotionSelection[], w: number, h: number): ClothPiece[] {
   const k = emotions.length;
   if (k === 0) return [];
-  if (k === 1) return [seg(emotions[0], { x: 0, y: 0, w, h })];
 
-  if (k === 2) {
-    const cols = splitSpan(
-      w,
-      emotions.map((e) => e.intensity)
-    );
-    return emotions.map((e, i) => seg(e, { x: cols[i].start, y: 0, w: cols[i].size, h }));
-  }
+  const cx = w / 2;
+  const cy = h / 2;
+  // A lone piece sits dead-centre; a cluster spreads on a ring ~16% of the box.
+  const radius = k === 1 ? 0 : Math.min(w, h) * 0.16;
 
-  if (k === 3) {
-    const [left, topRight, bottomRight] = emotions;
-    const cols = splitSpan(w, [
-      left.intensity,
-      mean([topRight.intensity, bottomRight.intensity]),
-    ]);
-    const rightRows = splitSpan(h, [topRight.intensity, bottomRight.intensity]);
-    return [
-      seg(left, { x: cols[0].start, y: 0, w: cols[0].size, h }),
-      seg(topRight, { x: cols[1].start, y: rightRows[0].start, w: cols[1].size, h: rightRows[0].size }),
-      seg(bottomRight, { x: cols[1].start, y: rightRows[1].start, w: cols[1].size, h: rightRows[1].size }),
-    ];
-  }
-
-  if (k === 4) {
-    const [a, b, c, d] = emotions;
-    const cols = splitSpan(w, [mean([a.intensity, b.intensity]), mean([c.intensity, d.intensity])]);
-    const leftRows = splitSpan(h, [a.intensity, b.intensity]);
-    const rightRows = splitSpan(h, [c.intensity, d.intensity]);
-    return [
-      seg(a, { x: cols[0].start, y: leftRows[0].start, w: cols[0].size, h: leftRows[0].size }),
-      seg(b, { x: cols[0].start, y: leftRows[1].start, w: cols[0].size, h: leftRows[1].size }),
-      seg(c, { x: cols[1].start, y: rightRows[0].start, w: cols[1].size, h: rightRows[0].size }),
-      seg(d, { x: cols[1].start, y: rightRows[1].start, w: cols[1].size, h: rightRows[1].size }),
-    ];
-  }
-
-  // k >= 5: vertical strips (the model caps a check-in at 5 emotions).
-  const cols = splitSpan(
-    w,
-    emotions.map((e) => e.intensity)
-  );
-  return emotions.map((e, i) => seg(e, { x: cols[i].start, y: 0, w: cols[i].size, h }));
+  return emotions.map((emotion, i) => {
+    const f = sizeFactor(emotion.intensity);
+    const pw = w * f;
+    const ph = h * f;
+    // Start at the top of the ring and step evenly around it.
+    const angle = -Math.PI / 2 + (i * 2 * Math.PI) / k;
+    const ox = radius * Math.cos(angle);
+    const oy = radius * Math.sin(angle);
+    return {
+      emotionId: emotion.emotionId,
+      family: emotion.family,
+      intensity: emotion.intensity,
+      rect: { x: cx + ox - pw / 2, y: cy + oy - ph / 2, w: pw, h: ph },
+      rx: Math.min(pw, ph) * 0.35,
+      opacity: CLOTH_OPACITY,
+    };
+  });
 }
 
 /** 'Tuesday morning: sad 3, hopeful 2' — screen-reader summary of a patch. */
@@ -210,9 +170,9 @@ function chunk<T>(items: T[], size: number): T[][] {
 /**
  * Lay the whole quilt out: week blocks (current week first, descending),
  * seven Mon→Sun day rows per week (current week stops at `now` — future days
- * are omitted, not shown as empty strips), empty days as thin strips, at most
- * 5 patches per row (overflow wraps to a second row with the same dayKey).
- * `now` is injectable so tests are date-stable.
+ * are omitted, not shown as empty strips), empty days as thin breathing gaps,
+ * at most 5 clusters per row (overflow wraps to a second row with the same
+ * dayKey). `now` is injectable so tests are date-stable.
  */
 export function computeQuiltLayout(
   checkIns: CheckIn[],
@@ -263,8 +223,8 @@ export function computeQuiltLayout(
 
       const rowChunks = chunk(dayCheckIns, 5);
       rowChunks.forEach((rowCheckIns, chunkIndex) => {
-        // Slot count floors at 3 so a lone patch stays patch-sized instead of
-        // stretching across the whole quilt.
+        // Slot count floors at 3 so a lone cluster stays cluster-sized instead
+        // of stretching across the whole quilt.
         const slots = Math.max(3, Math.min(rowCheckIns.length, 5));
         const patchW = (containerWidth - (slots - 1) * QUILT_GUTTER) / slots;
         const patches: PatchLayout[] = rowCheckIns.map((checkIn, i) => ({
@@ -273,7 +233,7 @@ export function computeQuiltLayout(
           y,
           w: patchW,
           h: DAY_ROW_HEIGHT,
-          segments: subdividePatch(checkIn.emotions, patchW, DAY_ROW_HEIGHT),
+          pieces: clothPieces(checkIn.emotions, patchW, DAY_ROW_HEIGHT),
           a11yLabel: buildPatchA11yLabel(checkIn),
         }));
         rows.push({
@@ -298,129 +258,4 @@ export function computeQuiltLayout(
   }
 
   return blocks;
-}
-
-/** Round for compact, deterministic path strings. */
-const r2 = (n: number) => Math.round(n * 100) / 100;
-
-/**
- * Monochrome texture primitives for one segment rect, everything strictly
- * inside the rect. Paths use absolute M/L commands ONLY so tests (and any
- * future tooling) can parse coordinates back out of the string.
- * Unknown ids return [] — the segment renders as plain shade.
- */
-export function generatePatternElements(
-  patternId: string,
-  rect: Rect,
-  opts?: { spacing?: number }
-): PatternElement[] {
-  const spacing = opts?.spacing ?? 7;
-  const { x, y, w, h } = rect;
-  const elements: PatternElement[] = [];
-
-  // Diagonal lines with slope +1 (down-right) or -1 (up-right), clipped to
-  // the rect by solving for the parameter range where x stays in bounds.
-  const diagonals = (slope: 1 | -1) => {
-    const t0 = -Math.ceil(h / spacing) * spacing;
-    for (let t = t0; t < w; t += spacing) {
-      const s0 = Math.max(0, -t);
-      const s1 = Math.min(h, w - t);
-      if (s1 - s0 <= 0.5) continue;
-      if (slope === 1) {
-        elements.push({ kind: 'line', x1: x + t + s0, y1: y + s0, x2: x + t + s1, y2: y + s1 });
-      } else {
-        elements.push({ kind: 'line', x1: x + t + s0, y1: y + h - s0, x2: x + t + s1, y2: y + h - s1 });
-      }
-    }
-  };
-
-  switch (patternId) {
-    case 'hatch':
-      diagonals(1);
-      break;
-
-    case 'vertical':
-      for (let vx = x + spacing; vx < x + w; vx += spacing) {
-        elements.push({ kind: 'line', x1: vx, y1: y, x2: vx, y2: y + h });
-      }
-      break;
-
-    case 'wave': {
-      const amplitude = 2.5;
-      const periods = 2.5; // 2–3 gentle periods across the width
-      const samples = 24;
-      for (let yc = y + spacing; yc < y + h; yc += spacing) {
-        if (yc - amplitude < y || yc + amplitude > y + h) continue;
-        const points: string[] = [];
-        for (let i = 0; i <= samples; i++) {
-          const px = x + (w * i) / samples;
-          const py = yc + amplitude * Math.sin((2 * Math.PI * periods * i) / samples);
-          points.push(`${i === 0 ? 'M' : 'L'} ${r2(px)} ${r2(py)}`);
-        }
-        elements.push({ kind: 'path', d: points.join(' ') });
-      }
-      break;
-    }
-
-    case 'crosshatch':
-      diagonals(1);
-      diagonals(-1);
-      break;
-
-    case 'dots': {
-      const radius = 1.6;
-      for (let row = 0; ; row++) {
-        const cy = y + spacing * 0.5 + row * spacing;
-        if (cy + radius > y + h) break;
-        if (cy - radius < y) continue;
-        // Offset alternate rows by half a step for a woven look.
-        const startX = x + spacing * 0.5 + (row % 2) * (spacing / 2);
-        for (let cx = startX; cx + radius <= x + w; cx += spacing) {
-          if (cx - radius < x) continue;
-          elements.push({ kind: 'circle', cx, cy, r: radius });
-        }
-      }
-      break;
-    }
-
-    case 'spokes': {
-      const cx = x + w / 2;
-      const cy = y + h / 2;
-      const len = Math.min(w, h) * 0.32;
-      for (let i = 0; i < 8; i++) {
-        const angle = (i * Math.PI) / 4;
-        // Start a little out from the centre so the spokes read as stitches,
-        // not a solid asterisk.
-        elements.push({
-          kind: 'line',
-          x1: cx + Math.cos(angle) * len * 0.35,
-          y1: cy + Math.sin(angle) * len * 0.35,
-          x2: cx + Math.cos(angle) * len,
-          y2: cy + Math.sin(angle) * len,
-        });
-      }
-      break;
-    }
-
-    case 'chevron': {
-      // Sparse rows (double spacing) of small V shapes.
-      const rowStep = spacing * 2;
-      const vWidth = spacing * 1.6;
-      const depth = spacing * 0.6;
-      for (let yc = y + spacing; yc + depth <= y + h; yc += rowStep) {
-        for (let px = x + spacing * 0.5; px + vWidth <= x + w; px += vWidth + spacing) {
-          elements.push({
-            kind: 'path',
-            d: `M ${r2(px)} ${r2(yc)} L ${r2(px + vWidth / 2)} ${r2(yc + depth)} L ${r2(px + vWidth)} ${r2(yc)}`,
-          });
-        }
-      }
-      break;
-    }
-
-    default:
-      break;
-  }
-
-  return elements;
 }

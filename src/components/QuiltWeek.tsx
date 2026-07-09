@@ -11,9 +11,9 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import Svg, { G, Line } from 'react-native-svg';
+import Svg, { G } from 'react-native-svg';
 
-import { colors, motion, spacing, textures, typography } from '@/constants/theme';
+import { colors, motion, spacing, typography } from '@/constants/theme';
 import { useMotion } from '@/hooks/useMotion';
 import type { WeekBlock } from '@/utils/quiltLayout';
 import QuiltPatch from '@/components/QuiltPatch';
@@ -64,7 +64,6 @@ function QuiltWeekInner({
 }: Props) {
   const { reduced: reduceMotion } = useMotion();
 
-  const canvasWidth = width - leftMargin;
   const animatedPatch = animateId
     ? block.rows.flatMap((r) => r.patches).find((p) => p.checkInId === animateId)
     : undefined;
@@ -75,24 +74,10 @@ function QuiltWeekInner({
       <View style={{ height: block.totalHeight }}>
         <Svg width={width} height={block.totalHeight}>
           <G transform={`translate(${leftMargin}, 0)`}>
-            {block.rows.map((row) =>
-              row.empty ? (
-                // Empty day: a thin dashed seam across the canvas.
-                <Line
-                  key={row.dayKey}
-                  x1={0}
-                  y1={row.y + row.height / 2}
-                  x2={canvasWidth}
-                  y2={row.y + row.height / 2}
-                  stroke={colors.inkFaint}
-                  strokeWidth={1}
-                  strokeDasharray={[...textures.stitchDashFine]}
-                />
-              ) : (
-                row.patches.map((patch) => (
-                  <QuiltPatch key={patch.checkInId} layout={patch} />
-                ))
-              )
+            {/* Empty days are just breathing space now — no drawn seam. The
+                redesign removes all grid lines; light through layers only. */}
+            {block.rows.flatMap((row) =>
+              row.patches.map((patch) => <QuiltPatch key={patch.checkInId} layout={patch} />)
             )}
           </G>
         </Svg>
