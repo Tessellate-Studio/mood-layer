@@ -98,7 +98,7 @@ describe('SettingsScreen', () => {
     expect(screen.getByText('Feel')).toBeTruthy();
     expect(screen.getByText('About the ideas')).toBeTruthy();
     expect(screen.getByText('Your data')).toBeTruthy();
-    expect(screen.getByText('v0.1.0')).toBeTruthy();
+    expect(screen.getByText('v0.2.0')).toBeTruthy();
   });
 
   it('shows the name-it status and navigates to its setup', () => {
