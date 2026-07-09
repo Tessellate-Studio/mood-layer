@@ -33,7 +33,7 @@ import { seedMonth } from '@/utils/devSeed';
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 /** Shown at the foot of the screen; bump alongside app.json on release. */
-const APP_VERSION = 'v0.1.0';
+const APP_VERSION = 'v0.2.0';
 
 const ABOUT_TEXT =
   'The quilt comes from Paul Ekman, who showed we rarely feel one thing at a ' +
