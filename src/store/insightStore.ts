@@ -30,10 +30,11 @@ export const useInsightStore = create<InsightState>()(
         if (get().lastGeneratedWeekKey === weekKey) return;
 
         const newCards: InsightCardState[] = generateInsights(stats).map(
-          ({ templateId, title, body }) => ({
+          ({ templateId, kind, title, body }) => ({
             id: generateUUID(),
             weekKey,
             templateId,
+            kind,
             title,
             body,
           })
@@ -54,6 +55,23 @@ export const useInsightStore = create<InsightState>()(
         })),
       clearAll: () => set({ cards: [], lastGeneratedWeekKey: null }),
     }),
-    { name: 'tml-insights', storage: createJSONStorage(() => AsyncStorage) }
+    {
+      name: 'tml-insights',
+      storage: createJSONStorage(() => AsyncStorage),
+      version: 1,
+      // v1: cards gained a `kind` overline. Backfill from the templateId so a
+      // card generated before the redesign still shows the right shelf.
+      migrate: (persisted, version) => {
+        const state = (persisted ?? {}) as Record<string, unknown>;
+        const RESISTANCE_IDS = ['stuck-decisions', 'looping-week', 'judgment-heavy'];
+        if (version < 1 && Array.isArray(state.cards)) {
+          state.cards = (state.cards as Array<Record<string, unknown>>).map((card) => ({
+            ...card,
+            kind: card.kind ?? (RESISTANCE_IDS.includes(card.templateId as string) ? 'resistance' : 'pattern'),
+          }));
+        }
+        return state as unknown as InsightState;
+      },
+    }
   )
 );

@@ -15,6 +15,7 @@ export const MAX_CARDS_PER_WEEK = 2;
 
 export interface RenderedInsight {
   templateId: string;
+  kind: 'pattern' | 'resistance';
   title: string;
   body: string;
 }
@@ -47,5 +48,5 @@ export function generateInsights(stats: WeekStats): RenderedInsight[] {
   return INSIGHT_TEMPLATES.filter((template) => template.matches(stats))
     .sort((a, b) => b.priority - a.priority)
     .slice(0, MAX_CARDS_PER_WEEK)
-    .map((template) => ({ templateId: template.id, ...template.render(stats) }));
+    .map((template) => ({ templateId: template.id, kind: template.kind, ...template.render(stats) }));
 }

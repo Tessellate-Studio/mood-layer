@@ -42,6 +42,28 @@ export function previousWeekKey(now: Date): string {
   return weekKey(sevenDaysBack.toISOString());
 }
 
+const MONTHS_SHORT = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+/** Local midnight of the Monday for an ISO 'GGGG-Www' week key. */
+function mondayOfWeekKey(wk: string): Date {
+  const isoYear = Number(wk.slice(0, 4));
+  const week = Number(wk.slice(6));
+  const jan4 = new Date(isoYear, 0, 4);
+  const mondayWeek1 = new Date(isoYear, 0, 4 - ((jan4.getDay() + 6) % 7));
+  return new Date(mondayWeek1.getFullYear(), mondayWeek1.getMonth(), mondayWeek1.getDate() + (week - 1) * 7);
+}
+
+/** Human range for an ISO week key, e.g. '2026-W28' → 'Jul 6 – Jul 12' (en dash). */
+export function weekRangeLabel(wk: string): string {
+  const monday = mondayOfWeekKey(wk);
+  const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+  const fmt = (d: Date) => `${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}`;
+  return `${fmt(monday)} – ${fmt(sunday)}`;
+}
+
 export type DayPart = 'morning' | 'afternoon' | 'evening' | 'night';
 
 /** Local part-of-day: 5:00–11:59 morning, 12:00–16:59 afternoon, 17:00–20:59 evening, else night. */

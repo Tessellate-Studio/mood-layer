@@ -107,6 +107,29 @@ describe('InsightsScreen', () => {
     expect(after?.dismissedAt).toBeDefined();
   });
 
+  it('shows a week summary, the resistance overline, its tells, and the gentle footer', async () => {
+    useCheckInStore.setState({
+      checkIns: [1, 2, 3, 4].map((n) => lastWeekCheckIn(n)),
+    });
+
+    renderScreen();
+    await screen.findByText('A week of either-or');
+
+    // Header summary: count + active days for the shown week.
+    const summary = screen.getByTestId('insights-summary');
+    // Regex so the match searches across the summary's nested <Text> spans.
+    expect(summary).toHaveTextContent(/4 check-ins across 1 day/);
+
+    // Resistance card overline + its four tell chips, the fired one selected.
+    expect(screen.getByText('Gentle notice · Resistance')).toBeTruthy();
+    const fired = screen.getByTestId('insight-tell-binary-stuckness');
+    expect(fired.props.accessibilityState.selected).toBe(true);
+    const quiet = screen.getByTestId('insight-tell-comparison');
+    expect(quiet.props.accessibilityState.selected).toBe(false);
+
+    expect(screen.getByTestId('insights-footer')).toBeTruthy();
+  });
+
   it('shows the gentle empty state when there is nothing to show', async () => {
     renderScreen();
     expect(

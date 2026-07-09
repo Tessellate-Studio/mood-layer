@@ -76,6 +76,13 @@ export interface InsightCardState {
   id: string;
   weekKey: string;
   templateId: string;
+  /**
+   * Which shelf this insight sits on — drives the card's overline. 'pattern'
+   * is a gentle observation of the week's texture; 'resistance' is the soft
+   * notice of a resisted feeling (looping, harsh judgment, either/or,
+   * comparison).
+   */
+  kind: 'pattern' | 'resistance';
   title: string;
   body: string;
   dismissedAt?: string;
@@ -85,10 +92,18 @@ export interface InsightCardState {
 export interface WeekStats {
   weekKey: string;
   checkInCount: number;
+  /** Distinct days that held at least one check-in ('across N days'). */
+  activeDayCount: number;
   familyCounts: Record<EmotionFamilyId, number>;
   resistanceCounts: Record<ResistanceTellId, number>;
   /** Check-ins that started from a masking state ('stressed', 'fine', …). */
   maskingCount: number;
   distinctEmotionIds: string[];
   judgmentEntryCount: number;
+  /**
+   * The two emotion families that most often showed up together inside the
+   * same check-in this week (≥2 co-occurrences), or null. Feeds the "keep
+   * arriving together" pattern — the quilt holding two things at once.
+   */
+  coOccurringFamilies: [EmotionFamilyId, EmotionFamilyId] | null;
 }

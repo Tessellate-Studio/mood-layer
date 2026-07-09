@@ -11,6 +11,7 @@ function stats(overrides: Partial<WeekStats> = {}): WeekStats {
   return {
     weekKey: '2026-W27',
     checkInCount: 5,
+    activeDayCount: 0,
     familyCounts: {
       anger: 0,
       fear: 0,
@@ -28,6 +29,7 @@ function stats(overrides: Partial<WeekStats> = {}): WeekStats {
     },
     maskingCount: 0,
     distinctEmotionIds: [],
+    coOccurringFamilies: null,
     judgmentEntryCount: 0,
     ...overrides,
   };
@@ -152,5 +154,54 @@ describe('computeStatsForWeek', () => {
     expect(result.maskingCount).toBe(1);
     expect(result.familyCounts.anger).toBe(2);
     expect(result.distinctEmotionIds).toEqual(['irritated']);
+  });
+
+  it('counts distinct active days', () => {
+    const day1 = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7, 9, 0);
+    const day1b = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7, 20, 0);
+    const day2 = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6, 9, 0);
+    const result = computeStatsForWeek(
+      [day1, day1b, day2].map((d) => checkIn(d.toISOString())),
+      [],
+      wk
+    );
+    expect(result.checkInCount).toBe(3);
+    expect(result.activeDayCount).toBe(2);
+  });
+
+  it('finds the two families that most often co-occur in a check-in (≥2), sorted', () => {
+    const bothFamilies = {
+      emotions: [
+        { emotionId: 'sad', family: 'sadness' as const, intensity: 2 as const },
+        { emotionId: 'glad', family: 'enjoyment' as const, intensity: 2 as const },
+      ],
+    };
+    const result = computeStatsForWeek(
+      [
+        checkIn(inWeek.toISOString(), bothFamilies),
+        checkIn(inWeek.toISOString(), bothFamilies),
+      ],
+      [],
+      wk
+    );
+    // 'enjoyment' < 'sadness' alphabetically → returned in sorted order.
+    expect(result.coOccurringFamilies).toEqual(['enjoyment', 'sadness']);
+  });
+
+  it('does not call a single co-occurrence a pattern', () => {
+    const result = computeStatsForWeek(
+      [
+        checkIn(inWeek.toISOString(), {
+          emotions: [
+            { emotionId: 'sad', family: 'sadness', intensity: 2 },
+            { emotionId: 'glad', family: 'enjoyment', intensity: 2 },
+          ],
+        }),
+        checkIn(inWeek.toISOString()),
+      ],
+      [],
+      wk
+    );
+    expect(result.coOccurringFamilies).toBeNull();
   });
 });

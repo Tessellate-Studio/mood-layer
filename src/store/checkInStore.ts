@@ -95,12 +95,17 @@ export function selectWeekStats(
     number
   >;
   const distinct = new Set<string>();
+  const activeDays = new Set<string>();
+  // Count unordered family pairs that co-occur inside one check-in, keyed
+  // 'a|b' with a<b so the pair is order-independent.
+  const pairCounts = new Map<string, number>();
   let checkInCount = 0;
   let maskingCount = 0;
 
   for (const checkIn of checkIns) {
     if (weekKey(checkIn.createdAt) !== wk) continue;
     checkInCount += 1;
+    activeDays.add(checkIn.dayKey);
     if ((checkIn.maskingUsed?.length ?? 0) > 0) maskingCount += 1;
     for (const selection of checkIn.emotions) {
       familyCounts[selection.family] += 1;
@@ -109,14 +114,37 @@ export function selectWeekStats(
     for (const flag of checkIn.resistanceFlags) {
       resistanceCounts[flag] += 1;
     }
+    // Distinct families in this check-in → every pair among them co-occurs.
+    const fams = [...new Set(checkIn.emotions.map((e) => e.family))].sort();
+    for (let i = 0; i < fams.length; i++) {
+      for (let j = i + 1; j < fams.length; j++) {
+        const key = `${fams[i]}|${fams[j]}`;
+        pairCounts.set(key, (pairCounts.get(key) ?? 0) + 1);
+      }
+    }
+  }
+
+  // Top co-occurring pair, requiring at least two check-ins so a single
+  // moment can't become "a pattern". Ties break by the sorted key for
+  // determinism.
+  let coOccurringFamilies: [EmotionFamilyId, EmotionFamilyId] | null = null;
+  let bestCount = 1;
+  for (const [key, count] of [...pairCounts].sort((a, b) => a[0].localeCompare(b[0]))) {
+    if (count > bestCount) {
+      bestCount = count;
+      const [a, b] = key.split('|') as [EmotionFamilyId, EmotionFamilyId];
+      coOccurringFamilies = [a, b];
+    }
   }
 
   return {
     weekKey: wk,
     checkInCount,
+    activeDayCount: activeDays.size,
     familyCounts,
     resistanceCounts,
     maskingCount,
+    coOccurringFamilies,
     distinctEmotionIds: [...distinct],
     judgmentEntryCount,
   };

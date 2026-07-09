@@ -80,6 +80,7 @@ function seedData() {
         id: 'seed-card',
         weekKey: '2026-W27',
         templateId: 'fluid-week',
+        kind: 'pattern',
         title: 't',
         body: 'b',
       },
