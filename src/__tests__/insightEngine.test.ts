@@ -53,7 +53,7 @@ function judgment(createdAt: string): JudgmentEntry {
     createdAt,
     target: 'a colleague',
     judgment: 'being careless',
-    uncoveredFeeling: null,
+    uncoveredFeelings: [],
   };
 }
 

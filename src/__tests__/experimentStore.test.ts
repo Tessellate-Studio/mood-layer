@@ -22,12 +22,12 @@ describe('experimentStore', () => {
     const first = useExperimentStore.getState().addJudgmentEntry({
       target: 'my coworker',
       judgment: 'being disorganized',
-      uncoveredFeeling: { emotionId: 'worried', family: 'fear', intensity: 2 },
+      uncoveredFeelings: [{ emotionId: 'worried', family: 'fear', intensity: 2 }],
     });
     const second = useExperimentStore.getState().addJudgmentEntry({
       target: 'myself',
       judgment: 'being lazy',
-      uncoveredFeeling: null,
+      uncoveredFeelings: [],
       freeWriting: 'I never give myself a break.',
     });
 
@@ -57,16 +57,34 @@ describe('experimentStore', () => {
     expect(useExperimentStore.getState().nameIt.enabled).toBe(true);
   });
 
-  it('clearAll resets entries and name-it settings', () => {
+  it('clearAll resets entries, name-it settings, and practice notes', () => {
     useExperimentStore.getState().addJudgmentEntry({
       target: 'my friend',
       judgment: 'canceling',
-      uncoveredFeeling: null,
+      uncoveredFeelings: [],
     });
     useExperimentStore.getState().setNameIt({ enabled: true });
+    useExperimentStore.getState().setPracticeNote('problem-solution', 0, 'the problem');
 
     useExperimentStore.getState().clearAll();
     expect(useExperimentStore.getState().judgmentEntries).toEqual([]);
     expect(useExperimentStore.getState().nameIt.enabled).toBe(false);
+    expect(useExperimentStore.getState().practiceNotes).toEqual({});
+  });
+
+  it('setPracticeNote writes per-step text without disturbing other steps', () => {
+    useExperimentStore.getState().setPracticeNote('five-year-flashback', 1, 'option A');
+    useExperimentStore.getState().setPracticeNote('five-year-flashback', 0, 'the decision');
+    expect(useExperimentStore.getState().practiceNotes['five-year-flashback']).toEqual([
+      'the decision',
+      'option A',
+    ]);
+
+    // Editing one step leaves the others intact.
+    useExperimentStore.getState().setPracticeNote('five-year-flashback', 0, 'a clearer decision');
+    expect(useExperimentStore.getState().practiceNotes['five-year-flashback']).toEqual([
+      'a clearer decision',
+      'option A',
+    ]);
   });
 });

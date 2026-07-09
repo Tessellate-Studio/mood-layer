@@ -34,7 +34,7 @@ function seedEntry() {
   return useExperimentStore.getState().addJudgmentEntry({
     target: 'myself',
     judgment: 'being late',
-    uncoveredFeeling: { emotionId: 'worried', family: 'fear', intensity: 2 },
+    uncoveredFeelings: [{ emotionId: 'worried', family: 'fear', intensity: 2 }],
   });
 }
 
@@ -69,6 +69,32 @@ describe('ExperimentsScreen', () => {
     fireEvent.press(screen.getByTestId(`practice-${first.id}`));
     expect(screen.getByText(first.steps[0])).toBeTruthy();
     expect(screen.getByText(first.closing)).toBeTruthy();
+  });
+
+  it('a practice offers a scratch pad per step that persists what you write', () => {
+    const first = PRACTICES[0];
+    render(
+      <NavigationContainer>
+        <ExperimentsScreen />
+      </NavigationContainer>
+    );
+    // No writing box until the practice is opened.
+    expect(screen.queryByTestId(`practice-${first.id}-note-0`)).toBeNull();
+
+    fireEvent.press(screen.getByTestId(`practice-${first.id}`));
+    fireEvent.changeText(
+      screen.getByTestId(`practice-${first.id}-note-0`),
+      'what my future self sees'
+    );
+
+    // Saved locally, keyed to that practice + step.
+    expect(useExperimentStore.getState().practiceNotes[first.id][0]).toBe(
+      'what my future self sees'
+    );
+    // And it stays in the field (reads back from the store).
+    expect(screen.getByTestId(`practice-${first.id}-note-0`).props.value).toBe(
+      'what my future self sees'
+    );
   });
 
   it('swipe actions: edit navigates with the entry id, remove confirms then deletes', () => {

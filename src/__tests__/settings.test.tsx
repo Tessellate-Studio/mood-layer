@@ -69,7 +69,7 @@ function seedData() {
         createdAt: '2026-07-01T11:00:00.000Z',
         target: 'myself',
         judgment: 'being slow',
-        uncoveredFeeling: null,
+        uncoveredFeelings: [],
       },
     ],
     nameIt: { ...state.nameIt, enabled: true, timesPerDay: 2, scheduledIds: ['n1'] },
