@@ -75,9 +75,20 @@ export const CLOTH_OPACITY = 0.66;
 /**
  * Maximum tilt (degrees) either way for a cloth piece. Small on purpose — the
  * mock leans the squircles just enough to read as sewn cloth, not printed
- * tiles. Every piece's tilt lands within ±this.
+ * tiles. Every piece's tilt lands within ±this. Held at 6° (not more) so a
+ * tilted wide piece's corner overhang never pokes it out of its row band.
  */
-export const CLOTH_TILT_DEG = 7;
+export const CLOTH_TILT_DEG = 6;
+
+/**
+ * How much of the cluster ring's spread is vertical. A day-row box is wide and
+ * short (≈84×72), so pieces fan out mostly sideways; compressing the vertical
+ * component keeps a two-emotion day — which otherwise spreads straight up and
+ * down — from bleeding into the row below. Tuned together with the max piece
+ * size and the tilt overhang so the worst case (two intensity-4 emotions) sits
+ * fully inside DAY_ROW_HEIGHT.
+ */
+const CLUSTER_VSCALE = 0.3;
 
 /**
  * Deterministic tilt for a piece, in [-CLOTH_TILT_DEG, +CLOTH_TILT_DEG].
@@ -126,7 +137,7 @@ const MONTHS_SHORT = [
  * the rest.
  */
 function sizeFactor(intensity: Intensity): number {
-  return 0.62 + intensity * 0.08; // 1→0.70, 2→0.78, 3→0.86, 4→0.94
+  return 0.52 + intensity * 0.06; // 1→0.58, 2→0.64, 3→0.70, 4→0.76
 }
 
 /**
@@ -142,8 +153,8 @@ export function clothPieces(emotions: EmotionSelection[], w: number, h: number):
 
   const cx = w / 2;
   const cy = h / 2;
-  // A lone piece sits dead-centre; a cluster spreads on a ring ~16% of the box.
-  const radius = k === 1 ? 0 : Math.min(w, h) * 0.16;
+  // A lone piece sits dead-centre; a cluster spreads on a ring ~15% of the box.
+  const radius = k === 1 ? 0 : Math.min(w, h) * 0.15;
 
   return emotions.map((emotion, i) => {
     const f = sizeFactor(emotion.intensity);
@@ -152,7 +163,8 @@ export function clothPieces(emotions: EmotionSelection[], w: number, h: number):
     // Start at the top of the ring and step evenly around it.
     const angle = -Math.PI / 2 + (i * 2 * Math.PI) / k;
     const ox = radius * Math.cos(angle);
-    const oy = radius * Math.sin(angle);
+    // Vertical spread is compressed so a cluster stays within its short row box.
+    const oy = radius * Math.sin(angle) * CLUSTER_VSCALE;
     return {
       emotionId: emotion.emotionId,
       family: emotion.family,

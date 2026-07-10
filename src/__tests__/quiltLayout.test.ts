@@ -114,6 +114,23 @@ describe('clothPieces', () => {
     const angles = new Set(pieces.map((p) => p.rotation));
     expect(angles.size).toBeGreaterThan(1);
   });
+
+  it('a cluster stays inside its row band — no vertical bleed into the next day', () => {
+    // Two intensity-4 emotions is the tightest fit: max piece size plus the
+    // ring's straight up/down spread plus tilt overhang. Every piece's tilted
+    // bounding box must sit within the row height [0, h] — this reproduces the
+    // bug where clusters spilled onto the row below.
+    const w = 85;
+    const h = DAY_ROW_HEIGHT;
+    const pieces = clothPieces([sel('a', 'enjoyment', 4), sel('b', 'sadness', 4)], w, h);
+    for (const p of pieces) {
+      const cy = p.rect.y + p.rect.h / 2;
+      const rad = (Math.abs(p.rotation) * Math.PI) / 180;
+      const halfH = (p.rect.w / 2) * Math.sin(rad) + (p.rect.h / 2) * Math.cos(rad);
+      expect(cy - halfH).toBeGreaterThanOrEqual(-0.5);
+      expect(cy + halfH).toBeLessThanOrEqual(h + 0.5);
+    }
+  });
 });
 
 describe('buildPatchA11yLabel', () => {
