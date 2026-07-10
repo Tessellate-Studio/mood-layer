@@ -24,6 +24,12 @@ export interface ClothPiece {
   rx: number;
   /** Fill translucency, so stacked pieces deepen instead of covering. */
   opacity: number;
+  /**
+   * Small clockwise tilt in degrees, applied around the piece's own centre.
+   * Hand-sewn cloth leans; a printed grid doesn't. Deterministic per
+   * emotion+slot so the same check-in always sews the same way.
+   */
+  rotation: number;
 }
 
 export interface PatchLayout {
@@ -65,6 +71,28 @@ export const EMPTY_ROW_HEIGHT = 14;
 
 /** Cloth fill translucency — matches the "fill-opacity 0.66" in the handoff. */
 export const CLOTH_OPACITY = 0.66;
+
+/**
+ * Maximum tilt (degrees) either way for a cloth piece. Small on purpose — the
+ * mock leans the squircles just enough to read as sewn cloth, not printed
+ * tiles. Every piece's tilt lands within ±this.
+ */
+export const CLOTH_TILT_DEG = 7;
+
+/**
+ * Deterministic tilt for a piece, in [-CLOTH_TILT_DEG, +CLOTH_TILT_DEG].
+ * Hashed from the emotion id and its slot so a lone piece still leans and a
+ * cluster's pieces lean at different angles — same check-in, same lean, every
+ * render (no Math.random: layout must be reproducible for tests + snapshots).
+ */
+function tiltFor(emotionId: string, index: number): number {
+  let h = (index + 1) * 0x9e3779b1;
+  for (let c = 0; c < emotionId.length; c++) {
+    h = (Math.imul(h, 31) + emotionId.charCodeAt(c)) | 0;
+  }
+  // h % 2000 lands in (-2000, 2000); /2000 → (-1, 1); scale to the tilt range.
+  return ((h % 2000) / 2000) * CLOTH_TILT_DEG;
+}
 
 const WEEKDAYS_FULL = [
   'Sunday',
@@ -132,6 +160,7 @@ export function clothPieces(emotions: EmotionSelection[], w: number, h: number):
       rect: { x: cx + ox - pw / 2, y: cy + oy - ph / 2, w: pw, h: ph },
       rx: Math.min(pw, ph) * 0.35,
       opacity: CLOTH_OPACITY,
+      rotation: tiltFor(emotion.emotionId, i),
     };
   });
 }

@@ -6,6 +6,7 @@ import {
   buildPatchA11yLabel,
   clothPieces,
   CLOTH_OPACITY,
+  CLOTH_TILT_DEG,
   computeQuiltLayout,
   DAY_ROW_HEIGHT,
   EMPTY_ROW_HEIGHT,
@@ -85,6 +86,33 @@ describe('clothPieces', () => {
   it('is deterministic — repeat calls deep-equal', () => {
     const emotions = [sel('angry', 'anger', 3), sel('sad', 'sadness', 1), sel('glad', 'enjoyment', 4)];
     expect(clothPieces(emotions, 100, 80)).toEqual(clothPieces(emotions, 100, 80));
+  });
+
+  it('every piece leans by a small tilt within ±CLOTH_TILT_DEG', () => {
+    const pieces = clothPieces(
+      [sel('sad', 'sadness', 3), sel('glad', 'enjoyment', 2), sel('uneasy', 'fear', 1)],
+      100,
+      80
+    );
+    for (const piece of pieces) {
+      expect(typeof piece.rotation).toBe('number');
+      expect(Math.abs(piece.rotation)).toBeLessThanOrEqual(CLOTH_TILT_DEG);
+    }
+  });
+
+  it('a lone piece still leans — hand-sewn, not a printed grid', () => {
+    const [piece] = clothPieces([sel('sad', 'sadness', 2)], 100, 80);
+    expect(piece.rotation).not.toBe(0);
+  });
+
+  it("a cluster's pieces lean at different angles", () => {
+    const pieces = clothPieces(
+      [sel('sad', 'sadness', 2), sel('glad', 'enjoyment', 2), sel('uneasy', 'fear', 2)],
+      100,
+      80
+    );
+    const angles = new Set(pieces.map((p) => p.rotation));
+    expect(angles.size).toBeGreaterThan(1);
   });
 });
 

@@ -32,6 +32,10 @@ function ClothBody({ pieces }: { pieces: ClothPiece[] }) {
           height={piece.rect.h}
           rx={piece.rx}
           ry={piece.rx}
+          // Lean the cloth around its own centre — sewn, not printed.
+          rotation={piece.rotation}
+          originX={piece.rect.x + piece.rect.w / 2}
+          originY={piece.rect.y + piece.rect.h / 2}
           fill={familyPalette[piece.family].shades[piece.intensity]}
           fillOpacity={piece.opacity}
         />
