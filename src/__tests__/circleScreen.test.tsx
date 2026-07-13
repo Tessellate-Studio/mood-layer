@@ -3,7 +3,7 @@
 
 import React from 'react';
 import { Alert, Share } from 'react-native';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { act, fireEvent, render, screen } from '@testing-library/react-native';
 
 import CircleScreen from '@/screens/CircleScreen';
 import { useCircleStore } from '@/store/circleStore';
@@ -88,6 +88,42 @@ describe('CircleScreen', () => {
     const arg = shareSpy.mock.calls[0][0] as { message: string };
     // 'colours' level → tone words, no raw counts.
     expect(arg.message).toBe('This week felt mostly warm.');
+  });
+
+  it('opens the share sheet for a pending-share person (a tapped reminder)', () => {
+    const p = seedPerson();
+    useCheckInStore.setState({ checkIns: [thisWeekCheckIn()] });
+    const shareSpy = jest
+      .spyOn(Share, 'share')
+      .mockResolvedValue({ action: 'sharedAction' } as Awaited<ReturnType<typeof Share.share>>);
+
+    render(<CircleScreen />);
+    // Simulate App.tsx routing a tapped Circle reminder into the share intent.
+    act(() => {
+      useCircleStore.getState().requestShare(p.id);
+    });
+
+    expect(shareSpy).toHaveBeenCalledTimes(1);
+    const arg = shareSpy.mock.calls[0][0] as { message: string };
+    // Same gated summary "Share this week" produces ('colours' → tone words).
+    expect(arg.message).toBe('This week felt mostly warm.');
+    // The one-shot intent is cleared so it can't re-fire.
+    expect(useCircleStore.getState().pendingSharePersonId).toBeNull();
+  });
+
+  it('clears a pending-share intent for a person who no longer exists, without sharing', () => {
+    seedPerson();
+    const shareSpy = jest
+      .spyOn(Share, 'share')
+      .mockResolvedValue({ action: 'sharedAction' } as Awaited<ReturnType<typeof Share.share>>);
+
+    render(<CircleScreen />);
+    act(() => {
+      useCircleStore.getState().requestShare('ghost-id');
+    });
+
+    expect(shareSpy).not.toHaveBeenCalled();
+    expect(useCircleStore.getState().pendingSharePersonId).toBeNull();
   });
 
   it('removes a person after a destructive confirm', () => {
