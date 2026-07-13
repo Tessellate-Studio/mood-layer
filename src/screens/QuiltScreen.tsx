@@ -22,12 +22,15 @@ import {
   typography,
 } from '@/constants/theme';
 import PaperTexture from '@/components/PaperTexture';
+import WeeklySummaryCard from '@/components/WeeklySummaryCard';
+import { homeWeeklySummary } from '@/content/circle';
 import { EMOTION_FAMILIES, findEmotionWord } from '@/content/emotions';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import QuiltWeek from '@/components/QuiltWeek';
-import { useCheckInStore } from '@/store/checkInStore';
+import { selectWeekStats, useCheckInStore } from '@/store/checkInStore';
 import { useHelperSheetStore } from '@/store/helperSheetStore';
 import type { CheckIn, EmotionFamilyId } from '@/types/models';
+import { weekKey } from '@/utils/dates';
 import { computeQuiltLayout } from '@/utils/quiltLayout';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -81,6 +84,10 @@ export default function QuiltScreen() {
     () => computeQuiltLayout(checkIns, contentWidth - 34),
     [checkIns, contentWidth]
   );
+  const weeklySummary = React.useMemo(() => {
+    const wk = weekKey(new Date().toISOString());
+    return homeWeeklySummary(selectWeekStats(checkIns, 0, wk));
+  }, [checkIns]);
 
   // Stitch-in: when the newest check-in id changes (a fresh stitch, not a
   // rehydrate), flag it for the one-shot arrival animation, then clear.
@@ -129,6 +136,8 @@ export default function QuiltScreen() {
           </Svg>
         </Pressable>
       </View>
+
+      <WeeklySummaryCard summary={weeklySummary} />
 
       {checkIns.length === 0 ? (
         <View style={styles.empty}>
@@ -282,7 +291,7 @@ const styles = StyleSheet.create({
   },
   headerRow: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     justifyContent: 'space-between',
     gap: spacing.sm,
   },

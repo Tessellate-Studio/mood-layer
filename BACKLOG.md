@@ -49,6 +49,17 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
 
 ## P1 — do next
 
+- **Install the app icons from the logo handoff** — **BUILT 2026-07-13.** The
+  logo-handoff assets (`icons/` PNGs + `svg/` sources) landed on this branch;
+  `app.json` now points at them (`assets/icon.png`, `assets/adaptive-icon.png`,
+  `assets/splash-icon.png`, `assets/favicon.png`), the Android adaptive icon
+  background is the flat `#F8F6F0` paper token, and the Quilt tab icon now
+  draws the designed mono three-band mark (`src/components/TabIcon.tsx`)
+  instead of the old grid glyph. The in-app mark
+  (`src/components/LogoMark.tsx`) matches the launcher icon's exact geometry.
+  PR #14. Still needs an on-device look once a build is available — icons
+  render correctly in the Expo config but haven't been eyeballed on a phone.
+
 - **Clean on-device verification pass of the v0.2.0 redesign** — rubric **7/12**.
   Full walkthrough of Quilt cloth, Insights depth, Circle, judgment
   multi-select, and Experiments in Expo Go. The last device session was cut

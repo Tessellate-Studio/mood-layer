@@ -162,6 +162,7 @@ describe('QuiltScreen', () => {
     expect(screen.getByTestId('screen-quilt')).toBeTruthy();
     expect(screen.getByTestId('checkin-fab')).toBeTruthy();
     expect(screen.getByTestId('open-settings')).toBeTruthy();
+    expect(screen.queryByTestId('weekly-summary')).toBeNull();
   });
 
   it('renders a pressable patch per seeded check-in', async () => {
@@ -169,6 +170,15 @@ describe('QuiltScreen', () => {
     renderScreen();
     expect(await screen.findByTestId('patch-today-1')).toBeTruthy();
     expect(screen.getByTestId('patch-today-2')).toBeTruthy();
+  });
+
+  it('shows the weekly summary once check-ins exist this week', async () => {
+    seedToday();
+    renderScreen();
+    expect(await screen.findByTestId('weekly-summary')).toBeTruthy();
+    // sadness (today-1) and anger (today-2), one check-in each — anger sorts
+    // first alphabetically on a tie, so its tone ("fiery") headlines.
+    expect(screen.getByText('Fiery')).toBeTruthy();
   });
 
   it('opens the patch detail modal on press, with emotion word + note + sensations', async () => {
