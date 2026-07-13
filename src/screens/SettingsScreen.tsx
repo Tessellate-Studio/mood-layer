@@ -20,7 +20,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Line } from 'react-native-svg';
 
 import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
+import LogoDivider from '@/components/LogoDivider';
 import PaperTexture from '@/components/PaperTexture';
+import SectionHeader from '@/components/SectionHeader';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { rescheduleNameIt } from '@/services/notifications';
 import { useCheckInStore } from '@/store/checkInStore';
@@ -131,7 +133,12 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.sectionHeader}>Reminders</Text>
+        {/* Muted-layer treatment: each settings section is its own layer —
+            reminders wear Name it's blue, feel the warm amber, the ideas the
+            violet, your data the mauve of past reflections. */}
+        <View style={styles.sectionHeader}>
+          <SectionHeader family="sadness" label="Reminders" />
+        </View>
         <Pressable
           testID="settings-name-it"
           accessibilityRole="button"
@@ -147,7 +154,9 @@ export default function SettingsScreen() {
           </Text>
         </Pressable>
 
-        <Text style={styles.sectionHeader}>Feel</Text>
+        <View style={styles.sectionHeader}>
+          <SectionHeader family="enjoyment" label="Feel" />
+        </View>
         <View style={styles.row}>
           <Text style={styles.rowLabel}>Haptics</Text>
           <Switch
@@ -176,7 +185,9 @@ export default function SettingsScreen() {
           </Text>
         </View>
 
-        <Text style={styles.sectionHeader}>About the ideas</Text>
+        <View style={styles.sectionHeader}>
+          <SectionHeader family="fear" label="About the ideas" />
+        </View>
         <Pressable
           testID="settings-about"
           accessibilityRole="button"
@@ -190,7 +201,9 @@ export default function SettingsScreen() {
         </Pressable>
         {aboutOpen ? <Text style={styles.aboutBody}>{ABOUT_TEXT}</Text> : null}
 
-        <Text style={styles.sectionHeader}>Your data</Text>
+        <View style={styles.sectionHeader}>
+          <SectionHeader family="contempt" label="Your data" />
+        </View>
         <View style={styles.rowGroup}>
           <Pressable
             testID="settings-export"
@@ -230,6 +243,7 @@ export default function SettingsScreen() {
           </Pressable>
         ) : null}
 
+        <LogoDivider />
         <Text style={styles.version}>{APP_VERSION}</Text>
       </ScrollView>
     </View>
@@ -262,7 +276,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   sectionHeader: {
-    ...typography.overline,
     marginTop: spacing.lg,
     marginBottom: spacing.xs,
   },
@@ -303,6 +316,8 @@ const styles = StyleSheet.create({
   version: {
     ...typography.caption,
     textAlign: 'center',
-    marginTop: spacing.xl,
+    // The LogoDivider above carries the vertical rhythm; pull the version up
+    // under the mark.
+    marginTop: -spacing.md,
   },
 });

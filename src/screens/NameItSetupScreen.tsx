@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ModalHeader from '@/components/ModalHeader';
 import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
 import PaperTexture from '@/components/PaperTexture';
+import ThreadCard from '@/components/ThreadCard';
 import { rescheduleNameIt, ensurePermissions } from '@/services/notifications';
 import { useExperimentStore } from '@/store/experimentStore';
 import type { NameItSettings } from '@/types/models';
@@ -163,11 +164,12 @@ export default function NameItSetupScreen() {
           a11yLabel={`Waking ends, ${nameIt.wakeEnd} o'clock`}
         />
 
-        {/* Preview */}
-        <View style={styles.previewBlock}>
+        {/* Preview — wears Name it's sadness blue, the layer this flow keeps
+            across the app (muted-layer treatment). */}
+        <ThreadCard family="sadness" style={styles.previewBlock}>
           <Text style={styles.overline}>Today&apos;s times</Text>
           <Text style={styles.preview}>{preview.map((t) => fmt(t.hour, t.minute)).join('   ')}</Text>
-        </View>
+        </ThreadCard>
       </ScrollView>
     </View>
   );

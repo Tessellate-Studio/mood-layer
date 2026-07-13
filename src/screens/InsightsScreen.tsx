@@ -18,13 +18,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Line } from 'react-native-svg';
 
 import { borderRadius, colors, hitTarget, motion, spacing, typography } from '@/constants/theme';
+import LogoDivider from '@/components/LogoDivider';
 import PaperTexture from '@/components/PaperTexture';
+import ThreadCard from '@/components/ThreadCard';
 import { RESISTANCE_TELLS } from '@/content/resistance';
 import { useMotion } from '@/hooks/useMotion';
 import { useCheckInStore } from '@/store/checkInStore';
 import { useExperimentStore } from '@/store/experimentStore';
 import { useInsightStore } from '@/store/insightStore';
-import type { InsightCardState, WeekStats } from '@/types/models';
+import type { EmotionFamilyId, InsightCardState, WeekStats } from '@/types/models';
 import { previousWeekKey, weekRangeLabel } from '@/utils/dates';
 import { computeStatsForWeek } from '@/utils/insightEngine';
 
@@ -34,6 +36,14 @@ const STAGGER_MS = 90;
 const OVERLINE: Record<InsightCardState['kind'], string> = {
   pattern: 'This week · Pattern',
   resistance: 'Gentle notice · Resistance',
+};
+
+// Muted-layer treatment: each card kind is its own layer. Patterns wear the
+// sadness blue (quiet observation); resistance wears the fear violet — the
+// hue the app already uses to teach resisted fear.
+const CARD_FAMILY: Record<InsightCardState['kind'], EmotionFamilyId> = {
+  pattern: 'sadness',
+  resistance: 'fear',
 };
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
@@ -104,25 +114,27 @@ function InsightCard({
   }, [stats]);
 
   return (
-    <Animated.View style={[styles.card, entryStyle]}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.overline}>{OVERLINE[card.kind]}</Text>
-        <Pressable
-          testID={`insight-dismiss-${card.id}`}
-          accessibilityRole="button"
-          accessibilityLabel="Dismiss insight"
-          style={styles.dismiss}
-          onPress={onDismiss}
-        >
-          <Svg width={14} height={14} viewBox="0 0 14 14">
-            <Line x1={2} y1={2} x2={12} y2={12} stroke={colors.inkMuted} strokeWidth={1.5} strokeLinecap="round" />
-            <Line x1={12} y1={2} x2={2} y2={12} stroke={colors.inkMuted} strokeWidth={1.5} strokeLinecap="round" />
-          </Svg>
-        </Pressable>
-      </View>
-      <Text style={styles.cardTitle}>{card.title}</Text>
-      {card.kind === 'resistance' ? <ResistanceTells fired={fired} /> : null}
-      <Text style={styles.cardBody}>{card.body}</Text>
+    <Animated.View style={entryStyle}>
+      <ThreadCard family={CARD_FAMILY[card.kind]} style={styles.cardBody}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.overline}>{OVERLINE[card.kind]}</Text>
+          <Pressable
+            testID={`insight-dismiss-${card.id}`}
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss insight"
+            style={styles.dismiss}
+            onPress={onDismiss}
+          >
+            <Svg width={14} height={14} viewBox="0 0 14 14">
+              <Line x1={2} y1={2} x2={12} y2={12} stroke={colors.inkMuted} strokeWidth={1.5} strokeLinecap="round" />
+              <Line x1={12} y1={2} x2={2} y2={12} stroke={colors.inkMuted} strokeWidth={1.5} strokeLinecap="round" />
+            </Svg>
+          </Pressable>
+        </View>
+        <Text style={styles.cardTitle}>{card.title}</Text>
+        {card.kind === 'resistance' ? <ResistanceTells fired={fired} /> : null}
+        <Text style={styles.cardText}>{card.body}</Text>
+      </ThreadCard>
     </Animated.View>
   );
 }
@@ -204,10 +216,9 @@ export default function InsightsScreen() {
             />
           )}
           ListFooterComponent={
-            <Text style={styles.footer} testID="insights-footer">
-              Insights stay gentle. Two a week, at most — the rest is just your quilt, quietly
-              growing.
-            </Text>
+            <View testID="insights-footer">
+              <LogoDivider tip="Insights stay gentle. Two a week, at most — the rest is just your quilt, quietly growing." />
+            </View>
           }
         />
       )}
@@ -244,14 +255,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     gap: spacing.md,
   },
-  card: {
-    backgroundColor: colors.paperRaised,
-    borderRadius: borderRadius.lg,
-    // Dashed hairline = the stitch border of a paper note.
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: colors.inkFaint,
-    padding: spacing.lg,
+  cardBody: {
     gap: spacing.sm,
   },
   cardHeader: {
@@ -277,7 +281,7 @@ const styles = StyleSheet.create({
     marginTop: -spacing.sm,
     marginRight: -spacing.sm,
   },
-  cardBody: {
+  cardText: {
     ...typography.body,
   },
   tellRow: {
@@ -294,7 +298,7 @@ const styles = StyleSheet.create({
   },
   tellChipOn: {
     borderColor: colors.ink,
-    backgroundColor: colors.paper,
+    backgroundColor: colors.paperRaised,
   },
   tellChipOff: {
     borderColor: colors.inkFaint,
@@ -308,10 +312,5 @@ const styles = StyleSheet.create({
   },
   tellTextOff: {
     color: colors.inkMuted,
-  },
-  footer: {
-    ...typography.caption,
-    marginTop: spacing.md,
-    textAlign: 'center',
   },
 });
