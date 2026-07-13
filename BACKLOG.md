@@ -49,6 +49,17 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
 
 ## P1 — do next
 
+- **Install the app icons from the logo handoff** — blocked on assets. The
+  logo-handoff README (2026-07-13) ships `icons/` PNGs + `svg/` sources
+  (store icon, Android adaptive foreground, favicon, mono tab glyph), but only
+  the README arrived — the actual files were never uploaded. Once they land:
+  copy the rasters into `assets/` and point `app.json` at them per the
+  README's install steps (adaptive background = flat `#F8F6F0` paper), and
+  consider swapping the Quilt tab icon to the mono mark. The *in-app* mark is
+  already done in code (`src/components/LogoMark.tsx`, drawn from theme
+  tokens, mood-tintable — PR #14), so this item is only the launcher/store
+  icon set. *Owner: user (supply files); agent installs.*
+
 - **Clean on-device verification pass of the v0.2.0 redesign** — rubric **7/12**.
   Full walkthrough of Quilt cloth, Insights depth, Circle, judgment
   multi-select, and Experiments in Expo Go. The last device session was cut
