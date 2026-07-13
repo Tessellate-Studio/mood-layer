@@ -91,7 +91,7 @@ export interface HomeWeeklySummary {
   headline: string;
   /** Gentle one-line body naming which families showed up. */
   body: string;
-  /** Top families (most-frequent first, up to 2) — for tinting the summary mark. */
+  /** Top families (most-frequent first, up to 3) — for tinting the summary mark. */
   families: EmotionFamilyId[];
 }
 
@@ -109,8 +109,8 @@ export function homeWeeklySummary(stats: WeekStats): HomeWeeklySummary | null {
   if (stats.checkInCount === 0) return null;
 
   const top = topFamilies(stats);
-  const families = top.slice(0, 2);
-  const labels = families.map((f) => EMOTION_FAMILIES[f].label);
+  const families = top.slice(0, 3);
+  const labels = top.slice(0, 2).map((f) => EMOTION_FAMILIES[f].label);
   const headline = capitalize(FAMILY_TONE[top[0]]);
 
   let body: string;

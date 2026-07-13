@@ -213,8 +213,10 @@ describe('homeWeeklySummary', () => {
 
   it('threads in a third family when one showed up too', () => {
     // week already carries fear (1) as the third family.
-    expect(homeWeeklySummary(week)?.body).toBe(
+    const out = homeWeeklySummary(week);
+    expect(out?.body).toBe(
       'Sadness and Enjoyment, sewn side by side — with a thread of Fear too.'
     );
+    expect(out?.families).toEqual(['sadness', 'enjoyment', 'fear']);
   });
 });

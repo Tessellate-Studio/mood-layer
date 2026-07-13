@@ -1,14 +1,14 @@
-// Home screen's "This week, mostly ___" card: a small cluster of translucent
-// cloth pieces (same layering idea as a quilt patch) tinted with the top 1-2
-// families, next to the gentle sentence naming them. Hidden entirely for a
-// quiet week — see homeWeeklySummary.
+// Home screen's "This week, mostly ___" card: the app mark mood-tinted with
+// the week's top families (per the logo handoff, variants swap which families
+// are stacked), next to the gentle sentence naming them. Hidden entirely for
+// a quiet week — see homeWeeklySummary.
 
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Svg, { Rect } from 'react-native-svg';
 
-import { colors, familyPalette, spacing, typography } from '@/constants/theme';
+import { colors, spacing, typography } from '@/constants/theme';
 import { WEEKLY_SUMMARY_OVERLINE, type HomeWeeklySummary } from '@/content/circle';
+import LogoMark from '@/components/LogoMark';
 
 const MARK_SIZE = 56;
 
@@ -21,20 +21,7 @@ export default function WeeklySummaryCard({ summary }: Props) {
 
   return (
     <View style={styles.row} testID="weekly-summary">
-      <Svg width={MARK_SIZE} height={MARK_SIZE} viewBox="0 0 56 56">
-        {summary.families.map((family, i) => (
-          <Rect
-            key={family}
-            x={i === 0 ? 4 : 16}
-            y={i === 0 ? 4 : 16}
-            width={36}
-            height={36}
-            rx={18}
-            fill={familyPalette[family].shades[3]}
-            fillOpacity={0.85}
-          />
-        ))}
-      </Svg>
+      <LogoMark families={summary.families} size={MARK_SIZE} />
       <View style={styles.text}>
         <Text style={styles.overline}>{WEEKLY_SUMMARY_OVERLINE}</Text>
         <Text style={styles.headline}>{summary.headline}</Text>
