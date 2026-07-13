@@ -73,10 +73,23 @@ describe('FieldGuideScreen', () => {
     }
   });
 
+  it('keeps word chips folded until a family is opened', async () => {
+    renderScreen(<FieldGuideScreen />);
+    await screen.findByTestId('screen-field-guide');
+    expect(screen.queryByTestId('chip-word-serene')).toBeNull();
+    fireEvent.press(screen.getByTestId('word-family-toggle-enjoyment'));
+    expect(screen.getByTestId('chip-word-serene')).toBeTruthy();
+    // Opening another family folds the first.
+    fireEvent.press(screen.getByTestId('word-family-toggle-fear'));
+    expect(screen.queryByTestId('chip-word-serene')).toBeNull();
+    expect(screen.getByTestId('chip-word-timid')).toBeTruthy();
+  });
+
   it('tapping a word shows its family and intensity, with a learn link', async () => {
     renderScreen(<FieldGuideScreen />);
-    // 'serene' is an extended enjoyment word from the wheel.
-    fireEvent.press(await screen.findByTestId('chip-word-serene'));
+    // 'serene' is an extended enjoyment word from the wheel; unfold its family first.
+    fireEvent.press(await screen.findByTestId('word-family-toggle-enjoyment'));
+    fireEvent.press(screen.getByTestId('chip-word-serene'));
     const detail = await screen.findByTestId('word-detail-enjoyment');
     expect(detail).toBeTruthy();
     fireEvent.press(screen.getByTestId('word-learn-enjoyment'));

@@ -15,6 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Line } from 'react-native-svg';
 
 import EmotionChip from '@/components/EmotionChip';
+import FamilyGroup from '@/components/FamilyGroup';
 import IntensityDial from '@/components/IntensityDial';
 import ModalHeader from '@/components/ModalHeader';
 import { borderRadius, colors, fonts, hitTarget, spacing, typography } from '@/constants/theme';
@@ -23,7 +24,7 @@ import { EMOTION_FAMILIES, findEmotionWord } from '@/content/emotions';
 import { JUDGMENT_EXAMPLES } from '@/content/judgmentExamples';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { useExperimentStore } from '@/store/experimentStore';
-import type { EmotionSelection, Intensity } from '@/types/models';
+import type { EmotionFamilyId, EmotionSelection, Intensity } from '@/types/models';
 
 const STEP_COUNT = 4;
 // A judgment usually hides more than one feeling, but a wall of intensity dials
@@ -65,6 +66,9 @@ export default function JudgmentFlowScreen() {
     editing?.uncoveredFeelings ?? []
   );
   const [freeWriting, setFreeWriting] = React.useState(editing?.freeWriting ?? '');
+  // Feeling step: families start folded (one open at a time, chosen words
+  // pinned) — same calm-list treatment as the check-in's feel step.
+  const [openFamily, setOpenFamily] = React.useState<EmotionFamilyId | null>(null);
 
   const example = EXAMPLES[0];
 
@@ -193,25 +197,41 @@ export default function JudgmentFlowScreen() {
               If I couldn&apos;t judge <Text style={styles.stitchStrong}>{stitchTarget}</Text> for{' '}
               <Text style={styles.stitchStrong}>{stitchJudgment}</Text>, I would feel…
             </Text>
-            {Object.values(EMOTION_FAMILIES).map((family) => (
-              <View key={family.id} style={styles.familyGroup}>
-                <Text style={styles.overline}>{family.label}</Text>
-                <View style={styles.chipWrap}>
-                  {family.gradient.map((word) => (
-                    // EmotionChip stamps its own testID `chip-${id}`; passing a
-                    // composite id yields the contract testID
-                    // `chip-judgment-feeling-{wordId}`.
-                    <EmotionChip
-                      key={word.id}
-                      id={`judgment-feeling-${word.id}`}
-                      label={word.label}
-                      selected={feelings.some((f) => f.emotionId === word.id)}
-                      onPress={() => toggleFeeling(word.id, family.id)}
-                    />
-                  ))}
-                </View>
-              </View>
-            ))}
+            {Object.values(EMOTION_FAMILIES).map((family) => {
+              const selectedInFamily = family.gradient.filter((w) =>
+                feelings.some((f) => f.emotionId === w.id)
+              );
+              const renderChip = (word: (typeof family.gradient)[number]) => (
+                // EmotionChip stamps its own testID `chip-${id}`; passing a
+                // composite id yields the contract testID
+                // `chip-judgment-feeling-{wordId}`.
+                <EmotionChip
+                  key={word.id}
+                  id={`judgment-feeling-${word.id}`}
+                  label={word.label}
+                  selected={feelings.some((f) => f.emotionId === word.id)}
+                  onPress={() => toggleFeeling(word.id, family.id)}
+                />
+              );
+              return (
+                <FamilyGroup
+                  key={family.id}
+                  family={family}
+                  testID={`judgment-family-${family.id}`}
+                  expanded={openFamily === family.id}
+                  onToggle={() =>
+                    setOpenFamily((cur) => (cur === family.id ? null : family.id))
+                  }
+                  pinned={
+                    selectedInFamily.length > 0 ? (
+                      <View style={styles.chipWrap}>{selectedInFamily.map(renderChip)}</View>
+                    ) : undefined
+                  }
+                >
+                  <View style={styles.chipWrap}>{family.gradient.map(renderChip)}</View>
+                </FamilyGroup>
+              );
+            })}
             {feelings.length > 0 ? (
               // One card per named feeling — the same word-plus-shade-dial the
               // check-in uses, so several feelings read as a set, not a count.

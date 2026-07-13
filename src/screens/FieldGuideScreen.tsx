@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Line } from 'react-native-svg';
 
 import EmotionChip from '@/components/EmotionChip';
+import FamilyGroup from '@/components/FamilyGroup';
 import LearnLink from '@/components/LearnLink';
 import PaperTexture from '@/components/PaperTexture';
 import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
@@ -24,9 +25,10 @@ export default function FieldGuideScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation();
 
-  // One state panel and one word detail open at a time — the guide reads like
-  // a reference page, not a form; nothing here is stored.
+  // One state panel, one unfolded family, and one word detail at a time — the
+  // guide reads like a reference page, not a form; nothing here is stored.
   const [openState, setOpenState] = React.useState<string | null>(null);
+  const [openFamily, setOpenFamily] = React.useState<EmotionFamilyId | null>(null);
   const [openWordId, setOpenWordId] = React.useState<string | null>(null);
 
   const openWord = openWordId ? findVocabularyWord(openWordId) : undefined;
@@ -99,20 +101,26 @@ export default function FieldGuideScreen() {
           </Text>
           {Object.values(EMOTION_FAMILIES).map((family) => (
             <View key={family.id} style={styles.familyGroup} testID={`word-family-${family.id}`}>
-              <Text style={typography.overline}>{family.label}</Text>
-              <Text style={typography.caption}>{family.essence}</Text>
-              <View style={styles.chipWrap}>
-                {allWordsForFamily(family.id).map((word) => (
-                  <EmotionChip
-                    key={word.id}
-                    id={`word-${word.id}`}
-                    label={word.label}
-                    selected={openWordId === word.id}
-                    onPress={() => setOpenWordId((cur) => (cur === word.id ? null : word.id))}
-                  />
-                ))}
-              </View>
-              {openWord && openWord.family.id === family.id ? (
+              <FamilyGroup
+                family={family}
+                testID={`word-family-toggle-${family.id}`}
+                expanded={openFamily === family.id}
+                onToggle={() => setOpenFamily((cur) => (cur === family.id ? null : family.id))}
+                preview={family.essence}
+              >
+                <View style={styles.chipWrap}>
+                  {allWordsForFamily(family.id).map((word) => (
+                    <EmotionChip
+                      key={word.id}
+                      id={`word-${word.id}`}
+                      label={word.label}
+                      selected={openWordId === word.id}
+                      onPress={() => setOpenWordId((cur) => (cur === word.id ? null : word.id))}
+                    />
+                  ))}
+                </View>
+              </FamilyGroup>
+              {openFamily === family.id && openWord && openWord.family.id === family.id ? (
                 <View style={styles.panel} testID={`word-detail-${family.id}`}>
                   <Text style={typography.body}>
                     {openWord.word.label} — {openWord.family.label.toLowerCase()},{' '}
