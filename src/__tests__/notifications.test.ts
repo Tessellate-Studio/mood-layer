@@ -9,9 +9,10 @@ import {
   configureHandler,
   ensureChannel,
   ensurePermissions,
+  rescheduleCircle,
   rescheduleNameIt,
 } from '@/services/notifications';
-import type { NameItSettings } from '@/types/models';
+import type { CirclePerson, NameItSettings } from '@/types/models';
 
 const BASE: NameItSettings = {
   enabled: true,
@@ -63,6 +64,73 @@ describe('rescheduleNameIt', () => {
     expect(arg.content.data).toEqual({ route: 'CheckInFlow', source: 'name-it' });
     expect(arg.trigger.hour).toBeGreaterThanOrEqual(0);
     expect(arg.trigger.minute).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('rescheduleCircle', () => {
+  const person = (over: Partial<CirclePerson> = {}): CirclePerson => ({
+    id: 'p1',
+    name: 'Sam',
+    relationship: 'Partner',
+    sees: 'colours',
+    frequency: 'evening',
+    ...over,
+  });
+
+  it('schedules one reminder per non-paused person and returns a personId → ids map', async () => {
+    const map = await rescheduleCircle(
+      [
+        person({ id: 'p1', frequency: 'evening' }),
+        person({ id: 'p2', frequency: 'weekly' }),
+        person({ id: 'p3', frequency: 'paused' }),
+      ],
+      {}
+    );
+    expect(Notifications.scheduleNotificationAsync).toHaveBeenCalledTimes(2);
+    expect(map).toEqual({ p1: ['mock-notification-id'], p2: ['mock-notification-id'] });
+  });
+
+  it('cancels prior ids PER ID — never cancelAll (that would wipe name-it)', async () => {
+    await rescheduleCircle([person({ id: 'p1' })], { p1: ['old-1'], p2: ['old-2'] });
+    expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('old-1');
+    expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('old-2');
+    expect(Notifications.cancelAllScheduledNotificationsAsync).not.toHaveBeenCalled();
+  });
+
+  it('a now-paused person: cancels their stale id and schedules nothing', async () => {
+    const map = await rescheduleCircle([person({ id: 'p1', frequency: 'paused' })], {
+      p1: ['old-1'],
+    });
+    expect(Notifications.cancelScheduledNotificationAsync).toHaveBeenCalledWith('old-1');
+    expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+    expect(map).toEqual({});
+  });
+
+  it('tags each reminder with the Circle route + personId so a tap deep-links', async () => {
+    await rescheduleCircle([person({ id: 'p1', frequency: 'evening' })], {});
+    const arg = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0][0];
+    expect(arg.content.data).toEqual({ route: 'Circle', source: 'circle', personId: 'p1' });
+  });
+
+  it('uses a weekly trigger (Sunday) for weekly and a daily trigger for evening', async () => {
+    await rescheduleCircle([person({ id: 'p1', frequency: 'weekly' })], {});
+    const weekly = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0][0];
+    expect(weekly.trigger.type).toBe('weekly');
+    expect(weekly.trigger.weekday).toBe(1);
+
+    jest.clearAllMocks();
+    await rescheduleCircle([person({ id: 'p2', frequency: 'evening' })], {});
+    const daily = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls[0][0];
+    expect(daily.trigger.type).toBe('daily');
+    expect(daily.trigger.weekday).toBeUndefined();
+  });
+
+  it('ensures the circle channel exists when scheduling', async () => {
+    await rescheduleCircle([person({ id: 'p1', frequency: 'evening' })], {});
+    expect(Notifications.setNotificationChannelAsync).toHaveBeenCalledWith(
+      'circle',
+      expect.objectContaining({ name: expect.any(String) })
+    );
   });
 });
 

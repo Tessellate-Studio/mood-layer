@@ -6,6 +6,7 @@
 
 import type {
   CircleFrequency,
+  CirclePerson,
   CircleSeesLevel,
   EmotionFamilyId,
   WeekStats,
@@ -81,4 +82,18 @@ export function shareSummary(sees: CircleSeesLevel, stats: WeekStats): string {
   const third = topFamilies(stats)[2];
   const tail = third ? ` — some ${FAMILY_TONE[third]} too` : '';
   return `Mostly ${joinTones(tones)}${tail}.`;
+}
+
+/**
+ * The title + body for a scheduled Circle share-nudge. Gentle and inviting,
+ * never directive (tone rule) — it *offers* sharing, it doesn't instruct. The
+ * live summary isn't baked in here: it's generated from the current week only
+ * when the user taps the reminder and the share sheet opens, so it can never go
+ * stale inside a standing daily/weekly notification.
+ */
+export function circleReminderContent(person: CirclePerson): { title: string; body: string } {
+  return {
+    title: 'A moment to share',
+    body: `Share this week with ${person.name}, whenever you're ready.`,
+  };
 }

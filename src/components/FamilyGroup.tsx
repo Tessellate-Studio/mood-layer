@@ -8,6 +8,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import SectionHeader from '@/components/SectionHeader';
 import { colors, hitTarget, spacing, typography } from '@/constants/theme';
 import type { EmotionFamily } from '@/content/emotions';
 
@@ -41,7 +42,9 @@ export function FamilyGroup({ family, expanded, onToggle, testID, preview, pinne
         onPress={onToggle}
       >
         <View style={styles.headerText}>
-          <Text style={typography.overline}>{family.label}</Text>
+          {/* Muted-layer treatment: the family's tinted section glyph does
+              the naming, teaching the family↔hue pairing the quilt uses. */}
+          <SectionHeader family={family.id} label={family.label} />
           {!expanded ? (
             <Text style={styles.preview} numberOfLines={1}>
               {previewText}

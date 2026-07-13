@@ -16,6 +16,7 @@ import {
   familyPalette,
   hitTarget,
   motion,
+  mutedPalette,
   spacing,
   textures,
   typography,
@@ -190,9 +191,27 @@ export default function QuiltScreen() {
           onPress={() => setSelectedId(null)}
         >
           {/* Inner press is swallowed so tapping the card doesn't dismiss. */}
-          <Pressable style={[styles.sheet, { paddingBottom: insets.bottom + spacing.lg }]} testID="patch-detail">
+          <Pressable
+            style={[
+              styles.sheet,
+              { paddingBottom: insets.bottom + spacing.lg },
+              // Muted-layer treatment: the sheet wears the check-in's leading
+              // family as a whisper tint + thread spine, tying the detail card
+              // to the patch that opened it.
+              selected
+                ? { backgroundColor: mutedPalette[uniqueFamilies(selected)[0]].fill }
+                : null,
+            ]}
+            testID="patch-detail"
+          >
             {selected ? (
               <>
+                <View
+                  style={[
+                    styles.sheetSpine,
+                    { backgroundColor: mutedPalette[uniqueFamilies(selected)[0]].thread },
+                  ]}
+                />
                 <Text style={styles.sheetTitle}>{buildTitle(selected)}</Text>
                 {selected.emotions.map((sel, i) => (
                   <View key={`${sel.emotionId}-${i}`} style={styles.emotionRow}>
@@ -319,6 +338,15 @@ const styles = StyleSheet.create({
     borderTopRightRadius: borderRadius.sheet,
     padding: spacing.lg,
     gap: spacing.sm,
+    // Clip the thread spine into the rounded top corner.
+    overflow: 'hidden',
+  },
+  sheetSpine: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 5,
   },
   sheetTitle: {
     ...typography.heading,

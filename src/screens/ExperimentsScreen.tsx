@@ -1,10 +1,11 @@
-// Experiments tab: small practices for meeting what's here. Grouped into
-// sections that echo the redesigned Quilt/Insights/Circle language — a gentle
-// intro line, overline-labelled sections, and a soft closing footer. Two
-// "Guided" practices (Name it, Under the judgment) open a flow; three
-// "Perspective" practices (Atlas of Emotions) unfold in place with a scratch
-// pad; "Past reflections" holds saved judgment entries (expand on tap, swipe to
-// edit or remove).
+// Experiments tab: small practices for meeting what's here. Redesigned to the
+// muted-layer treatment (2026-07-13): each section opens with a two-band logo
+// glyph tinted to its hue, every card is a ThreadCard — whisper-tint fill plus
+// a coloured thread spine — and the page closes with the three-band mark as a
+// divider over the tip. Two "Guided" practices (Name it, Under the judgment)
+// open a flow; three "Perspective" practices (Atlas of Emotions) unfold in
+// place with a scratch pad; "Past reflections" holds saved judgment entries
+// (expand on tap, swipe to edit or remove).
 
 import React from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -13,15 +14,38 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
+import { borderRadius, colors, hitTarget, mutedPalette, spacing, typography } from '@/constants/theme';
+import LogoDivider from '@/components/LogoDivider';
 import PaperTexture from '@/components/PaperTexture';
+import SectionHeader from '@/components/SectionHeader';
+import ThreadCard from '@/components/ThreadCard';
 import { findEmotionWord } from '@/content/emotions';
 import { PRACTICES, type Practice } from '@/content/practices';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { useExperimentStore } from '@/store/experimentStore';
-import type { JudgmentEntry } from '@/types/models';
+import type { EmotionFamilyId, JudgmentEntry } from '@/types/models';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
+
+// Layer hues per the settled design: Guided = sadness blue (section + Name
+// it), anger rose for Under the judgment; Perspective = enjoyment amber with
+// its cards cycling amber → green → violet; Past reflections = contempt mauve.
+const GUIDED_FAMILY: EmotionFamilyId = 'sadness';
+const JUDGMENT_FAMILY: EmotionFamilyId = 'anger';
+const PERSPECTIVE_FAMILY: EmotionFamilyId = 'enjoyment';
+const PRACTICE_FAMILIES: EmotionFamilyId[] = ['enjoyment', 'disgust', 'fear'];
+const REFLECTIONS_FAMILY: EmotionFamilyId = 'contempt';
+const LEARN_FAMILY: EmotionFamilyId = 'anticipation';
+
+/** The circled → marking a card that leads somewhere (opens a flow). */
+function ArrowRing({ family }: { family: EmotionFamilyId }) {
+  const palette = mutedPalette[family];
+  return (
+    <View style={[styles.arrowRing, { borderColor: palette.thread }]}>
+      <Text style={[styles.arrowGlyph, { color: palette.accent }]}>→</Text>
+    </View>
+  );
+}
 
 export default function ExperimentsScreen() {
   const insets = useSafeAreaInsets();
@@ -47,45 +71,70 @@ export default function ExperimentsScreen() {
           Small practices for meeting what&apos;s here. Take one when it calls — none are homework.
         </Text>
 
-        {/* Guided: these open a flow. A chevron marks that they lead somewhere,
-            unlike the perspective cards that unfold in place. */}
+        {/* Guided: these open a flow. A ringed arrow marks that they lead
+            somewhere, unlike the perspective cards that unfold in place. */}
         <View style={styles.section}>
-          <Text style={styles.overline}>Guided practices</Text>
-          <NavCard
+          <SectionHeader family={GUIDED_FAMILY} label="Guided practices" />
+          <ThreadCard
+            family={GUIDED_FAMILY}
             testID="card-name-it"
-            title="Name it"
-            sub="Gentle reminders to name what's here"
-            status={nameIt.enabled ? `${nameIt.timesPerDay}× a day` : 'Off'}
+            accessibilityLabel="Name it. Gentle reminders to name what's here."
             onPress={() => navigation.navigate('NameItSetup')}
-          />
-          <NavCard
+          >
+            <View style={styles.cardTitleRow}>
+              <Text style={[typography.heading, styles.cardTitle]}>Name it</Text>
+              <ArrowRing family={GUIDED_FAMILY} />
+            </View>
+            <Text style={styles.cardSub}>Gentle reminders to name what&apos;s here</Text>
+            <Text style={[styles.statusPill, { color: mutedPalette[GUIDED_FAMILY].accent, borderColor: mutedPalette[GUIDED_FAMILY].border }]}>
+              {nameIt.enabled ? `${nameIt.timesPerDay}× a day` : 'Off'}
+            </Text>
+          </ThreadCard>
+
+          <ThreadCard
+            family={JUDGMENT_FAMILY}
             testID="card-judgment"
-            title="Under the judgment"
-            sub="What would you feel if you couldn't judge?"
+            accessibilityLabel="Under the judgment. What would you feel if you couldn't judge?"
             onPress={() => navigation.navigate('JudgmentFlow')}
-          />
+          >
+            <View style={styles.cardTitleRow}>
+              <Text style={[typography.heading, styles.cardTitle]}>Under the judgment</Text>
+              <ArrowRing family={JUDGMENT_FAMILY} />
+            </View>
+            <Text style={styles.cardSub}>What would you feel if you couldn&apos;t judge?</Text>
+          </ThreadCard>
         </View>
 
         {/* Learn: the field guide — emotional education rather than practice.
-            Word finder + the underneath map (surface state → resisted feeling). */}
+            Word finder + the underneath map (surface state → resisted feeling).
+            Anticipation teal — the layer hue for leaning toward what's new. */}
         <View style={styles.section}>
-          <Text style={styles.overline}>Learn</Text>
-          <NavCard
+          <SectionHeader family={LEARN_FAMILY} label="Learn" />
+          <ThreadCard
+            family={LEARN_FAMILY}
             testID="card-field-guide"
-            title="Field guide"
-            sub="Find the right word — and what an old mood might be carrying"
+            accessibilityLabel="Field guide. Find the right word, and what an old mood might be carrying."
             onPress={() => navigation.navigate('FieldGuide')}
-          />
+          >
+            <View style={styles.cardTitleRow}>
+              <Text style={[typography.heading, styles.cardTitle]}>Field guide</Text>
+              <ArrowRing family={LEARN_FAMILY} />
+            </View>
+            <Text style={styles.cardSub}>
+              Find the right word — and what an old mood might be carrying
+            </Text>
+          </ThreadCard>
         </View>
 
         {/* Perspective practices from the Atlas of Emotions — they unfold in
             place with a scratch pad rather than opening a flow. */}
         <View style={styles.section}>
-          <Text style={styles.overline}>Perspective practices</Text>
-          {PRACTICES.map((practice) => (
+          <SectionHeader family={PERSPECTIVE_FAMILY} label="Perspective practices" />
+          {PRACTICES.map((practice, index) => (
             <PracticeCard
               key={practice.id}
               practice={practice}
+              family={PRACTICE_FAMILIES[index % PRACTICE_FAMILIES.length]}
               open={openPractice === practice.id}
               onToggle={() =>
                 setOpenPractice((cur) => (cur === practice.id ? null : practice.id))
@@ -99,7 +148,7 @@ export default function ExperimentsScreen() {
 
         {judgmentEntries.length > 0 ? (
           <View style={styles.section}>
-            <Text style={styles.overline}>Past reflections</Text>
+            <SectionHeader family={REFLECTIONS_FAMILY} label="Past reflections" />
             <Text style={styles.swipeHint}>Swipe a reflection to edit or remove it.</Text>
             {judgmentEntries.map((entry, index) => (
               <ReflectionRow
@@ -114,52 +163,20 @@ export default function ExperimentsScreen() {
           </View>
         ) : null}
 
-        <Text style={styles.footer}>
-          Nothing here is a test. Come back to a practice whenever it calls; the rest can wait.
-        </Text>
+        <LogoDivider tip="Nothing here is a test. Come back to a practice whenever it calls; the rest can wait." />
       </ScrollView>
     </View>
   );
 }
 
-/** A card that leads somewhere: title + chevron, one-line sub, optional status. */
-function NavCard({
-  testID,
-  title,
-  sub,
-  status,
-  onPress,
-}: {
-  testID: string;
-  title: string;
-  sub: string;
-  status?: string;
-  onPress(): void;
-}) {
-  return (
-    <Pressable
-      testID={testID}
-      accessibilityRole="button"
-      accessibilityLabel={`${title}. ${sub}`}
-      style={styles.card}
-      onPress={onPress}
-    >
-      <View style={styles.cardTitleRow}>
-        <Text style={[typography.heading, styles.cardTitle]}>{title}</Text>
-        <Text style={styles.chevron}>→</Text>
-      </View>
-      <Text style={styles.cardSub}>{sub}</Text>
-      {status ? <Text style={styles.cardStatus}>{status}</Text> : null}
-    </Pressable>
-  );
-}
-
 function PracticeCard({
   practice,
+  family,
   open,
   onToggle,
 }: {
   practice: Practice;
+  family: EmotionFamilyId;
   open: boolean;
   onToggle(): void;
 }) {
@@ -169,9 +186,9 @@ function PracticeCard({
   const setPracticeNote = useExperimentStore((s) => s.setPracticeNote);
 
   return (
-    // Only the header toggles — the steps hold text inputs, so wrapping the
-    // whole card in a Pressable would collapse it every time you tapped to type.
-    <View style={styles.card}>
+    // Only the header toggles — the steps hold text inputs, so making the
+    // whole card pressable would collapse it every time you tapped to type.
+    <ThreadCard family={family}>
       <Pressable
         testID={`practice-${practice.id}`}
         accessibilityRole="button"
@@ -206,7 +223,7 @@ function PracticeCard({
           <Text style={styles.practiceClosing}>{practice.closing}</Text>
         </View>
       ) : null}
-    </View>
+    </ThreadCard>
   );
 }
 
@@ -264,13 +281,13 @@ function ReflectionRow({
 
   return (
     <ReanimatedSwipeable renderRightActions={renderActions} overshootRight={false}>
-      <Pressable
+      <ThreadCard
+        family={REFLECTIONS_FAMILY}
         testID={`judgment-entry-${index}`}
-        accessibilityRole="button"
-        accessibilityState={{ expanded }}
         accessibilityLabel={`${entry.target}, for ${entry.judgment}. Swipe for edit and remove.`}
-        style={styles.entry}
+        accessibilityState={{ expanded }}
         onPress={onToggle}
+        style={styles.entryBody}
       >
         <Text style={styles.entryLine} numberOfLines={expanded ? undefined : 1}>
           {entry.target} — {entry.judgment}
@@ -285,7 +302,7 @@ function ReflectionRow({
             {entry.freeWriting ? <Text style={typography.body}>{entry.freeWriting}</Text> : null}
           </View>
         ) : null}
-      </Pressable>
+      </ThreadCard>
     </ReanimatedSwipeable>
   );
 }
@@ -307,17 +324,11 @@ const styles = StyleSheet.create({
     marginTop: spacing.lg,
     gap: spacing.sm,
   },
-  card: {
-    backgroundColor: colors.paperRaised,
-    borderRadius: borderRadius.lg,
-    borderWidth: 0.5,
-    borderColor: colors.inkFaint,
-    padding: spacing.md,
-    gap: spacing.xs,
-  },
   cardTitleRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    // Top-aligned so a wrapping title never centres against the fixed ring
+    // (elastic-layout rule, forge AP#22).
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: spacing.sm,
   },
@@ -325,15 +336,28 @@ const styles = StyleSheet.create({
     flex: 1,
     flexWrap: 'wrap',
   },
-  chevron: {
-    ...typography.heading,
-    color: colors.inkSoft,
+  arrowRing: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  arrowGlyph: {
+    ...typography.label,
   },
   cardSub: {
     ...typography.body,
   },
-  cardStatus: {
+  statusPill: {
     ...typography.caption,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderRadius: 20,
+    backgroundColor: colors.paperRaised,
+    paddingHorizontal: spacing.md - spacing.xs,
+    paddingVertical: spacing.xs - 1,
     marginTop: spacing.xs,
   },
   attribution: {
@@ -356,7 +380,8 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.ink,
     minHeight: 64,
-    backgroundColor: colors.paper,
+    // Raised paper so the writing box reads as a page laid on the tinted card.
+    backgroundColor: colors.paperRaised,
     borderRadius: borderRadius.md,
     borderWidth: 0.5,
     borderColor: colors.inkFaint,
@@ -377,23 +402,10 @@ const styles = StyleSheet.create({
     ...typography.caption,
     marginTop: spacing.xs,
   },
-  overline: {
-    ...typography.overline,
-  },
   swipeHint: {
     ...typography.caption,
   },
-  footer: {
-    ...typography.caption,
-    marginTop: spacing.xl,
-    textAlign: 'center',
-  },
-  entry: {
-    backgroundColor: colors.paperRaised,
-    borderRadius: borderRadius.md,
-    borderWidth: 0.5,
-    borderColor: colors.inkFaint,
-    padding: spacing.md,
+  entryBody: {
     gap: spacing.sm,
   },
   entryLine: {

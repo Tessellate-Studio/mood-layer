@@ -20,6 +20,8 @@ import IntensityDial from '@/components/IntensityDial';
 import ModalHeader from '@/components/ModalHeader';
 import { borderRadius, colors, fonts, hitTarget, spacing, typography } from '@/constants/theme';
 import PaperTexture from '@/components/PaperTexture';
+import SectionHeader from '@/components/SectionHeader';
+import ThreadCard from '@/components/ThreadCard';
 import { EMOTION_FAMILIES, findEmotionWord } from '@/content/emotions';
 import { JUDGMENT_EXAMPLES } from '@/content/judgmentExamples';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
@@ -238,7 +240,9 @@ export default function JudgmentFlowScreen() {
               feelings.map((feeling) => {
                 const label = findEmotionWord(feeling.emotionId)?.word.label ?? feeling.emotionId;
                 return (
-                  <View key={feeling.emotionId} style={styles.card}>
+                  // The card wears the named feeling's muted layer — same
+                  // treatment as the check-in's intensity step.
+                  <ThreadCard key={feeling.emotionId} family={feeling.family} style={styles.cardBody}>
                     <Text style={typography.heading}>{label}</Text>
                     <IntensityDial
                       wordId={feeling.emotionId}
@@ -249,7 +253,7 @@ export default function JudgmentFlowScreen() {
                         setFeelingIntensity(feeling.emotionId, intensity)
                       }
                     />
-                  </View>
+                  </ThreadCard>
                 );
               })
             ) : (
@@ -375,12 +379,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.sm,
   },
-  card: {
-    backgroundColor: colors.paperRaised,
-    borderRadius: borderRadius.lg,
-    borderWidth: 0.5,
-    borderColor: colors.inkFaint,
-    padding: spacing.md,
+  cardBody: {
     gap: spacing.md,
   },
   noteInput: {

@@ -195,16 +195,22 @@ between them.
   AsyncStorage). No accounts, no server, no analytics, no crash-reporting SDKs.
   Sending emotional data anywhere is an anti-pattern until the user explicitly
   decides otherwise (then it goes through the tracker + a privacy review).
-- **Ink-on-paper chrome, Atlas pastels in the quilt (user-locked 2026-07-08).**
-  Every colour comes from `src/constants/theme.ts`. The chrome (text, lines,
-  buttons, chips, backgrounds) stays ink/paper greys on warm cream, with the
-  `PaperTexture` grain on screen surfaces. The ONLY hue lives in the quilt:
-  `familyPalette` — soft pastels per emotion family after Ekman & the Dalai
-  Lama's Atlas of Emotions (anger red, fear violet, sadness blue, disgust
-  green, enjoyment amber, plus harmonised surprise tan / contempt mauve, and
-  anticipation teal / trust rose for the two Plutchik families user-added
-  2026-07-13) — used solely for patch fills/swatches/dials. No
-  hardcoded hex anywhere else; never colour the chrome.
+- **Typewriter ink, Atlas hues in two registers (user-locked 2026-07-08,
+  extended 2026-07-13 — "layers you can tell apart").** Every colour comes from
+  `src/constants/theme.ts`. Text, lines, buttons, and backgrounds stay
+  ink/paper greys on warm cream, with the `PaperTexture` grain on screen
+  surfaces. Hue follows the Atlas of Emotions families (anger red, fear
+  violet, sadness blue, disgust green, enjoyment amber, plus harmonised
+  surprise tan / contempt mauve, and anticipation teal / trust rose for the
+  two Plutchik families user-added 2026-07-13) in exactly two
+  registers: `familyPalette` — soft pastels, solely for quilt patch
+  fills/swatches/dials — and `mutedPalette` — the same hues desaturated
+  toward grey, solely for card fills, thread spines, section glyphs, and
+  same-hue accents (via `ThreadCard` / `SectionHeader` / `LogoDivider`), so
+  sections and cards read as distinct layers. Body text on a tinted fill
+  stays ink tiers; per-family `accent` is the only coloured text and must
+  hold WCAG AA (enforced in `designTreatment.test.tsx`). No hardcoded hex
+  anywhere else; never colour plain text, lines, or buttons.
 - **Typewriter voice — Courier Prime everywhere.** The app reads like a page
   typed onto paper; monospace is the design, not a placeholder. Regular + Bold
   ship as separate families (`CourierPrime-Regular` / `CourierPrime-Bold`), each

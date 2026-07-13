@@ -3,7 +3,7 @@
 // bar styled from theme tokens only.
 
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, type NavigatorScreenParams } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -24,7 +24,9 @@ import SettingsScreen from '@/screens/SettingsScreen';
 import { useSettingsStore } from '@/store/settingsStore';
 
 export type RootStackParamList = {
-  Main: undefined;
+  // Nested params so a tapped Circle reminder can deep-link straight to the
+  // CircleTab (navigate('Main', { screen: 'CircleTab' })).
+  Main: NavigatorScreenParams<MainTabParamList> | undefined;
   Onboarding: undefined;
   CheckInFlow: { source: 'manual' | 'name-it' } | undefined;
   JudgmentFlow: { editId?: string } | undefined;

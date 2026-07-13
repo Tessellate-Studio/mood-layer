@@ -1,6 +1,6 @@
 // Circle store (local-only people CRUD) + the pure share-summary generator.
 
-import { useCircleStore } from '@/store/circleStore';
+import { syncCircleReminders, useCircleStore } from '@/store/circleStore';
 import {
   FREQUENCY_ORDER,
   nextInCycle,
@@ -82,6 +82,49 @@ describe('circleStore', () => {
     useCircleStore.getState().addPerson({ name: 'X', relationship: 'Y', sees: 'colours', frequency: 'paused' });
     useCircleStore.getState().clearAll();
     expect(useCircleStore.getState().people).toEqual([]);
+  });
+
+  it('holds and clears a one-shot pending-share intent', () => {
+    useCircleStore.getState().requestShare('p1');
+    expect(useCircleStore.getState().pendingSharePersonId).toBe('p1');
+    useCircleStore.getState().clearPendingShare();
+    expect(useCircleStore.getState().pendingSharePersonId).toBeNull();
+  });
+
+  it('clearAll also drops reminder ids and any pending share', () => {
+    useCircleStore.getState().setReminderIds({ p1: ['id-1'] });
+    useCircleStore.getState().requestShare('p1');
+    useCircleStore.getState().clearAll();
+    expect(useCircleStore.getState().reminderIds).toEqual({});
+    expect(useCircleStore.getState().pendingSharePersonId).toBeNull();
+  });
+});
+
+describe('syncCircleReminders', () => {
+  it('schedules a reminder for a non-paused person and stores the id map', async () => {
+    const p = useCircleStore.getState().addPerson({
+      name: 'Sam',
+      relationship: 'Partner',
+      sees: 'colours',
+      frequency: 'evening',
+    });
+    await syncCircleReminders();
+    expect(useCircleStore.getState().reminderIds).toEqual({ [p.id]: ['mock-notification-id'] });
+  });
+
+  it('recadencing everyone to paused cancels and clears the stored ids', async () => {
+    const p = useCircleStore.getState().addPerson({
+      name: 'Sam',
+      relationship: 'Partner',
+      sees: 'colours',
+      frequency: 'evening',
+    });
+    await syncCircleReminders();
+    expect(useCircleStore.getState().reminderIds).not.toEqual({});
+
+    useCircleStore.getState().updatePerson(p.id, { frequency: 'paused' });
+    await syncCircleReminders();
+    expect(useCircleStore.getState().reminderIds).toEqual({});
   });
 });
 

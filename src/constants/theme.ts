@@ -1,12 +1,15 @@
 // The Mood Layer — typewriter-on-paper design tokens.
 // HARD RULE (CLAUDE.md): every colour in the app comes from here. No hex
-// literals anywhere else. The chrome (text, lines, buttons, chips) stays
-// ink-on-paper; the ONLY colour lives in the quilt itself — soft pastel
-// family hues after Ekman & the Dalai Lama's Atlas of Emotions
-// (atlasofemotions.org): anger red, fear violet, sadness blue, disgust
-// green, enjoyment amber (+ harmonised hues for surprise/contempt, and for
-// anticipation teal / trust rose — the Plutchik families user-added
-// 2026-07-13 — chosen to sit in the hue gaps the Atlas five leave open).
+// literals anywhere else. Text and line work stay ink-on-paper. Hue lives in
+// two registers, both after Ekman & the Dalai Lama's Atlas of Emotions
+// (atlasofemotions.org — anger red, fear violet, sadness blue, disgust green,
+// enjoyment amber, + harmonised hues for surprise/contempt and for
+// anticipation teal / trust rose, the Plutchik families user-added
+// 2026-07-13):
+//   - familyPalette — soft pastels, quilt patch fills/swatches/dials only.
+//   - mutedPalette — the same hues desaturated toward grey; card fills,
+//     thread spines, and section glyphs so screens read as distinct layers
+//     (user-directed 2026-07-13, "layers you can tell apart").
 
 import type { EmotionFamilyId } from '@/types/models';
 
@@ -98,6 +101,88 @@ export const familyPalette: Record<EmotionFamilyId, FamilyPalette> = {
     thread: '#B37E90',
   },
 };
+
+export interface MutedFamilyPalette {
+  /** Whisper-tint card fill — a layer you can tell apart, not a highlight. */
+  fill: string;
+  /** 1px card border + the section header's dashed rule. */
+  border: string;
+  /** The coloured "thread" spine, section glyph strokes, and arrow rings.
+   *  Non-text UI: holds ≥3:1 on its fill and on paper (WCAG 1.4.11). */
+  thread: string;
+  /** Deep same-hue tone for TEXT on the fill or raised paper (status pills,
+   *  arrow glyphs). Holds ≥4.5:1 on both (WCAG 1.4.3) — enforced by test. */
+  accent: string;
+}
+
+/**
+ * Muted layer palette — the design treatment settled 2026-07-13 ("layers you
+ * can tell apart"). The Atlas hues, desaturated heavily toward grey so cards
+ * and sections read as distinct layers while the tone stays somber and the
+ * text stays ink. Chrome text/lines remain ink tiers; these tints are for
+ * card fills, thread spines, section glyphs, and same-hue accents only.
+ * Handoff accents were nudged darker to clear WCAG AA (design bundle
+ * 2026-07-13; verified in designTreatment.test.tsx).
+ */
+export const mutedPalette: Record<EmotionFamilyId, MutedFamilyPalette> = {
+  anger: {
+    fill: '#F0ECEA',
+    border: '#D5CDC9',
+    thread: '#8F817C',
+    accent: '#6A5C56',
+  },
+  fear: {
+    fill: '#EDECF0',
+    border: '#CFCBD6',
+    thread: '#847E90',
+    accent: '#605A6C',
+  },
+  sadness: {
+    fill: '#EBEDEF',
+    border: '#CBCFD4',
+    thread: '#7C848E',
+    accent: '#59626C',
+  },
+  disgust: {
+    fill: '#EAEEE9',
+    border: '#CDD2CB',
+    thread: '#7E877C',
+    accent: '#586055',
+  },
+  enjoyment: {
+    fill: '#F0EDE6',
+    border: '#D4CDBE',
+    thread: '#8C8468',
+    accent: '#665F4B',
+  },
+  surprise: {
+    fill: '#F1EDE7',
+    border: '#D6CEC2',
+    thread: '#94836E',
+    accent: '#6C5D48',
+  },
+  contempt: {
+    fill: '#EEECEE',
+    border: '#D3CCD0',
+    thread: '#877E83',
+    accent: '#62595E',
+  },
+  anticipation: {
+    fill: '#EAEEEE',
+    border: '#CBD3D3',
+    thread: '#7B8A89',
+    accent: '#576362',
+  },
+  trust: {
+    fill: '#F0ECED',
+    border: '#D5CBCE',
+    thread: '#8E7E83',
+    accent: '#6A585E',
+  },
+};
+
+/** Fill opacity for the two-band section glyph's translucent bands. */
+export const glyphBandOpacity = 0.28;
 
 export const spacing = {
   xs: 4,

@@ -8,8 +8,10 @@ import React from 'react';
 import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
+import { borderRadius, colors, hitTarget, mutedPalette, spacing, typography } from '@/constants/theme';
+import LogoDivider from '@/components/LogoDivider';
 import PaperTexture from '@/components/PaperTexture';
+import ThreadCard from '@/components/ThreadCard';
 import {
   FREQUENCY_LABELS,
   FREQUENCY_ORDER,
@@ -21,13 +23,18 @@ import {
 import { useCheckInStore } from '@/store/checkInStore';
 import { useCircleStore } from '@/store/circleStore';
 import { useExperimentStore } from '@/store/experimentStore';
-import type { CirclePerson, WeekStats } from '@/types/models';
+import type { CirclePerson, EmotionFamilyId, WeekStats } from '@/types/models';
 import { weekKey } from '@/utils/dates';
 import { computeStatsForWeek } from '@/utils/insightEngine';
 
 function initialOf(name: string): string {
   return name.trim().charAt(0).toUpperCase() || '?';
 }
+
+// Muted-layer treatment: people wear the soft sage green (closeness), the
+// invite form the warm amber (an opening door).
+const PERSON_FAMILY: EmotionFamilyId = 'disgust';
+const INVITE_FAMILY: EmotionFamilyId = 'enjoyment';
 
 function PersonCard({ person, stats }: { person: CirclePerson; stats: WeekStats }) {
   const updatePerson = useCircleStore((s) => s.updatePerson);
@@ -54,9 +61,9 @@ function PersonCard({ person, stats }: { person: CirclePerson; stats: WeekStats 
   };
 
   return (
-    <View style={styles.card} testID={`circle-person-${person.id}`}>
+    <ThreadCard family={PERSON_FAMILY} testID={`circle-person-${person.id}`} style={styles.cardBody}>
       <View style={styles.personHeader}>
-        <View style={styles.avatar}>
+        <View style={[styles.avatar, { borderColor: mutedPalette[PERSON_FAMILY].thread }]}>
           <Text style={styles.avatarText}>{initialOf(person.name)}</Text>
         </View>
         <View style={styles.personName}>
@@ -119,7 +126,7 @@ function PersonCard({ person, stats }: { person: CirclePerson; stats: WeekStats 
       >
         <Text style={styles.shareText}>Share this week</Text>
       </Pressable>
-    </View>
+    </ThreadCard>
   );
 }
 
@@ -141,7 +148,7 @@ function InviteForm({ onDone }: { onDone: () => void }) {
   };
 
   return (
-    <View style={styles.card}>
+    <ThreadCard family={INVITE_FAMILY} style={styles.cardBody}>
       <Text style={typography.heading}>Invite someone</Text>
       <TextInput
         testID="circle-add-name"
@@ -181,7 +188,7 @@ function InviteForm({ onDone }: { onDone: () => void }) {
           <Text style={styles.primaryText}>Add to circle</Text>
         </Pressable>
       </View>
-    </View>
+    </ThreadCard>
   );
 }
 
@@ -192,11 +199,28 @@ export default function CircleScreen() {
   const judgmentEntries = useExperimentStore((s) => s.judgmentEntries);
   const [inviting, setInviting] = React.useState(false);
 
+  const pendingSharePersonId = useCircleStore((s) => s.pendingSharePersonId);
+  const clearPendingShare = useCircleStore((s) => s.clearPendingShare);
+
   // This week's summary, generated fresh — never stored.
   const stats = React.useMemo(
     () => computeStatsForWeek(checkIns, judgmentEntries, weekKey(new Date().toISOString())),
     [checkIns, judgmentEntries]
   );
+
+  // A tapped Circle reminder lands here with a pending-share intent: open the
+  // OS share sheet pre-loaded with that person's gated summary (the same gated
+  // text "Share this week" produces). The user still taps share — we only
+  // automated the nudge, not the send (hard rule: local-only).
+  React.useEffect(() => {
+    if (!pendingSharePersonId) return;
+    const person = people.find((p) => p.id === pendingSharePersonId);
+    clearPendingShare();
+    if (!person) return;
+    Share.share({ message: shareSummary(person.sees, stats) }).catch(() => {
+      // The share sheet rejects when dismissed — nothing to recover.
+    });
+  }, [pendingSharePersonId, people, stats, clearPendingShare]);
 
   return (
     <View style={styles.container}>
@@ -230,9 +254,7 @@ export default function CircleScreen() {
           </Pressable>
         )}
 
-        <Text style={styles.footer}>
-          Change or stop sharing any time. Removing someone deletes everything they were ever sent.
-        </Text>
+        <LogoDivider tip="Change or stop sharing any time. Removing someone deletes everything they were ever sent." />
       </ScrollView>
     </View>
   );
@@ -251,12 +273,7 @@ const styles = StyleSheet.create({
     ...typography.body,
     marginBottom: spacing.sm,
   },
-  card: {
-    backgroundColor: colors.paperRaised,
-    borderRadius: borderRadius.lg,
-    borderWidth: 0.5,
-    borderColor: colors.inkFaint,
-    padding: spacing.md,
+  cardBody: {
     gap: spacing.sm,
   },
   personHeader: {
@@ -268,8 +285,8 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.inkFaint,
+    // Border colour comes from the person layer's thread at the use site.
+    borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -332,7 +349,8 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.ink,
-    backgroundColor: colors.paper,
+    // Raised paper so the button reads as a page laid on the tinted card.
+    backgroundColor: colors.paperRaised,
     marginTop: spacing.xs,
   },
   shareText: {
@@ -389,10 +407,5 @@ const styles = StyleSheet.create({
   inviteText: {
     ...typography.label,
     color: colors.inkSoft,
-  },
-  footer: {
-    ...typography.caption,
-    marginTop: spacing.sm,
-    textAlign: 'center',
   },
 });

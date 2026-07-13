@@ -4,6 +4,12 @@
 // random noise in the preview — whole hours read like a kept appointment.
 // Deterministic: a re-run reproduces the same day exactly (the service cancels
 // + reschedules on every settings change).
+//
+// This module also plans the Circle share-nudge cadence (planCircleReminders):
+// same "pure function → the service schedules → ids get stored for cancel"
+// pattern as name-it, one reminder per non-paused person.
+
+import type { CircleFrequency } from '@/types/models';
 
 export interface DailyTime {
   hour: number;
@@ -45,4 +51,61 @@ export function planDailyTimes(
   }
 
   return [...hours].sort((a, b) => a - b).map((hour) => ({ hour, minute: 0 }));
+}
+
+// --- Circle share reminders -------------------------------------------------
+//
+// A local nudge on the USER's phone at their chosen cadence to *offer* sharing
+// this week with a circle person — the summary itself is still generated and
+// handed to the OS share sheet by the user's own tap (nothing auto-sends; hard
+// rule: local-only). One reminder per non-paused person.
+
+/** Evening nudge hour, 20:00 local — a settled part of the day, and inside the
+ *  name-it default waking window (wakeEnd 21) so it never lands after bedtime. */
+export const CIRCLE_EVENING_HOUR = 20;
+/** Expo WEEKLY trigger weekday: 1–7 with 1 = Sunday. Sunday evening = a gentle
+ *  close to the week. */
+export const CIRCLE_WEEKLY_WEEKDAY = 1;
+
+export interface CircleReminderSpec {
+  personId: string;
+  /** 'daily' → evening cadence; 'weekly' → weekly summary cadence. */
+  cadence: 'daily' | 'weekly';
+  hour: number;
+  minute: number;
+  /** Only for weekly cadence — Expo weekday (1 = Sunday). */
+  weekday?: number;
+}
+
+/**
+ * Which people get a reminder, and when. Paused people are excluded entirely;
+ * every non-paused person gets exactly one spec at the Circle evening hour —
+ * daily for 'evening', weekly (Sunday) for 'weekly'. Pure + order-preserving so
+ * a re-run reproduces the same plan (the service cancels + reschedules whenever
+ * the people list changes).
+ */
+export function planCircleReminders(
+  people: { id: string; frequency: CircleFrequency }[]
+): CircleReminderSpec[] {
+  const specs: CircleReminderSpec[] = [];
+  for (const person of people) {
+    if (person.frequency === 'evening') {
+      specs.push({
+        personId: person.id,
+        cadence: 'daily',
+        hour: CIRCLE_EVENING_HOUR,
+        minute: 0,
+      });
+    } else if (person.frequency === 'weekly') {
+      specs.push({
+        personId: person.id,
+        cadence: 'weekly',
+        weekday: CIRCLE_WEEKLY_WEEKDAY,
+        hour: CIRCLE_EVENING_HOUR,
+        minute: 0,
+      });
+    }
+    // 'paused' → no reminder.
+  }
+  return specs;
 }

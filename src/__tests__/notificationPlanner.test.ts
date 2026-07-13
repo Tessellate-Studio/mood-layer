@@ -3,9 +3,13 @@
 // read as noise), distinct, sorted, deterministic.
 
 import {
+  CIRCLE_EVENING_HOUR,
+  CIRCLE_WEEKLY_WEEKDAY,
   MAX_TIMES_PER_DAY,
+  planCircleReminders,
   planDailyTimes,
 } from '@/utils/notificationPlanner';
+import type { CircleFrequency } from '@/types/models';
 
 function toMinutes(t: { hour: number; minute: number }): number {
   return t.hour * 60 + t.minute;
@@ -70,5 +74,53 @@ describe('planDailyTimes', () => {
   it('clamps out-of-range requests instead of throwing', () => {
     expect(planDailyTimes(0, 9, 21)).toHaveLength(1);
     expect(planDailyTimes(99, 9, 21)).toHaveLength(MAX_TIMES_PER_DAY);
+  });
+});
+
+describe('planCircleReminders', () => {
+  const person = (id: string, frequency: CircleFrequency) => ({ id, frequency });
+
+  it('gives a paused person no reminder', () => {
+    expect(planCircleReminders([person('a', 'paused')])).toEqual([]);
+  });
+
+  it('schedules a daily evening reminder for the evening cadence', () => {
+    expect(planCircleReminders([person('a', 'evening')])).toEqual([
+      { personId: 'a', cadence: 'daily', hour: CIRCLE_EVENING_HOUR, minute: 0 },
+    ]);
+  });
+
+  it('schedules a weekly Sunday-evening reminder for the weekly cadence', () => {
+    expect(planCircleReminders([person('b', 'weekly')])).toEqual([
+      {
+        personId: 'b',
+        cadence: 'weekly',
+        weekday: CIRCLE_WEEKLY_WEEKDAY,
+        hour: CIRCLE_EVENING_HOUR,
+        minute: 0,
+      },
+    ]);
+  });
+
+  it('keeps one spec per non-paused person, in order, dropping paused ones', () => {
+    const specs = planCircleReminders([
+      person('a', 'evening'),
+      person('b', 'paused'),
+      person('c', 'weekly'),
+    ]);
+    expect(specs.map((s) => s.personId)).toEqual(['a', 'c']);
+  });
+
+  it('returns nothing for an empty circle', () => {
+    expect(planCircleReminders([])).toEqual([]);
+  });
+
+  it('places the nudge in the evening (18:00–22:00), inside waking hours', () => {
+    expect(CIRCLE_EVENING_HOUR).toBeGreaterThanOrEqual(18);
+    expect(CIRCLE_EVENING_HOUR).toBeLessThanOrEqual(22);
+  });
+
+  it('uses Expo weekday 1 (Sunday) for the weekly nudge', () => {
+    expect(CIRCLE_WEEKLY_WEEKDAY).toBe(1);
   });
 });

@@ -11,16 +11,29 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
 
 ## P0 — now (this week)
 
-- **Circle: scheduled sharing (backend automation)** — *committed this week
-  (user, 2026-07-13): "we will be doing this."* Circle (v0.2.0) already lets you
-  set, per person, *what* they see and *how often* (every evening / weekly summary
-  / paused) — but "how often" is only an intention today: sending is manual
-  ("Share this week" → OS share sheet). Making the cadence real means a summary is
-  generated **and delivered on a schedule**, which a phone-local app can't do on
-  its own → it needs a backend.
-  This is a **deliberate, scoped exception to local-only** (a summary leaves the
-  phone on a schedule) — decide and write down the trust boundary. **Decisions to
-  settle first (before code):**
+- **Circle: scheduled-share reminders (no-backend version)** — **BUILT
+  2026-07-13** (decided the same day: do the local, no-backend version first).
+  Instead of *delivering* a summary on a schedule (needs a server, breaks
+  local-only), we schedule a **local push notification on the user's own phone**
+  at each non-paused person's cadence (`evening` → daily 20:00, `weekly` →
+  Sunday 20:00). Tapping the nudge deep-links to the Circle tab and opens the OS
+  share sheet pre-loaded with that person's gated `shareSummary` — the user
+  still taps share, so **nothing leaves the phone on its own** and local-only is
+  preserved. Reuses the name-it notification pattern
+  (`utils/notificationPlanner` → `services/notifications.rescheduleCircle` →
+  ids persisted on `circleStore`, cancelled/rescheduled on
+  remove/pause/recadence and on app foreground). Per-id cancellation (never
+  `cancelAll`) so it never wipes the name-it reminders sharing the same OS queue.
+  ⚠️ **On-device firing needs a dev build** — Expo Go can't fire local
+  scheduled notifications (regression-log #4); every circle service fn no-ops
+  under Expo Go. Cross-ref the EAS dev-build item under "Post-launch" — the same
+  build unblocks device verification of both name-it and circle reminders.
+
+- **Circle: true auto-deliver to recipient (backend automation)** — *separate,
+  larger, and a deliberate break of local-only* — **not started**, keep only if
+  the local-reminder version above proves insufficient. This is the version that
+  actually **sends** a summary off-device on a schedule, which a phone-local app
+  can't do → it needs a backend. **Decisions to settle first (before code):**
   1. **Delivery channel** — email? SMS? push (recipient needs an app)? a private
      link the person opens?
   2. **Recipient identity** — a "person" is just a local name today; automated
@@ -31,8 +44,8 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
   4. **What's stored server-side** — ideally *nothing durable* (generate → send →
      forget) so the "circumvent storing data" promise survives automation.
   5. **Scheduling** — a server cron per person's cadence + timezone.
-  The on-device Circle UI + prefs already exist; this item is the **delivery
-  mechanism only**. *Owner: user + agent.*
+  This is a **deliberate, scoped exception to local-only** — decide and write
+  down the trust boundary before any code. *Owner: user + agent.*
 
 ## P1 — do next
 
