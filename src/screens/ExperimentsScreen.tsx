@@ -83,6 +83,27 @@ export default function ExperimentsScreen() {
           </Pressable>
         </View>
 
+        {/* Learn: the field guide — emotional education rather than practice.
+            Word finder + the underneath map (surface state → resisted feeling). */}
+        <View style={styles.section}>
+          <Text style={styles.overline}>Learn</Text>
+          <Pressable
+            testID="card-field-guide"
+            accessibilityRole="button"
+            accessibilityLabel="Field guide. Find the right word, and what an old mood might be carrying."
+            style={styles.card}
+            onPress={() => navigation.navigate('FieldGuide')}
+          >
+            <View style={styles.cardTitleRow}>
+              <Text style={[typography.heading, styles.cardTitle]}>Field guide</Text>
+              <Text style={styles.chevron}>→</Text>
+            </View>
+            <Text style={styles.cardSub}>
+              Find the right word — and what an old mood might be carrying
+            </Text>
+          </Pressable>
+        </View>
+
         {/* Perspective practices from the Atlas of Emotions — they unfold in
             place with a scratch pad rather than opening a flow. */}
         <View style={styles.section}>
