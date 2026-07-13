@@ -144,6 +144,48 @@ export const EMOTION_HELPERS: Record<EmotionFamilyId, EmotionHelper> = {
       'What feeling is arriving right behind the surprise?',
     ],
   },
+  anticipation: {
+    family: 'anticipation',
+    whatItMeans:
+      'Anticipation is a messenger about the future you care about. It leans you toward what is coming, gathers your energy for it, and keeps the horizon interesting. Felt cleanly, it is fuel rather than fret.',
+    bodySignature: [
+      'a forward lean, energy in the chest',
+      'a lightness or bounce in the limbs',
+      'eyes and attention pulling ahead',
+      'a small hum of not-yet in the belly',
+    ],
+    whenResisted: {
+      becomes: 'impatience and white-knuckled waiting',
+      description:
+        'When you resist anticipation, the leaning-toward turns into gripping. You try to fast-forward the middle part, refresh and re-check, and the waiting itself starts to feel like the enemy instead of part of the arriving.',
+    },
+    invitationToFeel: [
+      'Where does the leaning-forward live in your body right now?',
+      'Could you let the not-yet be pleasant for one breath?',
+      'What does this anticipation say you are hoping for?',
+    ],
+  },
+  trust: {
+    family: 'trust',
+    whatItMeans:
+      'Trust is a messenger about safety. It tells you where you can set your weight down — on a person, a place, or your own two feet — so that not everything has to be carried at once. It is the feeling that lets rest happen.',
+    bodySignature: [
+      'shoulders dropping, jaw unclenching',
+      'a slower, fuller breath',
+      'warmth or steadiness in the chest',
+      'the body settling back instead of bracing',
+    ],
+    whenResisted: {
+      becomes: 'guardedness',
+      description:
+        'When you resist trust, you keep checking the exits. Every kindness gets audited, help stays unasked-for, and the weight never comes off your shoulders — even around the people it would be safe to set it down with.',
+    },
+    invitationToFeel: [
+      'Where could your body put a little weight down right now?',
+      'Could you let one shoulder soften, just to see?',
+      'Who or what has quietly earned a bit of your trust lately?',
+    ],
+  },
   contempt: {
     family: 'contempt',
     whatItMeans:

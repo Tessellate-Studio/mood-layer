@@ -38,15 +38,41 @@ const renderScreen = () =>
   );
 
 describe('CheckInFlowScreen', () => {
+  it('starts with families folded and unfolds one at a time', () => {
+    renderScreen();
+    // No word chips visible until a family is opened — the folded list is the
+    // calm default (user feedback 2026-07-13: nine open families overwhelm).
+    expect(screen.queryByTestId('chip-sad')).toBeNull();
+    fireEvent.press(screen.getByTestId('family-sadness'));
+    expect(screen.getByTestId('chip-sad')).toBeTruthy();
+    // Opening another family folds the first.
+    fireEvent.press(screen.getByTestId('family-anger'));
+    expect(screen.getByTestId('chip-irritated')).toBeTruthy();
+    expect(screen.queryByTestId('chip-down')).toBeNull();
+  });
+
+  it('keeps a chosen word pinned when its family folds', () => {
+    renderScreen();
+    fireEvent.press(screen.getByTestId('family-sadness'));
+    fireEvent.press(screen.getByTestId('chip-sad'));
+    fireEvent.press(screen.getByTestId('family-anger'));
+    // 'sad' is selected, so it stays visible under its folded family; its
+    // unselected siblings do not.
+    expect(screen.getByTestId('chip-sad')).toBeTruthy();
+    expect(screen.queryByTestId('chip-down')).toBeNull();
+  });
+
   it('keeps Continue disabled until an emotion is chosen', () => {
     renderScreen();
     expect(screen.getByTestId('flow-next').props.accessibilityState.disabled).toBe(true);
+    fireEvent.press(screen.getByTestId('family-sadness'));
     fireEvent.press(screen.getByTestId('chip-sad'));
     expect(screen.getByTestId('flow-next').props.accessibilityState.disabled).toBe(false);
   });
 
   it('walks feel → stitch and writes one check-in with the right emotion', () => {
     renderScreen();
+    fireEvent.press(screen.getByTestId('family-sadness'));
     fireEvent.press(screen.getByTestId('chip-sad'));
     fireEvent.press(screen.getByTestId('flow-next')); // → intensity
     fireEvent.press(screen.getByTestId('dial-sad-3')); // set intensity 3
@@ -67,6 +93,7 @@ describe('CheckInFlowScreen', () => {
     mockParams = { source: 'name-it' };
     renderScreen();
     expect(screen.getByText('Can you name it?')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('family-fear'));
     fireEvent.press(screen.getByTestId('chip-afraid'));
     fireEvent.press(screen.getByTestId('flow-next')); // → intensity
     fireEvent.press(screen.getByTestId('flow-next')); // → body

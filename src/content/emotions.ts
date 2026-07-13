@@ -1,6 +1,7 @@
-// Emotion taxonomy: Ekman's seven families, each with a mild-to-intense
-// gradient of plain human words. Copy lives here as typed data (hard rule,
-// CLAUDE.md) so tone changes happen in one reviewed place, never inline.
+// Emotion taxonomy: Ekman's seven families plus Plutchik's anticipation and
+// trust (user-added 2026-07-13), each with a mild-to-intense gradient of
+// plain human words. Copy lives here as typed data (hard rule, CLAUDE.md) so
+// tone changes happen in one reviewed place, never inline.
 
 import type { EmotionFamilyId, Intensity } from '@/types/models';
 
@@ -106,6 +107,32 @@ export const EMOTION_FAMILIES: Record<EmotionFamilyId, EmotionFamily> = {
       { id: 'judgy', label: 'Judgy', intensityHint: 2 },
       { id: 'disdainful', label: 'Disdainful', intensityHint: 3 },
       { id: 'scornful', label: 'Scornful', intensityHint: 4 },
+    ],
+  },
+  anticipation: {
+    id: 'anticipation',
+    label: 'Anticipation',
+    essence: 'Something is on its way, and you are leaning toward it.',
+    gradient: [
+      { id: 'interested', label: 'Interested', intensityHint: 1 },
+      { id: 'expectant', label: 'Expectant', intensityHint: 2 },
+      { id: 'eager', label: 'Eager', intensityHint: 2 },
+      { id: 'excited', label: 'Excited', intensityHint: 3 },
+      { id: 'enthusiastic', label: 'Enthusiastic', intensityHint: 3 },
+      { id: 'elated', label: 'Elated', intensityHint: 4 },
+    ],
+  },
+  trust: {
+    id: 'trust',
+    label: 'Trust',
+    essence: 'You can rest your weight on this — a person, a place, yourself.',
+    gradient: [
+      { id: 'open', label: 'Open', intensityHint: 1 },
+      { id: 'comfortable', label: 'Comfortable', intensityHint: 1 },
+      { id: 'accepting', label: 'Accepting', intensityHint: 2 },
+      { id: 'secure', label: 'Secure', intensityHint: 2 },
+      { id: 'faithful', label: 'Faithful', intensityHint: 3 },
+      { id: 'devoted', label: 'Devoted', intensityHint: 4 },
     ],
   },
 };

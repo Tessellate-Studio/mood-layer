@@ -20,6 +20,8 @@ function stats(overrides: Partial<WeekStats> = {}): WeekStats {
       enjoyment: 0,
       surprise: 0,
       contempt: 0,
+      anticipation: 0,
+      trust: 0,
     },
     resistanceCounts: {
       'looping-thoughts': 0,

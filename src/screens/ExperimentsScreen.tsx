@@ -35,6 +35,7 @@ const JUDGMENT_FAMILY: EmotionFamilyId = 'anger';
 const PERSPECTIVE_FAMILY: EmotionFamilyId = 'enjoyment';
 const PRACTICE_FAMILIES: EmotionFamilyId[] = ['enjoyment', 'disgust', 'fear'];
 const REFLECTIONS_FAMILY: EmotionFamilyId = 'contempt';
+const LEARN_FAMILY: EmotionFamilyId = 'anticipation';
 
 /** The circled → marking a card that leads somewhere (opens a flow). */
 function ArrowRing({ family }: { family: EmotionFamilyId }) {
@@ -101,6 +102,27 @@ export default function ExperimentsScreen() {
               <ArrowRing family={JUDGMENT_FAMILY} />
             </View>
             <Text style={styles.cardSub}>What would you feel if you couldn&apos;t judge?</Text>
+          </ThreadCard>
+        </View>
+
+        {/* Learn: the field guide — emotional education rather than practice.
+            Word finder + the underneath map (surface state → resisted feeling).
+            Anticipation teal — the layer hue for leaning toward what's new. */}
+        <View style={styles.section}>
+          <SectionHeader family={LEARN_FAMILY} label="Learn" />
+          <ThreadCard
+            family={LEARN_FAMILY}
+            testID="card-field-guide"
+            accessibilityLabel="Field guide. Find the right word, and what an old mood might be carrying."
+            onPress={() => navigation.navigate('FieldGuide')}
+          >
+            <View style={styles.cardTitleRow}>
+              <Text style={[typography.heading, styles.cardTitle]}>Field guide</Text>
+              <ArrowRing family={LEARN_FAMILY} />
+            </View>
+            <Text style={styles.cardSub}>
+              Find the right word — and what an old mood might be carrying
+            </Text>
           </ThreadCard>
         </View>
 

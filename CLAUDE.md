@@ -200,7 +200,9 @@ between them.
   `src/constants/theme.ts`. Text, lines, buttons, and backgrounds stay
   ink/paper greys on warm cream, with the `PaperTexture` grain on screen
   surfaces. Hue follows the Atlas of Emotions families (anger red, fear
-  violet, sadness blue, disgust green, enjoyment amber) in exactly two
+  violet, sadness blue, disgust green, enjoyment amber, plus harmonised
+  surprise tan / contempt mauve, and anticipation teal / trust rose for the
+  two Plutchik families user-added 2026-07-13) in exactly two
   registers: `familyPalette` — soft pastels, solely for quilt patch
   fills/swatches/dials — and `mutedPalette` — the same hues desaturated
   toward grey, solely for card fills, thread spines, section glyphs, and

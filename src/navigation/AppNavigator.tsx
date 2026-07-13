@@ -14,6 +14,7 @@ import { navigationRef } from '@/navigation/navigationRef';
 import CheckInFlowScreen from '@/screens/CheckInFlowScreen';
 import CircleScreen from '@/screens/CircleScreen';
 import ExperimentsScreen from '@/screens/ExperimentsScreen';
+import FieldGuideScreen from '@/screens/FieldGuideScreen';
 import InsightsScreen from '@/screens/InsightsScreen';
 import JudgmentFlowScreen from '@/screens/JudgmentFlowScreen';
 import NameItSetupScreen from '@/screens/NameItSetupScreen';
@@ -30,6 +31,7 @@ export type RootStackParamList = {
   CheckInFlow: { source: 'manual' | 'name-it' } | undefined;
   JudgmentFlow: { editId?: string } | undefined;
   NameItSetup: undefined;
+  FieldGuide: undefined;
   Settings: undefined;
 };
 
@@ -67,6 +69,7 @@ const SafeOnboardingScreen = withBoundary('Onboarding', OnboardingScreen);
 const SafeCheckInFlowScreen = withBoundary('CheckInFlow', CheckInFlowScreen);
 const SafeJudgmentFlowScreen = withBoundary('JudgmentFlow', JudgmentFlowScreen);
 const SafeNameItSetupScreen = withBoundary('NameItSetup', NameItSetupScreen);
+const SafeFieldGuideScreen = withBoundary('FieldGuide', FieldGuideScreen);
 const SafeSettingsScreen = withBoundary('Settings', SettingsScreen);
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -144,6 +147,7 @@ export default function AppNavigator() {
           component={SafeNameItSetupScreen}
           options={{ presentation: 'modal' }}
         />
+        <Stack.Screen name="FieldGuide" component={SafeFieldGuideScreen} />
         <Stack.Screen name="Settings" component={SafeSettingsScreen} />
       </Stack.Navigator>
     </NavigationContainer>

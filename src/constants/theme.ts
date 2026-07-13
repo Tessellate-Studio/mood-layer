@@ -3,7 +3,9 @@
 // literals anywhere else. Text and line work stay ink-on-paper. Hue lives in
 // two registers, both after Ekman & the Dalai Lama's Atlas of Emotions
 // (atlasofemotions.org — anger red, fear violet, sadness blue, disgust green,
-// enjoyment amber, + two harmonised for surprise/contempt):
+// enjoyment amber, + harmonised hues for surprise/contempt and for
+// anticipation teal / trust rose, the Plutchik families user-added
+// 2026-07-13):
 //   - familyPalette — soft pastels, quilt patch fills/swatches/dials only.
 //   - mutedPalette — the same hues desaturated toward grey; card fills,
 //     thread spines, and section glyphs so screens read as distinct layers
@@ -90,6 +92,14 @@ export const familyPalette: Record<EmotionFamilyId, FamilyPalette> = {
     shades: { 1: '#F4EEF2', 2: '#ECE2E9', 3: '#DFCFDA', 4: '#CFB8C7' },
     thread: '#A18397',
   },
+  anticipation: {
+    shades: { 1: '#EBF4F4', 2: '#DCECEC', 3: '#C6E0DF', 4: '#AACFCE' },
+    thread: '#6C9E9D',
+  },
+  trust: {
+    shades: { 1: '#F9EFF1', 2: '#F5E2E7', 3: '#EED0D9', 4: '#E4BAC7' },
+    thread: '#B37E90',
+  },
 };
 
 export interface MutedFamilyPalette {
@@ -156,6 +166,18 @@ export const mutedPalette: Record<EmotionFamilyId, MutedFamilyPalette> = {
     border: '#D3CCD0',
     thread: '#877E83',
     accent: '#62595E',
+  },
+  anticipation: {
+    fill: '#EAEEEE',
+    border: '#CBD3D3',
+    thread: '#7B8A89',
+    accent: '#576362',
+  },
+  trust: {
+    fill: '#F0ECED',
+    border: '#D5CBCE',
+    thread: '#8E7E83',
+    accent: '#6A585E',
   },
 };
 

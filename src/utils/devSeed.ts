@@ -41,6 +41,10 @@ const WORDS: { id: string; family: EmotionSelection['family'] }[] = [
   { id: 'curious', family: 'surprise' },
   { id: 'startled', family: 'surprise' },
   { id: 'dismissive', family: 'contempt' },
+  { id: 'eager', family: 'anticipation' },
+  { id: 'excited', family: 'anticipation' },
+  { id: 'open', family: 'trust' },
+  { id: 'secure', family: 'trust' },
 ];
 
 const BODY = ['tight chest', 'warm face', 'heavy limbs', 'lump in throat', 'light shoulders'];

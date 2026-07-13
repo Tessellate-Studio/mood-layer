@@ -19,7 +19,9 @@ import * as Haptics from 'expo-haptics';
 import Svg, { Line } from 'react-native-svg';
 
 import EmotionChip from '@/components/EmotionChip';
+import FamilyGroup from '@/components/FamilyGroup';
 import IntensityDial from '@/components/IntensityDial';
+import LearnLink from '@/components/LearnLink';
 import ModalHeader from '@/components/ModalHeader';
 import { PatchPreview } from '@/components/QuiltPatch';
 import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
@@ -32,7 +34,7 @@ import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { useCheckInStore } from '@/store/checkInStore';
 import { useHelperSheetStore } from '@/store/helperSheetStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import type { Intensity } from '@/types/models';
+import type { EmotionFamilyId, Intensity } from '@/types/models';
 import {
   canFinishEarly,
   canProceed,
@@ -198,27 +200,45 @@ interface StepProps {
 
 function FeelStep({ state, setState }: StepProps) {
   const selectedMasking = MASKING_STATES.filter((m) => state.masking.includes(m.id));
+  // Families start folded (one open at a time) so the step reads as a short,
+  // calm list instead of ~50 chips at once. Chosen words stay pinned under
+  // their folded family, so nothing selected ever disappears.
+  const [openFamily, setOpenFamily] = React.useState<EmotionFamilyId | null>(null);
   return (
     <View style={styles.stepGap}>
-      {Object.values(EMOTION_FAMILIES).map((family) => (
-        <View key={family.id} style={styles.familyGroup}>
-          {/* Muted-layer treatment: each family group opens with its own
-              tinted section glyph, teaching the family↔hue pairing the quilt
-              uses. */}
-          <SectionHeader family={family.id} label={family.label} />
-          <View style={styles.chipWrap}>
-            {family.gradient.map((word) => (
-              <EmotionChip
-                key={word.id}
-                id={word.id}
-                label={word.label}
-                selected={state.selections.some((x) => x.emotionId === word.id)}
-                onPress={() => setState((s) => toggleEmotion(s, word.id, family.id))}
-              />
-            ))}
-          </View>
-        </View>
-      ))}
+      <Text style={styles.feelHint}>
+        Open whichever sounds close — naming even one word is plenty.
+      </Text>
+      {Object.values(EMOTION_FAMILIES).map((family) => {
+        const selectedInFamily = family.gradient.filter((w) =>
+          state.selections.some((x) => x.emotionId === w.id)
+        );
+        const renderChip = (word: (typeof family.gradient)[number]) => (
+          <EmotionChip
+            key={word.id}
+            id={word.id}
+            label={word.label}
+            selected={state.selections.some((x) => x.emotionId === word.id)}
+            onPress={() => setState((s) => toggleEmotion(s, word.id, family.id))}
+          />
+        );
+        return (
+          <FamilyGroup
+            key={family.id}
+            family={family}
+            testID={`family-${family.id}`}
+            expanded={openFamily === family.id}
+            onToggle={() => setOpenFamily((cur) => (cur === family.id ? null : family.id))}
+            pinned={
+              selectedInFamily.length > 0 ? (
+                <View style={styles.chipWrap}>{selectedInFamily.map(renderChip)}</View>
+              ) : undefined
+            }
+          >
+            <View style={styles.chipWrap}>{family.gradient.map(renderChip)}</View>
+          </FamilyGroup>
+        );
+      })}
 
       <Text style={styles.maskingIntro}>or, if it&apos;s more like…</Text>
       <View style={styles.chipWrap}>
@@ -247,15 +267,7 @@ function FeelStep({ state, setState }: StepProps) {
               <View key={familyId} style={styles.familyGroup}>
                 <View style={styles.underneathHeader}>
                   <Text style={styles.overline}>{family.label}</Text>
-                  <Pressable
-                    testID={`underneath-learn-${familyId}`}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Learn about ${family.label}`}
-                    hitSlop={8}
-                    onPress={() => useHelperSheetStore.getState().open(familyId)}
-                  >
-                    <Text style={styles.learnLink}>learn →</Text>
-                  </Pressable>
+                  <LearnLink family={familyId} testID={`underneath-learn-${familyId}`} />
                 </View>
                 <View style={styles.chipWrap}>
                   {family.gradient.map((word) => (
@@ -441,6 +453,9 @@ const styles = StyleSheet.create({
     ...typography.caption,
     marginTop: spacing.sm,
   },
+  feelHint: {
+    ...typography.caption,
+  },
   underneathPanel: {
     backgroundColor: colors.paperRaised,
     borderRadius: borderRadius.lg,
@@ -458,10 +473,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: spacing.sm,
-  },
-  learnLink: {
-    ...typography.caption,
-    color: colors.inkSoft,
   },
   underneathHint: {
     ...typography.caption,

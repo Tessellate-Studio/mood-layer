@@ -92,9 +92,12 @@ describe('JudgmentFlowScreen', () => {
     // judgment are emphasised inline).
     expect(stitch).toHaveTextContent(/my coworker.*being disorganized/);
 
-    // Multi-select: name two feelings, not one. EmotionChip stamps `chip-${id}`,
-    // so `judgment-feeling-worried` renders as `chip-judgment-feeling-worried`.
+    // Multi-select: name two feelings, not one. Families start folded, so each
+    // one is unfolded first. EmotionChip stamps `chip-${id}`, so
+    // `judgment-feeling-worried` renders as `chip-judgment-feeling-worried`.
+    fireEvent.press(screen.getByTestId('judgment-family-fear'));
     fireEvent.press(screen.getByTestId('chip-judgment-feeling-worried'));
+    fireEvent.press(screen.getByTestId('judgment-family-sadness'));
     fireEvent.press(screen.getByTestId('chip-judgment-feeling-hurt'));
     fireEvent.press(screen.getByTestId('judgment-next'));
 
@@ -118,7 +121,8 @@ describe('JudgmentFlowScreen', () => {
     fireEvent.changeText(await screen.findByTestId('judgment-judgment'), 'being slow');
     fireEvent.press(screen.getByTestId('judgment-next'));
 
-    fireEvent.press(await screen.findByTestId('chip-judgment-feeling-worried'));
+    fireEvent.press(await screen.findByTestId('judgment-family-fear'));
+    fireEvent.press(screen.getByTestId('chip-judgment-feeling-worried'));
     fireEvent.press(screen.getByTestId('chip-judgment-feeling-worried'));
     fireEvent.press(screen.getByTestId('judgment-next'));
     fireEvent.press(await screen.findByTestId('judgment-save'));

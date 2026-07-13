@@ -11,6 +11,7 @@ import AppNavigator, { pickInitialRoute } from '@/navigation/AppNavigator';
 import ScreenErrorBoundary from '@/components/ScreenErrorBoundary';
 import CircleScreen from '@/screens/CircleScreen';
 import ExperimentsScreen from '@/screens/ExperimentsScreen';
+import FieldGuideScreen from '@/screens/FieldGuideScreen';
 import InsightsScreen from '@/screens/InsightsScreen';
 import NameItSetupScreen from '@/screens/NameItSetupScreen';
 import OnboardingScreen from '@/screens/OnboardingScreen';
@@ -93,6 +94,7 @@ describe('screen skeletons render their landmarks', () => {
     ['screen-insights', InsightsScreen],
     ['screen-circle', CircleScreen],
     ['screen-name-it', NameItSetupScreen],
+    ['screen-field-guide', FieldGuideScreen],
     ['screen-settings', SettingsScreen],
     ['screen-onboarding', OnboardingScreen],
   ];
