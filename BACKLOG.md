@@ -65,6 +65,18 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
   low blast radius (it fails silently/no-ops rather than crashing), which is why
   post-launch is reasonable. *Owner: user. How-to: `docs/user-actions-tracker.md`.*
 
+## P3 — later
+
+- **Check in with any field-guide word** — the field guide's word finder
+  (v0.2.x, `src/content/vocabulary.ts`) is education-only: ~70 wheel words are
+  browsable but not selectable in a check-in, so the feel step stays a short,
+  nameable list. If users want the precision in their quilt, make word-finder
+  words selectable (ids are already unique across gradients + extended, and
+  `findVocabularyWord` already resolves both, so no data migration — swap the
+  check-in's label lookups from `findEmotionWord` to `findVocabularyWord` and
+  design how ~90 chips stay navigable). Also consider a "more words →" doorway
+  from the check-in feel step into the guide.
+
 ## Done / retired
 
 - **Install rubric-sdk for pulse scoring** — done 2026-07-12. `npm i -D
