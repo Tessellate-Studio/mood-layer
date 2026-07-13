@@ -13,29 +13,31 @@ export interface TabIconProps {
 
 const STROKE_WIDTH = 1.5;
 
-/** 2x2 quilt grid: an outer square with a dashed middle seam both ways. */
+// The app mark's three stacked bands, outlined only — matches the logo
+// handoff's icon_mono.svg (240-unit viewBox), recoloured via the tab bar's
+// active/inactive tint instead of shipping separate light/dark files.
+const MONO_BANDS = [
+  { x: 75, y: 51, w: 90, h: 46 },
+  { x: 66, y: 89, w: 108, h: 46 },
+  { x: 58, y: 127, w: 124, h: 46 },
+];
+
+/** The app mark, three outlined bands — same shape as the launcher icon. */
 export function QuiltIcon({ color, size }: TabIconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Rect x={4} y={4} width={16} height={16} rx={1.5} stroke={color} strokeWidth={STROKE_WIDTH} />
-      <Line
-        x1={12}
-        y1={4}
-        x2={12}
-        y2={20}
-        stroke={color}
-        strokeWidth={STROKE_WIDTH}
-        strokeDasharray={[...textures.stitchDashFine]}
-      />
-      <Line
-        x1={4}
-        y1={12}
-        x2={20}
-        y2={12}
-        stroke={color}
-        strokeWidth={STROKE_WIDTH}
-        strokeDasharray={[...textures.stitchDashFine]}
-      />
+    <Svg width={size} height={size} viewBox="0 0 240 240" fill="none">
+      {MONO_BANDS.map((band, i) => (
+        <Rect
+          key={i}
+          x={band.x}
+          y={band.y}
+          width={band.w}
+          height={band.h}
+          rx={band.h / 2}
+          stroke={color}
+          strokeWidth={8}
+        />
+      ))}
     </Svg>
   );
 }

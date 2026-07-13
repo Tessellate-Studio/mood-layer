@@ -1,10 +1,12 @@
 // The app mark: stacked strata — three bands of translucent feeling-cloth,
-// deepening where they overlap (see docs/logo handoff). Drawn inline from
-// theme tokens per the handoff spec: each band is a rounded rect filled with
-// its family's shades[3] at ~0.82 opacity, outlined with that family's thread
-// at 0.6 — no asset files, so the mark can be mood-tinted at runtime. The
-// brand stack is anger/enjoyment/sadness; passing `families` swaps which
-// families are stacked (the mood variants), same geometry.
+// deepening where they overlap. Geometry matches the logo handoff's
+// appicon_bare.svg exactly (240-unit viewBox, top-to-bottom narrowing bands
+// centred at x=120) so the in-app mark and the store/launcher icon are the
+// same shape. Colours come from theme tokens, not the asset's baked-in hex,
+// so the mark can be mood-tinted at runtime: the brand stack is
+// anger/enjoyment/sadness (rose/amber/blue, per the handoff); passing
+// `families` swaps which families are stacked (the mood variants), same
+// geometry.
 
 import React from 'react';
 import Svg, { Rect } from 'react-native-svg';
@@ -14,12 +16,15 @@ import type { EmotionFamilyId } from '@/types/models';
 
 const BRAND_STACK: EmotionFamilyId[] = ['anger', 'enjoyment', 'sadness'];
 
-// Band geometry in a 56-unit viewBox: narrow top fold, widening downward,
-// each overlapping the next so the alpha fills deepen at the seams.
+const VIEWBOX_SIZE = 240;
+
+// Top-to-bottom, narrowest-to-widest, each overlapping the one below by 28
+// units so the alpha fills deepen at the seams — lifted verbatim from
+// assets/svg/appicon_bare.svg.
 const BANDS = [
-  { x: 14, y: 8, w: 28, h: 16 },
-  { x: 10, y: 19, w: 36, h: 16 },
-  { x: 6, y: 30, w: 44, h: 18 },
+  { x: 59, y: 49, w: 122, h: 66 },
+  { x: 47, y: 87, w: 146, h: 66 },
+  { x: 36, y: 125, w: 168, h: 66 },
 ];
 
 interface Props {
@@ -35,7 +40,7 @@ export default function LogoMark({ families, size = 56 }: Props) {
   const stack = families && families.length > 0 ? families : BRAND_STACK;
 
   return (
-    <Svg width={size} height={size} viewBox="0 0 56 56">
+    <Svg width={size} height={size} viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}>
       {BANDS.map((band, i) => {
         const palette = familyPalette[stack[i] ?? stack[0]];
         return (
@@ -50,7 +55,7 @@ export default function LogoMark({ families, size = 56 }: Props) {
             fillOpacity={0.82}
             stroke={palette.thread}
             strokeOpacity={0.6}
-            strokeWidth={1}
+            strokeWidth={2.2}
           />
         );
       })}
