@@ -19,6 +19,8 @@ import IntensityDial from '@/components/IntensityDial';
 import ModalHeader from '@/components/ModalHeader';
 import { borderRadius, colors, fonts, hitTarget, spacing, typography } from '@/constants/theme';
 import PaperTexture from '@/components/PaperTexture';
+import SectionHeader from '@/components/SectionHeader';
+import ThreadCard from '@/components/ThreadCard';
 import { EMOTION_FAMILIES, findEmotionWord } from '@/content/emotions';
 import { JUDGMENT_EXAMPLES } from '@/content/judgmentExamples';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
@@ -195,7 +197,9 @@ export default function JudgmentFlowScreen() {
             </Text>
             {Object.values(EMOTION_FAMILIES).map((family) => (
               <View key={family.id} style={styles.familyGroup}>
-                <Text style={styles.overline}>{family.label}</Text>
+                {/* Muted-layer treatment: family groups open with their tinted
+                    section glyph, same as the check-in's feel step. */}
+                <SectionHeader family={family.id} label={family.label} />
                 <View style={styles.chipWrap}>
                   {family.gradient.map((word) => (
                     // EmotionChip stamps its own testID `chip-${id}`; passing a
@@ -218,7 +222,9 @@ export default function JudgmentFlowScreen() {
               feelings.map((feeling) => {
                 const label = findEmotionWord(feeling.emotionId)?.word.label ?? feeling.emotionId;
                 return (
-                  <View key={feeling.emotionId} style={styles.card}>
+                  // The card wears the named feeling's muted layer — same
+                  // treatment as the check-in's intensity step.
+                  <ThreadCard key={feeling.emotionId} family={feeling.family} style={styles.cardBody}>
                     <Text style={typography.heading}>{label}</Text>
                     <IntensityDial
                       wordId={feeling.emotionId}
@@ -229,7 +235,7 @@ export default function JudgmentFlowScreen() {
                         setFeelingIntensity(feeling.emotionId, intensity)
                       }
                     />
-                  </View>
+                  </ThreadCard>
                 );
               })
             ) : (
@@ -355,12 +361,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.sm,
   },
-  card: {
-    backgroundColor: colors.paperRaised,
-    borderRadius: borderRadius.lg,
-    borderWidth: 0.5,
-    borderColor: colors.inkFaint,
-    padding: spacing.md,
+  cardBody: {
     gap: spacing.md,
   },
   noteInput: {

@@ -16,12 +16,13 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
 
-import { borderRadius, colors, hitTarget, motion, spacing, textures, typography } from '@/constants/theme';
+import { borderRadius, colors, hitTarget, motion, mutedPalette, spacing, textures, typography } from '@/constants/theme';
 import PaperTexture from '@/components/PaperTexture';
 import { ONBOARDING_SLIDES } from '@/content/onboarding';
 import { useMotion } from '@/hooks/useMotion';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { useSettingsStore } from '@/store/settingsStore';
+import type { EmotionFamilyId } from '@/types/models';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -126,6 +127,14 @@ const VIGNETTES: Record<string, () => React.JSX.Element> = {
   privacy: PrivacyVignette,
 };
 
+// Muted-layer treatment: each slide's vignette sits on its own whisper-tint
+// layer — the first colours a new user meets are the ones the app will keep.
+const SLIDE_FAMILY: Record<string, EmotionFamilyId> = {
+  quilt: 'sadness',
+  fluidity: 'disgust',
+  privacy: 'fear',
+};
+
 /**
  * Fade/drift-in wrapper: re-runs whenever its slide becomes the settled page,
  * with `order` steps of stagger (vignette 0 → title 1 → body 2). Under
@@ -209,7 +218,13 @@ export default function OnboardingScreen() {
                 <FadeDrift active={active} reduceMotion={reduceMotion} order={0}>
                   {/* Decorative line art — hidden from screen readers. */}
                   <View
-                    style={styles.vignette}
+                    style={[
+                      styles.vignette,
+                      {
+                        backgroundColor: mutedPalette[SLIDE_FAMILY[slide.id]].fill,
+                        borderColor: mutedPalette[SLIDE_FAMILY[slide.id]].border,
+                      },
+                    ]}
                     accessibilityElementsHidden
                     importantForAccessibility="no-hide-descendants"
                   >
@@ -275,6 +290,10 @@ const styles = StyleSheet.create({
   },
   vignette: {
     marginBottom: spacing.lg,
+    alignSelf: 'flex-start',
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
   },
   slideTitle: {
     // typography.display sized down a notch so long titles fit small phones.

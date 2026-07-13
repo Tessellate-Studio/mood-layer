@@ -24,6 +24,8 @@ import ModalHeader from '@/components/ModalHeader';
 import { PatchPreview } from '@/components/QuiltPatch';
 import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
 import PaperTexture from '@/components/PaperTexture';
+import SectionHeader from '@/components/SectionHeader';
+import ThreadCard from '@/components/ThreadCard';
 import { EMOTION_FAMILIES, findEmotionWord, MASKING_STATES } from '@/content/emotions';
 import { RESISTANCE_TELLS } from '@/content/resistance';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
@@ -200,7 +202,10 @@ function FeelStep({ state, setState }: StepProps) {
     <View style={styles.stepGap}>
       {Object.values(EMOTION_FAMILIES).map((family) => (
         <View key={family.id} style={styles.familyGroup}>
-          <Text style={styles.overline}>{family.label}</Text>
+          {/* Muted-layer treatment: each family group opens with its own
+              tinted section glyph, teaching the family↔hue pairing the quilt
+              uses. */}
+          <SectionHeader family={family.id} label={family.label} />
           <View style={styles.chipWrap}>
             {family.gradient.map((word) => (
               <EmotionChip
@@ -281,7 +286,9 @@ function IntensityStep({ state, setState }: StepProps) {
       {state.selections.map((sel) => {
         const label = findEmotionWord(sel.emotionId)?.word.label ?? sel.emotionId;
         return (
-          <View key={sel.emotionId} style={styles.card}>
+          // The card wears its emotion's muted layer, so weighing an anger
+          // word already happens on anger's hue.
+          <ThreadCard key={sel.emotionId} family={sel.family} style={styles.intensityBody}>
             {/* Long-press the word to open its family's helper — an
                 unobtrusive doorway to the "why" without cluttering the step. */}
             <Pressable
@@ -299,7 +306,7 @@ function IntensityStep({ state, setState }: StepProps) {
               value={sel.intensity}
               onChange={(intensity: Intensity) => setState((s) => setIntensity(s, sel.emotionId, intensity))}
             />
-          </View>
+          </ThreadCard>
         );
       })}
       {state.selections.length === 0 ? (
@@ -477,6 +484,9 @@ const styles = StyleSheet.create({
   cardSelected: {
     borderWidth: 1,
     borderColor: colors.ink,
+  },
+  intensityBody: {
+    gap: spacing.md,
   },
   tellRow: {
     flexDirection: 'row',
