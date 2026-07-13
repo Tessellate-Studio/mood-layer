@@ -11,9 +11,14 @@ numbered entries get added as they're earned.
    through a privacy review + user-actions-tracker entry. A "harmless" telemetry
    dep is how this gets violated by accident; treat any network-capable
    dependency addition as a trigger to re-read this rule.
-2. **No colour.** Monochrome ink/paper tokens only (`theme.ts`). A single
-   accent-colour "just for the CTA" is the thin end of the wedge — intensity and
-   hierarchy are expressed with shade, texture, and type size.
+2. **No colour outside the two Atlas registers.** (Amended 2026-07-13 with the
+   muted-layer treatment; originally "no colour at all".) Hue exists only as
+   `familyPalette` (quilt pastels — patch fills/swatches/dials) and
+   `mutedPalette` (desaturated layer hues — card fills, thread spines, section
+   glyphs, AA-checked accents), both in `theme.ts` and both keyed to an emotion
+   family. A free-floating accent colour "just for the CTA" is still the thin
+   end of the wedge — buttons, plain text, and lines stay ink; hierarchy is
+   expressed with shade, texture, and type size.
 3. **Never gamify feelings.** No streaks, badges, scores, or guilt copy for
    missed days (empty quilt days render as quiet batting strips, not red gaps).
    Pressure to check in contradicts the fluidity concept the app teaches.
