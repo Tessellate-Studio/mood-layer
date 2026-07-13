@@ -1,0 +1,73 @@
+# Backlog — The Mood Layer
+
+Durable record of out-of-scope and not-yet-started work. Check here before
+proposing "should we build X?". Sections are P0 (do next) → P4 (someday). The
+*what + why* lives here; the *exactly-how* for any decided external setup lives
+in [`docs/user-actions-tracker.md`](docs/user-actions-tracker.md) — cross-link,
+don't copy. Rubric scores (0–12) come from `@tessellate-studio/rubric-sdk`
+`evaluateFromContext` (heuristic, auditable).
+
+Seeded 2026-07-12 from the first roadmap-pulse run.
+
+## P0 — now (this week)
+
+- **Circle: scheduled sharing (backend automation)** — *committed this week
+  (user, 2026-07-13): "we will be doing this."* Circle (v0.2.0) already lets you
+  set, per person, *what* they see and *how often* (every evening / weekly summary
+  / paused) — but "how often" is only an intention today: sending is manual
+  ("Share this week" → OS share sheet). Making the cadence real means a summary is
+  generated **and delivered on a schedule**, which a phone-local app can't do on
+  its own → it needs a backend.
+  This is a **deliberate, scoped exception to local-only** (a summary leaves the
+  phone on a schedule) — decide and write down the trust boundary. **Decisions to
+  settle first (before code):**
+  1. **Delivery channel** — email? SMS? push (recipient needs an app)? a private
+     link the person opens?
+  2. **Recipient identity** — a "person" is just a local name today; automated
+     delivery needs an address or account.
+  3. **Where the backend lives** — mood-layer has NO server today; this is a
+     **new** service (its own repo or a small serverless API), separate from
+     alate and Loom (different products).
+  4. **What's stored server-side** — ideally *nothing durable* (generate → send →
+     forget) so the "circumvent storing data" promise survives automation.
+  5. **Scheduling** — a server cron per person's cadence + timezone.
+  The on-device Circle UI + prefs already exist; this item is the **delivery
+  mechanism only**. *Owner: user + agent.*
+
+## P1 — do next
+
+- **Clean on-device verification pass of the v0.2.0 redesign** — rubric **7/12**.
+  Full walkthrough of Quilt cloth, Insights depth, Circle, judgment
+  multi-select, and Experiments in Expo Go. The last device session was cut
+  short by a dev-server connectivity error (regression-log #6) before a clean
+  pass. *Owner: user (device); agent preps Metro.*
+
+## P2 — soon
+
+- **Publish The Mood Layer to Google Play (direct, under Tessellate org)** —
+  rubric **6/12** (impact 3/3; costed down by external Play Console setup +
+  dependencies). **Decision made 2026-07-12:** publish directly to the Play
+  Store under the organization developer account; DUNS applied (org
+  verification pending Google's review). Depends on DUNS approval + a clean
+  v0.2.0 device pass. Steps/credentials go in the user-actions-tracker once the
+  DUNS is approved and the Play Console app is created. *Owner: user.*
+
+## Post-launch — verify after v0.2.0 is live
+
+- **Verify "Name it" reminders on a real device** — rubric **8/12**.
+  *User-designated post-launch (2026-07-13): ship first, verify reminders after.*
+  Local-notification reminders no-op in Expo Go (expo-notifications removed
+  SDK 53+, regression-log #4), so this shipped feature has never actually run.
+  `eas.json` is now scaffolded (dev/preview/production profiles); EAS login is
+  done. Remaining: `eas build --profile development --platform android`, install
+  on device, confirm a reminder fires + deep-links into the check-in flow.
+  Tradeoff to note: launching first means the reminder path ships unverified —
+  low blast radius (it fails silently/no-ops rather than crashing), which is why
+  post-launch is reasonable. *Owner: user. How-to: `docs/user-actions-tracker.md`.*
+
+## Done / retired
+
+- **Install rubric-sdk for pulse scoring** — done 2026-07-12. `npm i -D
+  github:ramsaptami/rubric-sdk` installs cleanly (59 packages, exit 0); the
+  earlier "agent sandbox can't install from a personal-repo git URL" note in the
+  tracker was wrong and has been corrected. Pulse scoring is now numeric.
