@@ -4,6 +4,7 @@
 // is gated by the person's `sees` level. Local-only: nothing leaves the phone
 // until the user taps share, and only what they chose to reveal.
 
+import { EMOTION_FAMILIES } from '@/content/emotions';
 import type {
   CircleFrequency,
   CirclePerson,
@@ -80,6 +81,48 @@ export function shareSummary(sees: CircleSeesLevel, stats: WeekStats): string {
   const third = topFamilies(stats)[2];
   const tail = third ? ` — some ${FAMILY_TONE[third]} too` : '';
   return `Mostly ${joinTones(tones)}${tail}.`;
+}
+
+/** The home screen's weekly-summary card overline (a hard rule: copy lives here, not inline in JSX). */
+export const WEEKLY_SUMMARY_OVERLINE = 'This week, mostly';
+
+export interface HomeWeeklySummary {
+  /** Bold headline word, e.g. "Warm" — the top family's tone, capitalised. */
+  headline: string;
+  /** Gentle one-line body naming which families showed up. */
+  body: string;
+  /** Top families (most-frequent first, up to 2) — for tinting the summary mark. */
+  families: EmotionFamilyId[];
+}
+
+function capitalize(word: string): string {
+  return word.length === 0 ? word : word[0].toUpperCase() + word.slice(1);
+}
+
+/**
+ * The home screen's "THIS WEEK, MOSTLY ___" card: a headline tone word plus a
+ * gentle sentence naming the families that showed up. Returns null for a
+ * quiet week (nothing stitched in yet) so the card can hide itself rather
+ * than announce an absence.
+ */
+export function homeWeeklySummary(stats: WeekStats): HomeWeeklySummary | null {
+  if (stats.checkInCount === 0) return null;
+
+  const top = topFamilies(stats);
+  const families = top.slice(0, 2);
+  const labels = families.map((f) => EMOTION_FAMILIES[f].label);
+  const headline = capitalize(FAMILY_TONE[top[0]]);
+
+  let body: string;
+  if (labels.length === 1) {
+    body = `${labels[0]}, running through the week.`;
+  } else {
+    const third = top[2];
+    const tail = third ? ` — with a thread of ${EMOTION_FAMILIES[third].label} too.` : '.';
+    body = `${labels[0]} and ${labels[1]}, sewn side by side${tail}`;
+  }
+
+  return { headline, body, families };
 }
 
 /**

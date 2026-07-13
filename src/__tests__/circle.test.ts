@@ -3,6 +3,7 @@
 import { syncCircleReminders, useCircleStore } from '@/store/circleStore';
 import {
   FREQUENCY_ORDER,
+  homeWeeklySummary,
   nextInCycle,
   SEES_ORDER,
   shareSummary,
@@ -168,5 +169,52 @@ describe('shareSummary', () => {
     for (const level of SEES_ORDER) {
       expect(shareSummary(level, stats())).toBe('A quiet week — nothing stitched in yet.');
     }
+  });
+});
+
+describe('homeWeeklySummary', () => {
+  const week = stats({
+    checkInCount: 6,
+    familyCounts: {
+      anger: 0,
+      fear: 1,
+      sadness: 4,
+      disgust: 0,
+      enjoyment: 3,
+      surprise: 0,
+      contempt: 0,
+    },
+  });
+
+  it('returns null for a quiet week', () => {
+    expect(homeWeeklySummary(stats())).toBeNull();
+  });
+
+  it('names one family when only one showed up', () => {
+    const out = homeWeeklySummary(
+      stats({ checkInCount: 2, familyCounts: { ...stats().familyCounts, enjoyment: 2 } })
+    );
+    expect(out).toEqual({
+      headline: 'Warm',
+      body: 'Enjoyment, running through the week.',
+      families: ['enjoyment'],
+    });
+  });
+
+  it('sews the top two families side by side, headlined by the top tone', () => {
+    // sadness (4) → tender, enjoyment (3) → warm; sadness leads, no third family.
+    const twoOnly = { ...week, familyCounts: { ...week.familyCounts, fear: 0 } };
+    expect(homeWeeklySummary(twoOnly)).toEqual({
+      headline: 'Tender',
+      body: 'Sadness and Enjoyment, sewn side by side.',
+      families: ['sadness', 'enjoyment'],
+    });
+  });
+
+  it('threads in a third family when one showed up too', () => {
+    // week already carries fear (1) as the third family.
+    expect(homeWeeklySummary(week)?.body).toBe(
+      'Sadness and Enjoyment, sewn side by side — with a thread of Fear too.'
+    );
   });
 });

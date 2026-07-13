@@ -1,5 +1,5 @@
 // Four shade swatches for setting one emotion's intensity (1 light → 4 pressed
-// hard). The chosen swatch gets a dashed ink ring. The ramp uses the emotion
+// hard). The chosen swatch gets a solid ink ring. The ramp uses the emotion
 // family's Atlas-of-Emotions pastel — the same colour the patch will be sewn
 // in, so the dial doubles as a preview.
 
@@ -66,7 +66,6 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
     borderWidth: 2,
     borderColor: colors.ink,
-    borderStyle: 'dashed',
   },
 });
 
