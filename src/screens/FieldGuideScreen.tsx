@@ -12,12 +12,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Line } from 'react-native-svg';
 
 import EmotionChip from '@/components/EmotionChip';
+import LearnLink from '@/components/LearnLink';
 import PaperTexture from '@/components/PaperTexture';
 import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
 import { EMOTION_FAMILIES } from '@/content/emotions';
 import { UNDERNEATH_MAP } from '@/content/underneath';
 import { allWordsForFamily, findVocabularyWord, INTENSITY_PHRASES } from '@/content/vocabulary';
-import { useHelperSheetStore } from '@/store/helperSheetStore';
 import type { EmotionFamilyId } from '@/types/models';
 
 export default function FieldGuideScreen() {
@@ -30,6 +30,9 @@ export default function FieldGuideScreen() {
   const [openWordId, setOpenWordId] = React.useState<string | null>(null);
 
   const openWord = openWordId ? findVocabularyWord(openWordId) : undefined;
+  const openUnderneath = openState
+    ? UNDERNEATH_MAP.find((s) => s.id === openState)
+    : undefined;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-field-guide">
@@ -58,7 +61,7 @@ export default function FieldGuideScreen() {
 
         {/* ——— What's underneath? ——— */}
         <View style={styles.section}>
-          <Text style={styles.overline}>What&apos;s underneath?</Text>
+          <Text style={typography.overline}>What&apos;s underneath?</Text>
           <Text style={typography.body}>
             When a state will not shift, it is often carrying a feeling that has not been felt
             yet. Tap one that sounds like today.
@@ -76,28 +79,28 @@ export default function FieldGuideScreen() {
             ))}
           </View>
 
-          {UNDERNEATH_MAP.filter((s) => s.id === openState).map((state) => (
-            <View key={state.id} style={styles.panel} testID={`underneath-panel-${state.id}`}>
-              <Text style={typography.body}>{state.description}</Text>
-              {state.underneath.map((familyId) => (
+          {openUnderneath ? (
+            <View style={styles.panel} testID={`underneath-panel-${openUnderneath.id}`}>
+              <Text style={typography.body}>{openUnderneath.description}</Text>
+              {openUnderneath.underneath.map((familyId) => (
                 <UnderneathFamilyRow key={familyId} familyId={familyId} />
               ))}
-              <Text style={styles.invitation}>{state.invitation}</Text>
+              <Text style={styles.invitation}>{openUnderneath.invitation}</Text>
             </View>
-          ))}
+          ) : null}
         </View>
 
         {/* ——— Find the word ——— */}
         <View style={styles.section}>
-          <Text style={styles.overline}>Find the word</Text>
+          <Text style={typography.overline}>Find the word</Text>
           <Text style={typography.body}>
             More words than the check-in offers, mild to intense — sometimes the right one is
             all a feeling needs.
           </Text>
           {Object.values(EMOTION_FAMILIES).map((family) => (
             <View key={family.id} style={styles.familyGroup} testID={`word-family-${family.id}`}>
-              <Text style={styles.overline}>{family.label}</Text>
-              <Text style={styles.essence}>{family.essence}</Text>
+              <Text style={typography.overline}>{family.label}</Text>
+              <Text style={typography.caption}>{family.essence}</Text>
               <View style={styles.chipWrap}>
                 {allWordsForFamily(family.id).map((word) => (
                   <EmotionChip
@@ -115,7 +118,7 @@ export default function FieldGuideScreen() {
                     {openWord.word.label} — {openWord.family.label.toLowerCase()},{' '}
                     {INTENSITY_PHRASES[openWord.word.intensityHint]}.
                   </Text>
-                  <LearnLink familyId={family.id} testID={`word-learn-${family.id}`} />
+                  <LearnLink family={family.id} testID={`word-learn-${family.id}`} />
                 </View>
               ) : null}
             </View>
@@ -138,25 +141,10 @@ function UnderneathFamilyRow({ familyId }: { familyId: EmotionFamilyId }) {
     <View style={styles.familyRow}>
       <View style={styles.familyRowText}>
         <Text style={typography.heading}>{family.label}</Text>
-        <Text style={styles.essence}>{family.essence}</Text>
+        <Text style={typography.caption}>{family.essence}</Text>
       </View>
-      <LearnLink familyId={familyId} testID={`guide-learn-${familyId}`} />
+      <LearnLink family={familyId} testID={`guide-learn-${familyId}`} />
     </View>
-  );
-}
-
-function LearnLink({ familyId, testID }: { familyId: EmotionFamilyId; testID: string }) {
-  const label = EMOTION_FAMILIES[familyId].label;
-  return (
-    <Pressable
-      testID={testID}
-      accessibilityRole="button"
-      accessibilityLabel={`Learn about ${label}`}
-      hitSlop={8}
-      onPress={() => useHelperSheetStore.getState().open(familyId)}
-    >
-      <Text style={styles.learnLink}>learn →</Text>
-    </Pressable>
   );
 }
 
@@ -185,9 +173,6 @@ const styles = StyleSheet.create({
   section: {
     gap: spacing.sm,
   },
-  overline: {
-    ...typography.overline,
-  },
   chipWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -213,16 +198,9 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.xs,
   },
-  essence: {
-    ...typography.caption,
-  },
   invitation: {
     ...typography.body,
     color: colors.ink,
-  },
-  learnLink: {
-    ...typography.caption,
-    color: colors.inkSoft,
   },
   familyGroup: {
     gap: spacing.sm,

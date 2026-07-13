@@ -4,7 +4,9 @@
 // ink-on-paper; the ONLY colour lives in the quilt itself — soft pastel
 // family hues after Ekman & the Dalai Lama's Atlas of Emotions
 // (atlasofemotions.org): anger red, fear violet, sadness blue, disgust
-// green, enjoyment amber (+ two harmonised for surprise/contempt).
+// green, enjoyment amber (+ harmonised hues for surprise/contempt, and for
+// anticipation teal / trust rose — the Plutchik families user-added
+// 2026-07-13 — chosen to sit in the hue gaps the Atlas five leave open).
 
 import type { EmotionFamilyId } from '@/types/models';
 
@@ -86,6 +88,14 @@ export const familyPalette: Record<EmotionFamilyId, FamilyPalette> = {
   contempt: {
     shades: { 1: '#F4EEF2', 2: '#ECE2E9', 3: '#DFCFDA', 4: '#CFB8C7' },
     thread: '#A18397',
+  },
+  anticipation: {
+    shades: { 1: '#EBF4F4', 2: '#DCECEC', 3: '#C6E0DF', 4: '#AACFCE' },
+    thread: '#6C9E9D',
+  },
+  trust: {
+    shades: { 1: '#F9EFF1', 2: '#F5E2E7', 3: '#EED0D9', 4: '#E4BAC7' },
+    thread: '#B37E90',
   },
 };
 

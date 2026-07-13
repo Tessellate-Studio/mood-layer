@@ -20,6 +20,7 @@ import Svg, { Line } from 'react-native-svg';
 
 import EmotionChip from '@/components/EmotionChip';
 import IntensityDial from '@/components/IntensityDial';
+import LearnLink from '@/components/LearnLink';
 import ModalHeader from '@/components/ModalHeader';
 import { PatchPreview } from '@/components/QuiltPatch';
 import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
@@ -242,15 +243,7 @@ function FeelStep({ state, setState }: StepProps) {
               <View key={familyId} style={styles.familyGroup}>
                 <View style={styles.underneathHeader}>
                   <Text style={styles.overline}>{family.label}</Text>
-                  <Pressable
-                    testID={`underneath-learn-${familyId}`}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Learn about ${family.label}`}
-                    hitSlop={8}
-                    onPress={() => useHelperSheetStore.getState().open(familyId)}
-                  >
-                    <Text style={styles.learnLink}>learn →</Text>
-                  </Pressable>
+                  <LearnLink family={familyId} testID={`underneath-learn-${familyId}`} />
                 </View>
                 <View style={styles.chipWrap}>
                   {family.gradient.map((word) => (
@@ -451,10 +444,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: spacing.sm,
-  },
-  learnLink: {
-    ...typography.caption,
-    color: colors.inkSoft,
   },
   underneathHint: {
     ...typography.caption,

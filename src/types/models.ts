@@ -2,7 +2,11 @@
 // persisted via zustand + AsyncStorage, never sent anywhere (hard rule,
 // CLAUDE.md "Local-only data").
 
-/** Ekman's seven universal emotion families (contempt included per his later work). */
+/**
+ * The emotion families. Ekman's seven (contempt included per his later work)
+ * plus anticipation and trust from Plutchik's wheel — added 2026-07-13 at the
+ * user's direction so the feelings-wheel vocabulary keeps its own homes.
+ */
 export type EmotionFamilyId =
   | 'anger'
   | 'fear'
@@ -10,7 +14,9 @@ export type EmotionFamilyId =
   | 'disgust'
   | 'enjoyment'
   | 'surprise'
-  | 'contempt';
+  | 'contempt'
+  | 'anticipation'
+  | 'trust';
 
 /** How strongly a feeling is present, 1 (a light touch) to 4 (pressed hard). */
 export type Intensity = 1 | 2 | 3 | 4;

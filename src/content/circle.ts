@@ -41,6 +41,8 @@ const FAMILY_TONE: Record<EmotionFamilyId, string> = {
   enjoyment: 'warm',
   surprise: 'open',
   contempt: 'guarded',
+  anticipation: 'expectant',
+  trust: 'settled',
 };
 
 /** The families that showed up most this week, most-frequent first (count > 0). */

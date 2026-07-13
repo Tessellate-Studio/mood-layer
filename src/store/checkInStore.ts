@@ -67,6 +67,8 @@ const FAMILY_IDS: EmotionFamilyId[] = [
   'enjoyment',
   'surprise',
   'contempt',
+  'anticipation',
+  'trust',
 ];
 
 const TELL_IDS: ResistanceTellId[] = [

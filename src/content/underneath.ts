@@ -105,6 +105,22 @@ export const UNDERNEATH_MAP: UnderneathEntry[] = [
     invitation: 'Could you let the good thing land for one breath longer than feels safe?',
   },
   {
+    id: 'impatient',
+    label: 'Impatient',
+    description:
+      'Impatience is often anticipation gripped too tight — the leaning-toward turned into pulling — sometimes with anger at whatever stands in the way.',
+    underneath: ['anticipation', 'anger'],
+    invitation: 'Could the waiting itself be felt for a moment, instead of fought?',
+  },
+  {
+    id: 'wary',
+    label: 'Wary of everyone',
+    description:
+      'Wariness that outstays its evidence is often trust being resisted — staying braced can feel safer than resting your weight on anyone. Underneath there is usually a fear that got burned once.',
+    underneath: ['trust', 'fear'],
+    invitation: 'Is there one place it might be safe to set a little weight down?',
+  },
+  {
     id: 'controlling',
     label: 'Needing control',
     description:

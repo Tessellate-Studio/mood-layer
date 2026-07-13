@@ -23,6 +23,8 @@ const FAMILY_IDS: EmotionFamilyId[] = [
   'enjoyment',
   'surprise',
   'contempt',
+  'anticipation',
+  'trust',
 ];
 
 const TELL_IDS: ResistanceTellId[] = [
@@ -45,6 +47,8 @@ function emptyStats(overrides: Partial<WeekStats> = {}): WeekStats {
       enjoyment: 0,
       surprise: 0,
       contempt: 0,
+      anticipation: 0,
+      trust: 0,
     },
     resistanceCounts: {
       'looping-thoughts': 0,
@@ -71,6 +75,8 @@ const maxedStats: WeekStats = emptyStats({
     enjoyment: 3,
     surprise: 2,
     contempt: 2,
+    anticipation: 2,
+    trust: 2,
   },
   resistanceCounts: {
     'looping-thoughts': 5,
@@ -137,7 +143,7 @@ const TEMPLATE_FIXTURES: Record<string, WeekStats> = {
 };
 
 describe('emotion families', () => {
-  it('has exactly the seven Ekman-derived families', () => {
+  it('has exactly the nine families (Ekman seven + anticipation/trust)', () => {
     expect(Object.keys(EMOTION_FAMILIES).sort()).toEqual([...FAMILY_IDS].sort());
   });
 

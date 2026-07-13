@@ -13,15 +13,9 @@ import {
   INTENSITY_PHRASES,
 } from '@/content/vocabulary';
 
-const FAMILY_IDS: EmotionFamilyId[] = [
-  'anger',
-  'fear',
-  'sadness',
-  'disgust',
-  'enjoyment',
-  'surprise',
-  'contempt',
-];
+// Derived from the data so a new family can never silently skip these checks
+// (the canonical family-set assertion lives in content.shape.test.ts).
+const FAMILY_IDS = Object.keys(EMOTION_FAMILIES) as EmotionFamilyId[];
 
 const gradientIds = FAMILY_IDS.flatMap((f) => EMOTION_FAMILIES[f].gradient.map((w) => w.id));
 const extendedIds = FAMILY_IDS.flatMap((f) => EXTENDED_VOCABULARY[f].map((w) => w.id));
@@ -74,6 +68,14 @@ describe('the underneath map', () => {
       // Invitations end as questions, matching the helper-sheet voice.
       expect(state.invitation.trim().endsWith('?')).toBe(true);
     }
+  });
+
+  it("'numb' stays in sync with its masking-state twin", () => {
+    // The same state is deliberately reachable from the check-in (masking
+    // chip) and the field guide — their family mappings must not drift.
+    const masking = MASKING_STATES.find((m) => m.id === 'numb')!;
+    const state = UNDERNEATH_MAP.find((s) => s.id === 'numb')!;
+    expect(state.underneath).toEqual(masking.unpacksTo);
   });
 
   it('state ids never collide with emotion word ids', () => {

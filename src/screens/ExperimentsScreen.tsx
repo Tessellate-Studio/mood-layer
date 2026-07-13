@@ -51,57 +51,31 @@ export default function ExperimentsScreen() {
             unlike the perspective cards that unfold in place. */}
         <View style={styles.section}>
           <Text style={styles.overline}>Guided practices</Text>
-          <Pressable
+          <NavCard
             testID="card-name-it"
-            accessibilityRole="button"
-            accessibilityLabel="Name it. Gentle reminders to name what's here."
-            style={styles.card}
+            title="Name it"
+            sub="Gentle reminders to name what's here"
+            status={nameIt.enabled ? `${nameIt.timesPerDay}× a day` : 'Off'}
             onPress={() => navigation.navigate('NameItSetup')}
-          >
-            <View style={styles.cardTitleRow}>
-              <Text style={[typography.heading, styles.cardTitle]}>Name it</Text>
-              <Text style={styles.chevron}>→</Text>
-            </View>
-            <Text style={styles.cardSub}>Gentle reminders to name what&apos;s here</Text>
-            <Text style={styles.cardStatus}>
-              {nameIt.enabled ? `${nameIt.timesPerDay}× a day` : 'Off'}
-            </Text>
-          </Pressable>
-
-          <Pressable
+          />
+          <NavCard
             testID="card-judgment"
-            accessibilityRole="button"
-            accessibilityLabel="Under the judgment. What would you feel if you couldn't judge?"
-            style={styles.card}
+            title="Under the judgment"
+            sub="What would you feel if you couldn't judge?"
             onPress={() => navigation.navigate('JudgmentFlow')}
-          >
-            <View style={styles.cardTitleRow}>
-              <Text style={[typography.heading, styles.cardTitle]}>Under the judgment</Text>
-              <Text style={styles.chevron}>→</Text>
-            </View>
-            <Text style={styles.cardSub}>What would you feel if you couldn&apos;t judge?</Text>
-          </Pressable>
+          />
         </View>
 
         {/* Learn: the field guide — emotional education rather than practice.
             Word finder + the underneath map (surface state → resisted feeling). */}
         <View style={styles.section}>
           <Text style={styles.overline}>Learn</Text>
-          <Pressable
+          <NavCard
             testID="card-field-guide"
-            accessibilityRole="button"
-            accessibilityLabel="Field guide. Find the right word, and what an old mood might be carrying."
-            style={styles.card}
+            title="Field guide"
+            sub="Find the right word — and what an old mood might be carrying"
             onPress={() => navigation.navigate('FieldGuide')}
-          >
-            <View style={styles.cardTitleRow}>
-              <Text style={[typography.heading, styles.cardTitle]}>Field guide</Text>
-              <Text style={styles.chevron}>→</Text>
-            </View>
-            <Text style={styles.cardSub}>
-              Find the right word — and what an old mood might be carrying
-            </Text>
-          </Pressable>
+          />
         </View>
 
         {/* Perspective practices from the Atlas of Emotions — they unfold in
@@ -145,6 +119,38 @@ export default function ExperimentsScreen() {
         </Text>
       </ScrollView>
     </View>
+  );
+}
+
+/** A card that leads somewhere: title + chevron, one-line sub, optional status. */
+function NavCard({
+  testID,
+  title,
+  sub,
+  status,
+  onPress,
+}: {
+  testID: string;
+  title: string;
+  sub: string;
+  status?: string;
+  onPress(): void;
+}) {
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={`${title}. ${sub}`}
+      style={styles.card}
+      onPress={onPress}
+    >
+      <View style={styles.cardTitleRow}>
+        <Text style={[typography.heading, styles.cardTitle]}>{title}</Text>
+        <Text style={styles.chevron}>→</Text>
+      </View>
+      <Text style={styles.cardSub}>{sub}</Text>
+      {status ? <Text style={styles.cardStatus}>{status}</Text> : null}
+    </Pressable>
   );
 }
 
