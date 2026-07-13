@@ -17,8 +17,9 @@
 
 import Constants from 'expo-constants';
 
-import type { NameItSettings } from '@/types/models';
-import { planDailyTimes } from '@/utils/notificationPlanner';
+import { circleReminderContent } from '@/content/circle';
+import type { CirclePerson, NameItSettings } from '@/types/models';
+import { planCircleReminders, planDailyTimes } from '@/utils/notificationPlanner';
 
 type NotificationsModule = typeof import('expo-notifications');
 
@@ -36,6 +37,7 @@ function getNotifications(): NotificationsModule | null {
 }
 
 const CHANNEL_ID = 'name-it';
+const CIRCLE_CHANNEL_ID = 'circle';
 
 // Gentle, rotating reminder lines — never clinical or directive (tone rule).
 const REMINDER_LINES = [
@@ -115,6 +117,85 @@ export async function rescheduleNameIt(settings: NameItSettings): Promise<string
     ids.push(id);
   }
   return ids;
+}
+
+/** Android channel for Circle share nudges (no-op on iOS and Expo Go). */
+export async function ensureCircleChannel(): Promise<void> {
+  const Notifications = getNotifications();
+  if (!Notifications) return;
+  await Notifications.setNotificationChannelAsync(CIRCLE_CHANNEL_ID, {
+    name: 'Circle share reminders',
+    importance: Notifications.AndroidImportance.DEFAULT,
+    sound: null,
+  });
+}
+
+/**
+ * (Re)schedule the Circle share nudges from the current people list. Returns a
+ * personId → scheduled-ids map so the caller can persist it and cancel later.
+ *
+ * Cancels our OWN previously-scheduled ids first — PER ID, never
+ * cancelAllScheduledNotificationsAsync (that would also wipe the name-it
+ * reminders, which schedule through the same OS queue). This is the deliberate
+ * difference from rescheduleNameIt: two independent schedulers share one queue,
+ * so each may only cancel what it owns.
+ *
+ * Local-only: every reminder is a nudge on the user's own phone to OFFER
+ * sharing; nothing sends on its own. Expo Go: no-op returning {} (the module
+ * can't load there — regression-log #4); reminders only fire in a dev build.
+ */
+export async function rescheduleCircle(
+  people: CirclePerson[],
+  previousIds: Record<string, string[]>
+): Promise<Record<string, string[]>> {
+  const Notifications = getNotifications();
+  if (!Notifications) return {};
+
+  for (const ids of Object.values(previousIds)) {
+    for (const id of ids) {
+      await Notifications.cancelScheduledNotificationAsync(id);
+    }
+  }
+
+  const specs = planCircleReminders(people);
+  if (specs.length === 0) return {};
+
+  await ensureCircleChannel();
+
+  const peopleById = new Map(people.map((p) => [p.id, p] as const));
+  const next: Record<string, string[]> = {};
+  for (const spec of specs) {
+    const person = peopleById.get(spec.personId);
+    if (!person) continue;
+    const { title, body } = circleReminderContent(person);
+    const trigger =
+      spec.cadence === 'weekly'
+        ? {
+            type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
+            weekday: spec.weekday,
+            hour: spec.hour,
+            minute: spec.minute,
+            channelId: CIRCLE_CHANNEL_ID,
+          }
+        : {
+            type: Notifications.SchedulableTriggerInputTypes.DAILY,
+            hour: spec.hour,
+            minute: spec.minute,
+            channelId: CIRCLE_CHANNEL_ID,
+          };
+    const id = await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        // A tap deep-links to the Circle tab and opens the share sheet for this
+        // exact person (App.tsx routes on route/personId).
+        data: { route: 'Circle', source: 'circle', personId: spec.personId },
+      },
+      trigger,
+    });
+    (next[spec.personId] ??= []).push(id);
+  }
+  return next;
 }
 
 /**

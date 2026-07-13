@@ -192,11 +192,28 @@ export default function CircleScreen() {
   const judgmentEntries = useExperimentStore((s) => s.judgmentEntries);
   const [inviting, setInviting] = React.useState(false);
 
+  const pendingSharePersonId = useCircleStore((s) => s.pendingSharePersonId);
+  const clearPendingShare = useCircleStore((s) => s.clearPendingShare);
+
   // This week's summary, generated fresh — never stored.
   const stats = React.useMemo(
     () => computeStatsForWeek(checkIns, judgmentEntries, weekKey(new Date().toISOString())),
     [checkIns, judgmentEntries]
   );
+
+  // A tapped Circle reminder lands here with a pending-share intent: open the
+  // OS share sheet pre-loaded with that person's gated summary (the same gated
+  // text "Share this week" produces). The user still taps share — we only
+  // automated the nudge, not the send (hard rule: local-only).
+  React.useEffect(() => {
+    if (!pendingSharePersonId) return;
+    const person = people.find((p) => p.id === pendingSharePersonId);
+    clearPendingShare();
+    if (!person) return;
+    Share.share({ message: shareSummary(person.sees, stats) }).catch(() => {
+      // The share sheet rejects when dismissed — nothing to recover.
+    });
+  }, [pendingSharePersonId, people, stats, clearPendingShare]);
 
   return (
     <View style={styles.container}>

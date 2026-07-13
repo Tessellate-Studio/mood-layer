@@ -149,7 +149,12 @@ jest.mock('expo-notifications', () => ({
   addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
   getLastNotificationResponseAsync: jest.fn(() => Promise.resolve(null)),
   AndroidImportance: { DEFAULT: 3, LOW: 2, HIGH: 4 },
-  SchedulableTriggerInputTypes: { DAILY: 'daily', DATE: 'date', TIME_INTERVAL: 'timeInterval' },
+  SchedulableTriggerInputTypes: {
+    DAILY: 'daily',
+    WEEKLY: 'weekly',
+    DATE: 'date',
+    TIME_INTERVAL: 'timeInterval',
+  },
 }));
 
 // Safe-area insets: the real SafeAreaProvider measures natively and never
