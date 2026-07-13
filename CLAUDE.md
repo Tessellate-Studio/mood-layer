@@ -201,7 +201,9 @@ between them.
   `PaperTexture` grain on screen surfaces. The ONLY hue lives in the quilt:
   `familyPalette` — soft pastels per emotion family after Ekman & the Dalai
   Lama's Atlas of Emotions (anger red, fear violet, sadness blue, disgust
-  green, enjoyment amber) — used solely for patch fills/swatches/dials. No
+  green, enjoyment amber, plus harmonised surprise tan / contempt mauve, and
+  anticipation teal / trust rose for the two Plutchik families user-added
+  2026-07-13) — used solely for patch fills/swatches/dials. No
   hardcoded hex anywhere else; never colour the chrome.
 - **Typewriter voice — Courier Prime everywhere.** The app reads like a page
   typed onto paper; monospace is the design, not a placeholder. Regular + Bold
