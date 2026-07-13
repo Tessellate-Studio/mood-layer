@@ -11,8 +11,9 @@ Legend: ✅ done · 🟡 in progress (action left) · 🔲 not started.
 
 | Item | Status | What's left (you) |
 |---|---|---|
-| rubric-sdk dev dependency | 🔲 | Optional: `npm i -D github:ramsaptami/rubric-sdk` (agent sandbox can't install from a personal-repo git URL; roadmap-pulse degrades gracefully without it) |
-| EAS dev build (to test "Name it" reminders) | 🔲 | Reminders can't fire in Expo Go (expo-notifications removed from Expo Go SDK 53+ — regression-log #4). To exercise firing reminders on-device, build a dev client: there's no `eas.json` yet, so `eas build:configure` then `eas build --profile development --platform android`. Needs an Expo account + EAS. Everything *except* reminders is fully testable in Expo Go |
+| rubric-sdk dev dependency | ✅ | Done 2026-07-12. `npm i -D github:ramsaptami/rubric-sdk` installs cleanly (59 packages, exit 0) — the earlier "agent sandbox can't install from a personal-repo git URL" note was wrong. Roadmap-pulse scoring is now numeric |
+| EAS dev build (to test "Name it" reminders) | 🟡 | Reminders can't fire in Expo Go (expo-notifications removed from Expo Go SDK 53+ — regression-log #4). `eas.json` is now scaffolded (dev/preview/production profiles) and EAS login is done. Left: `eas build --profile development --platform android`, install the dev client on your Android, confirm a reminder fires. Everything *except* reminders is fully testable in Expo Go |
+| Publish to Google Play (direct, under Tessellate org) | 🟡 | Decided 2026-07-12: publish directly to the Play Store under the org developer account. DUNS applied — waiting on Google's org verification. Once approved: create the Play Console app for `com.tessellate.moodlayer`, then the production build (`eas build --profile production --platform android`) → upload the AAB. Full numbered steps land here when DUNS is approved and the Console app exists |
 
 Everything else is local-only by design — no backend, auth, analytics, or
 crash-reporting to configure.
