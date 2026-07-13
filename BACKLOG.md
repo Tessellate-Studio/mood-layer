@@ -67,6 +67,15 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
 
 ## P3 — later
 
+- **Further de-overwhelm interactions for word pickers** — folded-by-default
+  family groups shipped 2026-07-13 (user feedback: nine open families read as
+  a wall). Candidates if the feel step still feels heavy: a "words you've
+  used lately" row at the top (zero scrolling for regulars — convenience, not
+  a streak); a family-first two-step flow (pick 1 of 9 families → see only
+  its 6 words); a type-to-find filter (fits the typewriter voice; typing may
+  itself be work when overwhelmed — test with users); body-first entry
+  ("where do you feel it?" → suggest families from the sensation).
+
 - **Check in with any field-guide word** — the field guide's word finder
   (v0.2.x, `src/content/vocabulary.ts`) is education-only: ~70 wheel words are
   browsable but not selectable in a check-in, so the feel step stays a short,
