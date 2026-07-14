@@ -1,0 +1,85 @@
+name: Build Android APK
+
+# Cloud builds ONLY (2026-07-14, explicit user rule): native compilation
+# (Gradle/CMake) must never run on the user's laptop — local builds were
+# consuming the machine to breaking point, and Windows' 260-char path
+# limit breaks local CMake object paths anyway. This workflow is the only
+# sanctioned way to produce a Mood Layer APK:
+#
+#   gh workflow run build-android-apk.yml --ref master
+#   gh run download <run-id> --name mood-layer-apk
+#   adb install -r app-release.apk
+#
+# workflow_dispatch only — same Actions-minutes reasoning as badige's
+# 2026-07-13 CI-cost fix: a full Android build on every merge is spend
+# nobody is necessarily waiting on. A manual dispatch is a deliberate
+# "build it now".
+#
+# Signing: debug keystore (deliberate for now). The app is sideload-only —
+# not on Play Store — and a stable, committed-nowhere debug key means any
+# machine's dispatch produces install-compatible builds. Replace with a
+# real keystore secret (per alate's build-android-apk.yml + anti-pattern
+# #19: restore from secret store, never echo, fail closed) before any
+# store release.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Expo prebuild (generate android/)
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Build release APK
+        working-directory: android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mood-layer-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
+
+  # A red run in the Actions tab is silent (see alate's 18-day dead-deploy
+  # precedent) — open an issue so a failure actually reaches a human.
+  alert-on-failure:
+    needs: [build]
+    if: failure() || needs.build.result == 'cancelled'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Open a ci-failure issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `APK build failed: run ${context.runId}`,
+              body: `The Android APK build failed or was cancelled.\n\nRun: https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              labels: ['ci-failure'],
+            });
