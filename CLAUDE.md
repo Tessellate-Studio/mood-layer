@@ -157,6 +157,21 @@ Every screen is wrapped in a screen-level error boundary. New screen: create the
 Unit/component tests run locally and must stay green before any commit
 (`npx jest --no-coverage` + `npx tsc --noEmit`).
 
+## Builds — cloud ONLY, never compile natively on the laptop
+
+Set 2026-07-14 (user rule, all projects): native compilation (Gradle /
+CMake / `expo prebuild`+`gradlew`) must NOT run on the user's machine —
+local builds consumed it to breaking point, and Windows' 260-char path
+limit breaks CMake object paths anyway. To produce an APK:
+
+1. `gh workflow run build-android-apk.yml --ref master`
+2. `gh run download <run-id> --name mood-layer-apk`
+3. `adb install -r app-release.apk`
+
+Diagnose build failures from `gh run view <run-id> --log-failed` — never
+"reproduce locally" as the first step. Metro / Expo Go dev serving, jest,
+and tsc stay local-OK (JS-only, and the pre-commit gate needs them).
+
 ## Code style
 
 Use theme tokens (colours, spacing, typography, alphas) — never hardcoded
