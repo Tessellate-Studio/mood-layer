@@ -1,53 +1,56 @@
 # Project Docs — The Mood Layer
 
-Documentation structure and placement guide for this repo. All planning, shipping decisions, and operational knowledge live here. Start with the most relevant section.
+Quick reference for where every doc lives and what it contains.
 
-## Quick links
+---
 
-- **How to work here?** → `CLAUDE.md`
-- **What's out of scope?** → `BACKLOG.md` (P0–P4 sections)
-- **What happened this week?** → `WEEKLY_DIGEST.md` (newest section on top)
-- **What broke before?** → `memory/project_regression_log.md` (bug record; read before fixing)
-- **Where's the external setup I started?** → `docs/user-actions-tracker.md` (decided paths only)
+## Root-level docs — rules, status, and planning
 
-## Documentation by purpose
+| Doc | Path | Holds |
+|-----|------|-------|
+| **Project rules** | [`CLAUDE.md`](./CLAUDE.md) | Shared forge policy (TDD, WCAG, isolation) + app-specific rules (emotional quilt, local-only, typewriter voice, Reanimated, versioned Expo docs) |
+| **README** | [`README.md`](./README.md) | Product vision + tech stack. Emotional quilt, ink-on-paper design, Expo 55/RN 0.83 |
+| **Backlog** | [`BACKLOG.md`](./BACKLOG.md) | Out-of-scope work (P0–P4). Shipping decisions live here first |
+| **Weekly digest** | [`WEEKLY_DIGEST.md`](./WEEKLY_DIGEST.md) | Weekly priority decisions (roadmap-pulse, rubric-sdk scoring, dependencies). Newest on top |
+| **Anti-patterns** | [`memory/project_anti_patterns.md`](./memory/project_anti_patterns.md) | Build guardrails (no data leaves device, no colour, no gamify, Reanimated mocking, SVG generation). Cross-link to forge/standards/anti-patterns.md |
+| **Regression log** | [`memory/project_regression_log.md`](./memory/project_regression_log.md) | Every bug (symptom → root → fix → test → lesson). Read before fixing anything familiar |
 
-### Root-level docs
+---
 
-**`README.md`** — Product vision + tech stack. Product language (emotional quilt, fluidity), design language (ink-on-paper, no colour), stack (Expo SDK 55, RN 0.83, React 19). Read this first if you're new to the app. *Kept concise; tech detail stays in CLAUDE.md.*
+## `docs/` — Operations & Setup
 
-**`CLAUDE.md`** — Claude Code instructions: communication style, authority-not-assumption rule, anti-patterns, branch placement, concurrent-session isolation, TDD, testing, error boundaries. First half is shared forge policy (summarized here for speed); second half is app-specific (emotional quilt hard rules, local-only stance, typewriter voice, Reanimated + Jest mocking, reduce-motion requirement, versioned Expo docs). Change the shared rules in forge, not here.
+| Doc | Path | Holds |
+|-----|------|-------|
+| **Security policy** | [`SECURITY.md`](./docs/SECURITY.md) | Dependency-alert triage (fix / accept / N/A) + why. Local-only context: any network-capable or data-leaving dep is a finding |
+| **External-tool setup** | [`user-actions-tracker.md`](./docs/user-actions-tracker.md) | **Decided** setups only (Play, EAS, Auth, DNS, Stripe). Actual values, copy-pasteable steps, verification commands. Status: ✅ / 🟡 / 🔲 |
+| **User doc template** | [`_USER_DOC_TEMPLATE.md`](./_USER_DOC_TEMPLATE.md) | Runbook template: plain-language "what" → numbered "how" (real links) → "verify" |
+| **Device testing quick ref** | [`user-actions-tracker.md` (Expo section)](./docs/user-actions-tracker.md) | LAN IP changes per session; verify with `npx expo start`. Regression-log #6 for failures |
 
-### Planning & shipping
+---
 
-**`BACKLOG.md`** — Durable record of out-of-scope and not-yet-started work. Sections: P0 (this week) → P4 (someday). Holds the *what + why*. **Decision:** does this go in the app? Its answer lives here first (before code). External-tool decisions get copied to `docs/user-actions-tracker.md` once decided.
+## How to read this guide
 
-**`WEEKLY_DIGEST.md`** — Append-only history of weekly priority decisions, produced by `forge:roadmap-pulse` skill. Newest section on top. Each item cites the source (`file:line` or commit SHA) that justifies its status. Scoring via `@tessellate-studio/rubric-sdk` (Impact / Complexity / Reusability / Strategic). Dependencies tracked (e.g. "item #2 gates #4"). Run the pulse manually with "run roadmap pulse" or "what should I focus on this week?" if the cron misses.
+- **Before coding:** skim `CLAUDE.md` (rules + isolation checklist) + `memory/project_anti_patterns.md` (why each rule matters).
+- **Before fixing a bug:** scan `memory/project_regression_log.md` for a matching symptom.
+- **Before shipping:** walk `BACKLOG.md` for each feature, confirm all paths work end-to-end.
+- **Before deployment:** check `docs/SECURITY.md` (open alerts) + `docs/user-actions-tracker.md` (verified steps).
 
-### Operational knowledge
+---
 
-**`memory/project_anti_patterns.md`** — App-specific build guardrails. Numbered 1–N as they're earned. Covers: no emotional data leaves the device, no colour (monochrome only), never gamify, gentle tone, Reanimated/Jest mocking, SVG pattern generation. Cross-app rules live in `forge/standards/anti-patterns.md` (TDD, hardcoded colours/fonts, hooks discipline, WCAG 2.1 AA, concurrent-session isolation, etc.) — read both before a feature or fix in their areas.
+## What's NOT here (yet)
 
-**`memory/project_regression_log.md`** — Tabulated record of bugs (symptom → root cause → fix → test → lesson). Read end-to-end before fixing anything with matching symptoms. 3+ rows on one theme get promoted to an anti-pattern. **Bug-fix pre-flight rule:** read the log first. Never assume a bug is new.
+- **User paths** — no `USER_PATHS.md` (add if happy/edge/uncovered-flow analysis exceeds a BACKLOG entry).
+- **Release roadmap** — no `RELEASE_V2.md` (add if major scope is in flight; today's scope: v0.2.0 shipped).
+- **Long-form planning** — no `backlog/` subdirectory (add when parked items need detail; today's items fit in BACKLOG.md).
 
-**`docs/SECURITY.md`** — Dependency-alert disposition log (triaged per `forge/standards/security-triage.md`). Date → alert → disposition (fix / accept / not-applicable) → why. Context: local-only app, so any network-capable dependency or data-leaving-device is a security/privacy finding by definition. Currently empty (no alerts yet); rows land here as they arise.
+---
 
-### External-tool setup
+## Maintaining this guide
 
-**`docs/user-actions-tracker.md`** — Single place to look when "where did I leave that setup?" comes up. **Decided** external setups only (Play Console, EAS, Auth, DNS, Stripe, etc.); unevaluated options stay in BACKLOG. Holds actual providers, actual values, numbered copy-pasteable steps, verification commands, and "where to look" diagnostics for recovery. Status legend: ✅ done · 🟡 in progress · 🔲 not started. Cross-linked to BACKLOG entries that reference the same decision.
-
-**`docs/_USER_DOC_TEMPLATE.md`** — Template for runbooks / how-to docs meant for the user. Structure: plain-language "what this is" → numbered "what you need to do" (with real links) → "how to verify it worked". No jargon. Use this for any user-facing guide (device setup, Play install, etc.).
-
-### Version & reference
-
-**`docs/user-actions-tracker.md` (Device testing section)** — Quick reference for Expo Go on this PC: LAN IP changes between sessions (DHCP), firewall is Public. Always read the current IP (`npx expo start`); don't reuse yesterday's URL. Regression-log #6 for the failure mode.
-
-## When to create a new doc
-
-- **`USER_PATHS.md`** — if happy-path / edge / uncovered-flow analysis gets longer than a BACKLOG entry (not yet needed).
-- **`RELEASE_V2.md`** — if a V2 / major scope decision is afoot (not yet needed; today's scope is maintenance + v0.2.0 shipped).
-- **`backlog/`** — long-form planning docs for parked items, cross-linked from BACKLOG entries (not yet needed; today's items fit in BACKLOG).
-- **`memory/project_<topic>.md`** — app-specific knowledge that doesn't fit anti-patterns or the log (e.g. design vision, font plans, architecture decisions). Cross-link from CLAUDE.md's app-specific section or from the entry that references it.
+- When you add a new doc, update this guide to list it.
+- When a doc's purpose shifts, update the "Holds" column.
+- When you archive a doc, move it to `docs/archive/` and note the reason.
+- Keep this structure in sync with `CLAUDE.md` — the two are the canonical maps.
 
 ## Maintenance
 
