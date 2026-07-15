@@ -219,3 +219,8 @@ between them.
   changes go through `src/content/` (typed TS data), not inline strings.
 - **SVG quilt patterns are generated primitives**, not `<Pattern>` defs (rnsvg
   quirks; untestable). Pattern generators are pure functions with unit tests.
+- **Use versioned Expo documentation.** Read the docs for the exact version we're
+  on: `https://docs.expo.dev/versions/v55.0.0/` (or update the version when the
+  SDK upgrades). Expo's latest docs may describe features or APIs that don't
+  exist in SDK 55; referencing an older major version is a common source of
+  confusing "this API doesn't exist" errors.
