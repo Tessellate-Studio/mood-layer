@@ -61,6 +61,13 @@ anti-patterns live in
 `memory/project_anti_patterns.md`. Read both before a feature that touches their
 areas.
 
+## Documentation Structure — Reference
+
+All docs follow [`PROJECT_DOCS.md`](./PROJECT_DOCS.md): maps every doc type to 
+its location (root, `docs/`, `memory/`, `backlog/`, subsystems). Check it 
+before creating or moving any doc. Reflects platform standard 
+[`forge/standards/doc-placement.md`](https://github.com/Tessellate-Studio/forge/blob/main/standards/doc-placement.md).
+
 ## User-facing docs — use the template
 
 Any runbook / how-to for me follows `docs/_USER_DOC_TEMPLATE.md`: plain-language
