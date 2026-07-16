@@ -19,7 +19,8 @@
       "source": {
         "source": "github",
         "repo": "Tessellate-Studio/forge"
-      }
+      },
+      "autoUpdate": true
     }
   },
   "enabledPlugins": {
