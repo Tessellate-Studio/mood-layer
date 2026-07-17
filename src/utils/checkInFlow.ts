@@ -6,10 +6,13 @@
 
 import type { EmotionFamilyId, EmotionSelection, Intensity, ResistanceTellId } from '@/types/models';
 
-export type CheckInStep = 'feel' | 'intensity' | 'body' | 'resistance' | 'note' | 'stitch';
+// No 'intensity' step: temperature is set on the word itself in the feel step
+// (chip + four-swatch dial), so weighing never needs its own screen
+// (user-approved temperature-chip design, 2026-07-17).
+export type CheckInStep = 'feel' | 'body' | 'resistance' | 'note' | 'stitch';
 
 /** Ordered steps; index drives next/prev and the progress dashes. */
-export const STEP_ORDER: CheckInStep[] = ['feel', 'intensity', 'body', 'resistance', 'note', 'stitch'];
+export const STEP_ORDER: CheckInStep[] = ['feel', 'body', 'resistance', 'note', 'stitch'];
 
 /** Steps a 'name-it' flow is allowed to finish early from. */
 const FINISH_EARLY_STEPS: CheckInStep[] = ['body', 'resistance', 'note'];
@@ -17,8 +20,10 @@ const FINISH_EARLY_STEPS: CheckInStep[] = ['body', 'resistance', 'note'];
 /** Default intensity when an emotion is first selected — a middle "present". */
 const DEFAULT_INTENSITY: Intensity = 2;
 
-/** Max emotions per check-in — the quilt subdivision tops out at 5. */
-export const MAX_EMOTIONS = 5;
+// NOTE: deliberately NO cap on how many emotions a check-in holds. The old
+// max of 5 had no basis in the literature — "on some level, we are always
+// feeling multiple feelings at a time" (Six Seconds, Practicing EQ p.15) —
+// and the quilt cluster scales to any count (user, 2026-07-17).
 
 export interface FlowState {
   step: CheckInStep;
@@ -80,7 +85,6 @@ export function toggleEmotion(s: FlowState, emotionId: string, family: EmotionFa
   if (existing) {
     return { ...s, selections: s.selections.filter((x) => x.emotionId !== emotionId) };
   }
-  if (s.selections.length >= MAX_EMOTIONS) return s;
   return {
     ...s,
     selections: [...s.selections, { emotionId, family, intensity: DEFAULT_INTENSITY }],

@@ -6,7 +6,7 @@ export const ONBOARDING_SLIDES: { id: string; title: string; body: string }[] = 
     id: 'quilt',
     title: 'You never feel just one thing',
     body:
-      'Feelings arrive together — a little anger folded into some fear, a trace of relief running through sadness. Each check-in here captures that whole moment, up to five emotions at once, and week by week they build into layers of feeling that are unmistakably yours.',
+      'Feelings arrive together — a little anger folded into some fear, a trace of relief running through sadness. Each check-in here captures that whole moment, as many emotions as are truly present, and week by week they build into layers of feeling that are unmistakably yours.',
   },
   {
     id: 'fluidity',

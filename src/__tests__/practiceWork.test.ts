@@ -10,6 +10,7 @@ import {
   itemKey,
   notedItems,
   removeListItem,
+  sessionLines,
   setEntry,
   setPick,
   toggleMark,
@@ -79,13 +80,13 @@ describe('removeListItem cascade', () => {
     let work = emptyWork();
     work = setEntry(work, 'options', 0, 'stay');
     work = setEntry(work, 'options', 1, 'go');
-    work = setEntry(work, 'from-above', 0, 'staying looks small');
-    work = setEntry(work, 'from-above', 1, 'going looks brave');
+    work = setEntry(work, 'changed', 0, 'staying looks small');
+    work = setEntry(work, 'changed', 1, 'going looks brave');
 
     work = removeListItem(flashback, work, 'options', 0);
     expect(entriesFor(work, 'options')).toEqual(['go']);
     // The reflection for 'go' is still the one written for 'go'.
-    expect(entriesFor(work, 'from-above')).toEqual(['going looks brave']);
+    expect(entriesFor(work, 'changed')).toEqual(['going looks brave']);
   });
 
   it('drops marks on the removed point and reindexes later ones', () => {
@@ -125,6 +126,41 @@ describe('removeListItem cascade', () => {
     // Removing the picked point clears the pick.
     let cleared = removeListItem(problem, work, 'ideas', 1);
     expect(cleared.picks['one-step']).toBeUndefined();
+  });
+});
+
+describe('sessionLines', () => {
+  it('summarises a sitting: one line per touched step, keys resolved to text', () => {
+    let work = emptyWork();
+    work = setEntry(work, 'problem', 0, 'no time');
+    work = setEntry(work, 'cannot', 0, 'days are full');
+    work = setEntry(work, 'ideas', 0, 'ask for help');
+    work = setEntry(work, 'ideas', 1, 'a wizard fixes it');
+    work = toggleMark(work, 'fantastical', itemKey('ideas', 1));
+    work = setPick(work, 'one-step', itemKey('ideas', 0));
+
+    const lines = sessionLines(problem, work);
+    expect(lines.map((l) => l.title)).toEqual([
+      'The problem',
+      'Why it cannot be solved',
+      'Ways it could improve',
+      'Notice the fantastical',
+      'One idea to keep',
+    ]);
+    expect(lines.find((l) => l.title === 'Notice the fantastical')?.body).toBe(
+      'a wizard fixes it'
+    );
+    expect(lines.find((l) => l.title === 'One idea to keep')?.body).toBe('ask for help');
+  });
+
+  it('pairs reflections with their source point', () => {
+    let work = emptyWork();
+    work = setEntry(work, 'options', 0, 'stay');
+    work = setEntry(work, 'changed', 0, 'settled but far away');
+    const lines = sessionLines(flashback, work);
+    expect(lines.find((l) => l.title === 'How am I — and others — changed?')?.body).toBe(
+      'stay → settled but far away'
+    );
   });
 });
 

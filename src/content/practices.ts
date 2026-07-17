@@ -1,7 +1,9 @@
-// Perspective practices adapted from the Atlas of Emotions
-// (atlasofemotions.org — Paul Ekman with the Dalai Lama), brought in at the
-// user's request (2026-07-08). Typed data like all copy (hard rule); tone stays
-// invitational — steps describe a practice to try, never homework to complete.
+// Perspective practices adapted from Six Seconds' "Practicing EQ" guide
+// (Freedman, Miller & Freedman, 6sec.org) — the user-supplied source PDF
+// (2026-07-17), which is also where the feelings quilt and name-it-to-tame-it
+// come from. Steps follow the guide's worksheets, not just its practice
+// blurbs. Typed data like all copy (hard rule); tone stays invitational —
+// steps describe a practice to try, never homework to complete.
 //
 // Redesigned 2026-07-17 (user): each practice is now a guided multi-step flow
 // (screens/PracticeFlowScreen) instead of an inline scratch pad. Steps are
@@ -57,6 +59,10 @@ export const PRACTICE_FAMILY: Record<string, EmotionFamilyId> = {
 };
 
 export const PRACTICES: Practice[] = [
+  // Worksheet (guide p.42): per option, ONE question — "How am I and others
+  // changed?" — then "Which option will contribute to something that still
+  // matters in five years?" The earlier two-reflect version split that one
+  // question ambiguously (user feedback 2026-07-17).
   {
     id: 'five-year-flashback',
     title: 'Five year flashback',
@@ -72,33 +78,36 @@ export const PRACTICES: Practice[] = [
       {
         kind: 'list',
         id: 'options',
-        title: 'The options',
-        prompt: 'List the options you are weighing — as many as are on the table.',
+        title: 'The options, from five years up',
+        prompt:
+          'Imagine you are looking back on today from five years in the future. What are the options your future self can see? List them all.',
         itemNoun: 'option',
         placeholder: 'one option…',
       },
       {
         kind: 'reflect',
-        id: 'from-above',
-        title: 'From five years up',
+        id: 'changed',
+        title: 'How am I — and others — changed?',
         prompt:
-          'Look back on this moment from five years in the future. Walk through each option from up there — what can your future self see?',
+          'Take each option in turn. If you chose it, how are you changed in five years — and who else is changed by it? Adding the consequences for other people gives an option its real weight.',
         sourceStepId: 'options',
-        placeholder: 'what the view from up there shows…',
+        placeholder: 'how this changes me, and who else it changes…',
       },
       {
-        kind: 'reflect',
-        id: 'who-it-touches',
-        title: 'Who it touches',
+        kind: 'pick',
+        id: 'still-matters',
+        title: 'What still matters',
         prompt:
-          'Add the consequences for other people. Choices gain weight when you can see who they touch — and where a little more good could go.',
+          'Which option contributes to something that will still matter in five years?',
         sourceStepId: 'options',
-        placeholder: 'who this option touches…',
       },
     ],
     closing:
-      'Taking perspective like this builds the muscle of letting the small stuff stay small, so your attention can rest on what matters most.',
+      'Practising this builds the muscle of taking perspective — the small stuff gets easier to let go. When you feel uncertain, ask: what will create the most value for all of us?',
   },
+  // Worksheet (guide p.38): respect → dignity & worth → their viewpoint →
+  // something to learn; the practice text (p.37) adds noticing the small ways
+  // of holding yourself above, and choosing to stand as equals.
   {
     id: 'empathic-respect',
     title: 'Empathic respect',
@@ -106,18 +115,33 @@ export const PRACTICES: Practice[] = [
     steps: [
       {
         kind: 'write',
+        id: 'respect',
+        title: 'Something to respect',
+        prompt: 'Bring the person to mind. What is something you respect about them?',
+        placeholder: 'one thing you respect…',
+      },
+      {
+        kind: 'write',
+        id: 'dignity',
+        title: 'Their dignity and worth',
+        prompt:
+          'How does this person have dignity and worth? Consider their family, their community, their relationships, what they contribute.',
+        placeholder: 'where their dignity lives…',
+      },
+      {
+        kind: 'write',
         id: 'their-view',
         title: 'Their view',
         prompt:
-          'Think about the other person and make a real effort to consider their view. What might this look like from where they stand?',
+          'Consider their viewpoint. What beliefs do they hold that make their ideas true or valid — from where they stand?',
         placeholder: 'the situation, from their side…',
       },
       {
         kind: 'write',
-        id: 'to-value',
-        title: 'One thing to value',
-        prompt: 'Look for one thing you could value or learn from them.',
-        placeholder: 'one thing worth valuing…',
+        id: 'to-learn',
+        title: 'Something to learn',
+        prompt: 'What is something you could learn from them?',
+        placeholder: 'one thing worth learning…',
       },
       {
         kind: 'list',
@@ -186,6 +210,16 @@ export const PRACTICES: Practice[] = [
         title: 'One idea to keep',
         prompt: 'Pick one idea from the solution side that could help, even a little.',
         sourceStepId: 'ideas',
+      },
+      // Worksheet (guide p.35) closes with: how could it help, even a little,
+      // and what small step can you take to implement it.
+      {
+        kind: 'write',
+        id: 'small-step',
+        title: 'A small step',
+        prompt:
+          'How could the idea you kept help, even just a little — and what small step could you take toward it?',
+        placeholder: 'the small step…',
       },
     ],
     closing:

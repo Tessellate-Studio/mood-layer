@@ -93,12 +93,15 @@ Package id: `com.tessellate.moodlayer`.
 Android app (Expo SDK 55, RN 0.83, React 19, portrait). Two grounding concepts:
 
 - **Emotional quilt (Paul Ekman):** we always feel several emotions at once. A
-  check-in captures 1–5 co-occurring emotions, each with intensity 1–4; the home
-  screen renders them as translucent overlapping layers (one cluster per
-  check-in, one cloth piece per emotion). **Copy rule (user, 2026-07-17): the
-  app SPEAKS in layer language** — "Layer it in", "Your mood layers", never
-  stitch/quilt/sew in user-facing strings. The quilt stays named exactly one
-  place: Settings → About the ideas, as the Ekman inspiration.
+  check-in captures the co-occurring emotions — deliberately NO cap (the old
+  max-5 had no basis in the literature; user removed it 2026-07-17) — each
+  with intensity 1–4, set ON the word itself (chip + four-swatch dial; no
+  separate intensity step). The home screen renders them as translucent
+  overlapping layers (one cluster per check-in, one cloth piece per emotion).
+  **Copy rule (user, 2026-07-17): the app SPEAKS in layer language** —
+  "Layer it in", "Your mood layers", never stitch/quilt/sew in user-facing
+  strings. The quilt stays named exactly one place: Settings → About the
+  ideas, as the Ekman inspiration.
 - **Emotional fluidity (Joe Hudson):** resilience comes from feeling emotions in
   the body instead of resisting them. Four resistance tells (looping thoughts,
   harsh judgment, binary stuckness, better/worse-than comparison); resisted
@@ -124,7 +127,9 @@ between them.
   surprise tan / contempt mauve, and anticipation teal / trust rose for the
   two Plutchik families user-added 2026-07-13) in exactly two
   registers: `familyPalette` — soft pastels, solely for quilt patch
-  fills/swatches/dials — and `mutedPalette` — the same hues desaturated
+  fills/swatches/dials and the SELECTED emotion-word chip's fill (the chip
+  doubles as its temperature swatch, ink text on top — user-approved
+  2026-07-17) — and `mutedPalette` — the same hues desaturated
   toward grey, solely for card fills, thread spines, section glyphs, and
   same-hue accents (via `ThreadCard` / `SectionHeader` / `LogoDivider`), so
   sections and cards read as distinct layers. Body text on a tinted fill

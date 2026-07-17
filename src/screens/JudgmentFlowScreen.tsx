@@ -9,20 +9,26 @@
 // + why in your head across screens (device feedback, 2026-07-08).
 
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Line } from 'react-native-svg';
 
 import EmotionChip from '@/components/EmotionChip';
 import FamilyGroup from '@/components/FamilyGroup';
-import IntensityDial from '@/components/IntensityDial';
 import ModalHeader from '@/components/ModalHeader';
-import { borderRadius, colors, fonts, hitTarget, spacing, typography } from '@/constants/theme';
+import WordTemperatureRow from '@/components/WordTemperatureRow';
+import { borderRadius, colors, familyPalette, fonts, hitTarget, spacing, typography } from '@/constants/theme';
 import PaperTexture from '@/components/PaperTexture';
-import SectionHeader from '@/components/SectionHeader';
-import ThreadCard from '@/components/ThreadCard';
-import { EMOTION_FAMILIES, type EmotionWord } from '@/content/emotions';
+import { EMOTION_FAMILIES } from '@/content/emotions';
 import { allWordsForFamily, findVocabularyWord } from '@/content/vocabulary';
 import { JUDGMENT_EXAMPLES } from '@/content/judgmentExamples';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
@@ -30,9 +36,8 @@ import { useExperimentStore } from '@/store/experimentStore';
 import type { EmotionFamilyId, EmotionSelection, Intensity } from '@/types/models';
 
 const STEP_COUNT = 4;
-// A judgment usually hides more than one feeling, but a wall of intensity dials
-// is its own kind of noise — cap the naming at four so the step stays light.
-const MAX_FEELINGS = 4;
+// No cap on named feelings — the temperature now sits inline on each word,
+// so more feelings no longer means a wall of separate dial cards.
 const DEFAULT_INTENSITY: Intensity = 2;
 // A rotating example seed so the placeholders + inline examples feel fresh but
 // stay deterministic within a session.
@@ -100,13 +105,11 @@ export default function JudgmentFlowScreen() {
   };
 
   const toggleFeeling = (emotionId: string, family: EmotionSelection['family']) => {
-    // Multi-select: tap to add, tap again to clear. Capped at MAX_FEELINGS —
-    // extra taps beyond the cap are a no-op (the chip just won't select).
+    // Multi-select: tap to add, tap again to clear.
     setFeelings((prev) => {
       if (prev.some((f) => f.emotionId === emotionId)) {
         return prev.filter((f) => f.emotionId !== emotionId);
       }
-      if (prev.length >= MAX_FEELINGS) return prev;
       return [...prev, { emotionId, family, intensity: DEFAULT_INTENSITY }];
     });
   };
@@ -124,6 +127,8 @@ export default function JudgmentFlowScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-judgment">
       <PaperTexture />
+      {/* Edge-to-edge Android never resizes for the keyboard (2026-07-17). */}
+      <KeyboardAvoidingView style={styles.avoider} behavior="padding">
       <ModalHeader
         title="Under the judgment"
         closeTestID="judgment-close"
@@ -202,23 +207,33 @@ export default function JudgmentFlowScreen() {
             </Text>
             {Object.values(EMOTION_FAMILIES).map((family) => {
               // Full vocabulary, same as the check-in — recognising the exact
-              // word is the practice.
+              // word is the practice. Chosen words carry their temperature
+              // dial inline (temperature-chip design, 2026-07-17).
               const words = allWordsForFamily(family.id);
-              const selectedInFamily = words.filter((w) =>
-                feelings.some((f) => f.emotionId === w.id)
+              const selectedInFamily = feelings.filter((f) =>
+                words.some((w) => w.id === f.emotionId)
               );
-              const renderChip = (word: EmotionWord) => (
-                // EmotionChip stamps its own testID `chip-${id}`; passing a
-                // composite id yields the contract testID
-                // `chip-judgment-feeling-{wordId}`.
-                <EmotionChip
-                  key={word.id}
-                  id={`judgment-feeling-${word.id}`}
-                  label={word.label}
-                  selected={feelings.some((f) => f.emotionId === word.id)}
-                  onPress={() => toggleFeeling(word.id, family.id)}
-                />
-              );
+              const temperatureRows =
+                selectedInFamily.length > 0 ? (
+                  <View style={styles.temperatureRows}>
+                    {selectedInFamily.map((feeling) => (
+                      <WordTemperatureRow
+                        key={feeling.emotionId}
+                        wordId={feeling.emotionId}
+                        chipId={`judgment-picked-${feeling.emotionId}`}
+                        label={
+                          findVocabularyWord(feeling.emotionId)?.word.label ?? feeling.emotionId
+                        }
+                        family={feeling.family}
+                        intensity={feeling.intensity}
+                        onToggle={() => toggleFeeling(feeling.emotionId, feeling.family)}
+                        onChangeIntensity={(intensity) =>
+                          setFeelingIntensity(feeling.emotionId, intensity)
+                        }
+                      />
+                    ))}
+                  </View>
+                ) : undefined;
               return (
                 <FamilyGroup
                   key={family.id}
@@ -228,43 +243,37 @@ export default function JudgmentFlowScreen() {
                   onToggle={() =>
                     setOpenFamily((cur) => (cur === family.id ? null : family.id))
                   }
-                  pinned={
-                    selectedInFamily.length > 0 ? (
-                      <View style={styles.chipWrap}>{selectedInFamily.map(renderChip)}</View>
-                    ) : undefined
-                  }
+                  pinned={temperatureRows}
                 >
-                  <View style={styles.chipWrap}>{words.map(renderChip)}</View>
+                  <View style={styles.chipWrap}>
+                    {words.map((word) => {
+                      const sel = feelings.find((f) => f.emotionId === word.id);
+                      return (
+                        // EmotionChip stamps its own testID `chip-${id}`;
+                        // passing a composite id yields the contract testID
+                        // `chip-judgment-feeling-{wordId}`.
+                        <EmotionChip
+                          key={word.id}
+                          id={`judgment-feeling-${word.id}`}
+                          label={word.label}
+                          selected={sel !== undefined}
+                          fill={
+                            sel ? familyPalette[family.id].shades[sel.intensity] : undefined
+                          }
+                          onPress={() => toggleFeeling(word.id, family.id)}
+                        />
+                      );
+                    })}
+                  </View>
+                  {temperatureRows}
                 </FamilyGroup>
               );
             })}
-            {feelings.length > 0 ? (
-              // One card per named feeling — the same word-plus-shade-dial the
-              // check-in uses, so several feelings read as a set, not a count.
-              feelings.map((feeling) => {
-                const label = findVocabularyWord(feeling.emotionId)?.word.label ?? feeling.emotionId;
-                return (
-                  // The card wears the named feeling's muted layer — same
-                  // treatment as the check-in's intensity step.
-                  <ThreadCard key={feeling.emotionId} family={feeling.family} style={styles.cardBody}>
-                    <Text style={typography.heading}>{label}</Text>
-                    <IntensityDial
-                      wordId={feeling.emotionId}
-                      label={label}
-                      family={feeling.family}
-                      value={feeling.intensity}
-                      onChange={(intensity: Intensity) =>
-                        setFeelingIntensity(feeling.emotionId, intensity)
-                      }
-                    />
-                  </ThreadCard>
-                );
-              })
-            ) : (
+            {feelings.length === 0 ? (
               <Text style={typography.caption}>
                 Name as many as fit — or move on if nothing does.
               </Text>
-            )}
+            ) : null}
           </View>
         )}
 
@@ -329,6 +338,7 @@ export default function JudgmentFlowScreen() {
           </Pressable>
         )}
       </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -338,6 +348,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.paper,
     paddingHorizontal: spacing.md,
+  },
+  avoider: {
+    flex: 1,
   },
   progress: {
     marginTop: spacing.sm,
@@ -383,8 +396,9 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.sm,
   },
-  cardBody: {
-    gap: spacing.md,
+  temperatureRows: {
+    gap: spacing.sm,
+    marginTop: spacing.xs,
   },
   noteInput: {
     ...typography.body,

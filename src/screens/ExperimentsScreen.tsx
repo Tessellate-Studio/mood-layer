@@ -1,12 +1,16 @@
-// Experiments tab: small practices for meeting what's here. Redesigned to the
-// muted-layer treatment (2026-07-13): each section opens with a two-band logo
-// glyph tinted to its hue, every card is a ThreadCard — whisper-tint fill plus
-// a coloured thread spine — and the page closes with the three-band mark as a
-// divider over the tip. Two "Guided" practices (Name it, Under the judgment)
-// open a flow, with "Past reflections" (saved judgment entries; expand on tap,
-// swipe to edit or remove) directly beneath them so the exercise and its log
-// sit together (user, 2026-07-17). The three "Perspective" practices (Atlas
-// of Emotions) open their own guided flow too — PracticeFlowScreen.
+// Experiments tab, structured by KIND so the page reads calmly (user,
+// 2026-07-17: a person with real emotional needs shouldn't feel their brain
+// tangling in a disorganized mess):
+//   Practices        — the four exercises (Under the judgment + three
+//                      perspective practices), one uniform card each.
+//   Past reflections — what practising left behind (judgment reflections +
+//                      archived practice sittings), right under the practices
+//                      that write them.
+//   Learn            — the field guide (education, not practice).
+//   Reminders        — Name it, which is a SCHEDULE, not an exercise — so it
+//                      sits last as quiet configuration.
+// Muted-layer treatment throughout (2026-07-13): tinted section glyphs,
+// ThreadCards, the three-band mark as the closing divider.
 
 import React from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -21,22 +25,23 @@ import PaperTexture from '@/components/PaperTexture';
 import SectionHeader from '@/components/SectionHeader';
 import ThreadCard from '@/components/ThreadCard';
 import { findVocabularyWord } from '@/content/vocabulary';
-import { PRACTICE_FAMILY, PRACTICES } from '@/content/practices';
+import { findPractice, PRACTICE_FAMILY, PRACTICES } from '@/content/practices';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
-import { useExperimentStore } from '@/store/experimentStore';
+import { useExperimentStore, type PracticeSession } from '@/store/experimentStore';
 import type { EmotionFamilyId, JudgmentEntry } from '@/types/models';
+import { sessionLines } from '@/utils/practiceWork';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-// Layer hues per the settled design: Guided = sadness blue (section + Name
-// it), anger rose for Under the judgment; Perspective = enjoyment amber with
-// its cards keyed per practice (PRACTICE_FAMILY, content/practices.ts);
-// Past reflections = contempt mauve.
-const GUIDED_FAMILY: EmotionFamilyId = 'sadness';
+// Layer hues per the settled design: Practices section = sadness blue with
+// anger rose for Under the judgment and per-practice hues (PRACTICE_FAMILY,
+// content/practices.ts); Past reflections = contempt mauve; Learn =
+// anticipation teal; Reminders = trust rose.
+const PRACTICES_FAMILY: EmotionFamilyId = 'sadness';
 const JUDGMENT_FAMILY: EmotionFamilyId = 'anger';
-const PERSPECTIVE_FAMILY: EmotionFamilyId = 'enjoyment';
 const REFLECTIONS_FAMILY: EmotionFamilyId = 'contempt';
 const LEARN_FAMILY: EmotionFamilyId = 'anticipation';
+const REMINDERS_FAMILY: EmotionFamilyId = 'trust';
 
 /** The circled → marking a card that leads somewhere (opens a flow). */
 function ArrowRing({ family }: { family: EmotionFamilyId }) {
@@ -53,6 +58,7 @@ export default function ExperimentsScreen() {
   const navigation = useNavigation<Nav>();
   const nameIt = useExperimentStore((s) => s.nameIt);
   const judgmentEntries = useExperimentStore((s) => s.judgmentEntries);
+  const practiceSessions = useExperimentStore((s) => s.practiceSessions);
 
   const [expanded, setExpanded] = React.useState<string | null>(null);
 
@@ -71,25 +77,10 @@ export default function ExperimentsScreen() {
           Small practices for meeting what&apos;s here. Take one when it calls — none are homework.
         </Text>
 
-        {/* Guided: a ringed arrow marks a card that leads into a flow. */}
+        {/* Practices: the four exercises, one uniform card each. A ringed
+            arrow marks a card that leads into a flow. */}
         <View style={styles.section}>
-          <SectionHeader family={GUIDED_FAMILY} label="Guided practices" />
-          <ThreadCard
-            family={GUIDED_FAMILY}
-            testID="card-name-it"
-            accessibilityLabel="Name it. Gentle reminders to name what's here."
-            onPress={() => navigation.navigate('NameItSetup')}
-          >
-            <View style={styles.cardTitleRow}>
-              <Text style={[typography.heading, styles.cardTitle]}>Name it</Text>
-              <ArrowRing family={GUIDED_FAMILY} />
-            </View>
-            <Text style={styles.cardSub}>Gentle reminders to name what&apos;s here</Text>
-            <Text style={[styles.statusPill, { color: mutedPalette[GUIDED_FAMILY].accent, borderColor: mutedPalette[GUIDED_FAMILY].border }]}>
-              {nameIt.enabled ? `${nameIt.timesPerDay}× a day` : 'Off'}
-            </Text>
-          </ThreadCard>
-
+          <SectionHeader family={PRACTICES_FAMILY} label="Practices" />
           <ThreadCard
             family={JUDGMENT_FAMILY}
             testID="card-judgment"
@@ -102,12 +93,29 @@ export default function ExperimentsScreen() {
             </View>
             <Text style={styles.cardSub}>What would you feel if you couldn&apos;t judge?</Text>
           </ThreadCard>
+          {PRACTICES.map((practice) => (
+            <ThreadCard
+              key={practice.id}
+              family={PRACTICE_FAMILY[practice.id]}
+              testID={`practice-${practice.id}`}
+              accessibilityLabel={`${practice.title}. ${practice.whenFor}`}
+              onPress={() => navigation.navigate('PracticeFlow', { practiceId: practice.id })}
+            >
+              <View style={styles.cardTitleRow}>
+                <Text style={[typography.heading, styles.cardTitle]}>{practice.title}</Text>
+                <ArrowRing family={PRACTICE_FAMILY[practice.id]} />
+              </View>
+              <Text style={styles.cardSub}>{practice.whenFor}</Text>
+            </ThreadCard>
+          ))}
+          <Text style={styles.attribution}>
+            Perspective practices adapted from Six Seconds&apos; Practicing EQ guide.
+          </Text>
         </View>
 
-        {/* Past reflections live directly under the judgment card that writes
-            them — doing the exercise and finding its log at the far end of the
-            page read as two different places (user, 2026-07-17). */}
-        {judgmentEntries.length > 0 ? (
+        {/* Past reflections sit directly under the practices that write them:
+            judgment reflections first, then archived practice sittings. */}
+        {judgmentEntries.length > 0 || practiceSessions.length > 0 ? (
           <View style={styles.section}>
             <SectionHeader family={REFLECTIONS_FAMILY} label="Past reflections" />
             <Text style={styles.swipeHint}>Swipe a reflection to edit or remove it.</Text>
@@ -119,6 +127,15 @@ export default function ExperimentsScreen() {
                 expanded={expanded === entry.id}
                 onToggle={() => setExpanded((cur) => (cur === entry.id ? null : entry.id))}
                 onEdit={() => navigation.navigate('JudgmentFlow', { editId: entry.id })}
+              />
+            ))}
+            {practiceSessions.map((session, index) => (
+              <PracticeSessionRow
+                key={session.id}
+                session={session}
+                index={index}
+                expanded={expanded === session.id}
+                onToggle={() => setExpanded((cur) => (cur === session.id ? null : session.id))}
               />
             ))}
           </View>
@@ -145,28 +162,25 @@ export default function ExperimentsScreen() {
           </ThreadCard>
         </View>
 
-        {/* Perspective practices from the Atlas of Emotions — each opens its
-            own guided flow (multi-point steps, side-by-side reflection). */}
+        {/* Reminders: Name it is a schedule, not an exercise — quiet
+            configuration at the end of the page (user, 2026-07-17). */}
         <View style={styles.section}>
-          <SectionHeader family={PERSPECTIVE_FAMILY} label="Perspective practices" />
-          {PRACTICES.map((practice) => (
-            <ThreadCard
-              key={practice.id}
-              family={PRACTICE_FAMILY[practice.id]}
-              testID={`practice-${practice.id}`}
-              accessibilityLabel={`${practice.title}. ${practice.whenFor}`}
-              onPress={() => navigation.navigate('PracticeFlow', { practiceId: practice.id })}
-            >
-              <View style={styles.cardTitleRow}>
-                <Text style={[typography.heading, styles.cardTitle]}>{practice.title}</Text>
-                <ArrowRing family={PRACTICE_FAMILY[practice.id]} />
-              </View>
-              <Text style={styles.cardSub}>{practice.whenFor}</Text>
-            </ThreadCard>
-          ))}
-          <Text style={styles.attribution}>
-            Practices adapted from the Atlas of Emotions.
-          </Text>
+          <SectionHeader family={REMINDERS_FAMILY} label="Reminders" />
+          <ThreadCard
+            family={REMINDERS_FAMILY}
+            testID="card-name-it"
+            accessibilityLabel="Name it. Gentle reminders to name what's here."
+            onPress={() => navigation.navigate('NameItSetup')}
+          >
+            <View style={styles.cardTitleRow}>
+              <Text style={[typography.heading, styles.cardTitle]}>Name it</Text>
+              <ArrowRing family={REMINDERS_FAMILY} />
+            </View>
+            <Text style={styles.cardSub}>Gentle reminders to name what&apos;s here</Text>
+            <Text style={[styles.statusPill, { color: mutedPalette[REMINDERS_FAMILY].accent, borderColor: mutedPalette[REMINDERS_FAMILY].border }]}>
+              {nameIt.enabled ? `${nameIt.timesPerDay}× a day` : 'Off'}
+            </Text>
+          </ThreadCard>
         </View>
 
         <LogoDivider tip="Nothing here is a test. Come back to a practice whenever it calls; the rest can wait." />
@@ -248,6 +262,77 @@ function ReflectionRow({
               <Text style={typography.caption}>Underneath: {feelingLabel}</Text>
             ) : null}
             {entry.freeWriting ? <Text style={typography.body}>{entry.freeWriting}</Text> : null}
+          </View>
+        ) : null}
+      </ThreadCard>
+    </ReanimatedSwipeable>
+  );
+}
+
+/** One archived practice sitting in Past reflections: title + date collapsed,
+ *  a per-step summary when expanded, swipe to remove. */
+function PracticeSessionRow({
+  session,
+  index,
+  expanded,
+  onToggle,
+}: {
+  session: PracticeSession;
+  index: number;
+  expanded: boolean;
+  onToggle(): void;
+}) {
+  const removePracticeSession = useExperimentStore((s) => s.removePracticeSession);
+  const practice = findPractice(session.practiceId);
+  if (!practice) return null;
+  const when = new Date(session.createdAt).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  });
+  const lines = sessionLines(practice, session.work);
+
+  const confirmRemove = () => {
+    Alert.alert('Remove this sitting?', 'It will be gone from this phone.', [
+      { text: 'Keep it', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => removePracticeSession(session.id) },
+    ]);
+  };
+
+  const renderActions = () => (
+    <View style={styles.actionsRow}>
+      <Pressable
+        testID={`session-delete-${index}`}
+        accessibilityRole="button"
+        accessibilityLabel="Remove practice sitting"
+        style={[styles.actionBtn, styles.actionDelete]}
+        onPress={confirmRemove}
+      >
+        <Text style={[styles.actionText, styles.actionDeleteText]}>Remove</Text>
+      </Pressable>
+    </View>
+  );
+
+  return (
+    <ReanimatedSwipeable renderRightActions={renderActions} overshootRight={false}>
+      <ThreadCard
+        family={PRACTICE_FAMILY[practice.id]}
+        testID={`practice-session-${index}`}
+        accessibilityLabel={`${practice.title}, ${when}. Swipe to remove.`}
+        accessibilityState={{ expanded }}
+        onPress={onToggle}
+        style={styles.entryBody}
+      >
+        <Text style={styles.entryLine} numberOfLines={expanded ? undefined : 1}>
+          {practice.title} — {when}
+        </Text>
+        {expanded ? (
+          <View style={styles.entryDetail}>
+            {lines.map((line) => (
+              <View key={line.title}>
+                <Text style={typography.caption}>{line.title}</Text>
+                <Text style={typography.body}>{line.body}</Text>
+              </View>
+            ))}
           </View>
         ) : null}
       </ThreadCard>

@@ -62,18 +62,37 @@ describe('PracticeFlowScreen — problem, then solution', () => {
     fireEvent.press(screen.getByTestId('practice-mark-ideas-1'));
     fireEvent.press(screen.getByTestId('practice-next'));
 
-    // Step 5 — pick the idea to keep; the closing thought shows on the last step.
+    // Step 5 — pick the idea to keep.
     fireEvent.press(screen.getByTestId('practice-pick-one-step-0'));
+    fireEvent.press(screen.getByTestId('practice-next'));
+
+    // Step 6 — the small step; closing thought shows on the last step.
+    fireEvent.changeText(
+      screen.getByTestId('practice-write-small-step'),
+      'ask about the Monday call'
+    );
     expect(screen.getByText(/held at the same time/)).toBeTruthy();
     fireEvent.press(screen.getByTestId('practice-done'));
     expect(mockGoBack).toHaveBeenCalled();
 
-    const work = useExperimentStore.getState().practiceWork['problem-solution'];
-    expect(work.entries.problem).toEqual(['never enough time']);
-    expect(work.entries.cannot).toEqual(['the days are full', 'nobody can help']);
-    expect(work.entries.ideas).toEqual(['ask for help anyway', 'a robot does my chores']);
-    expect(work.marks.fantastical).toEqual(['ideas:1']);
-    expect(work.picks['one-step']).toBe('ideas:0');
+    // "Set it down" ARCHIVES the sitting and clears the form — next visit
+    // starts fresh instead of resurfacing old answers (user, 2026-07-17).
+    expect(useExperimentStore.getState().practiceWork['problem-solution']).toBeUndefined();
+    const [session] = useExperimentStore.getState().practiceSessions;
+    expect(session.practiceId).toBe('problem-solution');
+    expect(session.work.entries.problem).toEqual(['never enough time']);
+    expect(session.work.entries.cannot).toEqual(['the days are full', 'nobody can help']);
+    expect(session.work.entries.ideas).toEqual(['ask for help anyway', 'a robot does my chores']);
+    expect(session.work.marks.fantastical).toEqual(['ideas:1']);
+    expect(session.work.picks['one-step']).toBe('ideas:0');
+    expect(session.work.entries['small-step']).toEqual(['ask about the Monday call']);
+  });
+
+  it('an untouched sitting archives nothing', () => {
+    renderFlow('problem-solution');
+    for (let i = 0; i < 5; i++) fireEvent.press(screen.getByTestId('practice-next'));
+    fireEvent.press(screen.getByTestId('practice-done'));
+    expect(useExperimentStore.getState().practiceSessions).toHaveLength(0);
   });
 
   it('removing a point removes its row', () => {
@@ -90,7 +109,7 @@ describe('PracticeFlowScreen — problem, then solution', () => {
 });
 
 describe('PracticeFlowScreen — five year flashback', () => {
-  it('reflect steps show each option BESIDE its own writing space', () => {
+  it('the changed step shows each option BESIDE its own writing space', () => {
     renderFlow('five-year-flashback');
     fireEvent.changeText(screen.getByTestId('practice-write-decision'), 'move cities?');
     fireEvent.press(screen.getByTestId('practice-next'));
@@ -100,23 +119,31 @@ describe('PracticeFlowScreen — five year flashback', () => {
     fireEvent.changeText(screen.getByTestId('practice-item-options-1'), 'go north');
     fireEvent.press(screen.getByTestId('practice-next'));
 
-    // From five years up: both noted options visible, each with its own box.
+    // "How am I — and others — changed?": both noted options visible, each
+    // with its own box (worksheet p.42).
     expect(screen.getByText('stay put')).toBeTruthy();
     expect(screen.getByText('go north')).toBeTruthy();
     fireEvent.changeText(
-      screen.getByTestId('practice-reflect-from-above-1'),
-      'it looked scary and small from here'
+      screen.getByTestId('practice-reflect-changed-1'),
+      'harder year up front, closer after'
     );
 
     const work = useExperimentStore.getState().practiceWork['five-year-flashback'];
     // Reflection saved at the SAME index as its option — alignment contract.
-    expect(work.entries['from-above'][1]).toBe('it looked scary and small from here');
+    expect(work.entries.changed[1]).toBe('harder year up front, closer after');
+
+    // Final step: pick which option still matters in five years.
+    fireEvent.press(screen.getByTestId('practice-next'));
+    fireEvent.press(screen.getByTestId('practice-pick-still-matters-1'));
+    expect(
+      useExperimentStore.getState().practiceWork['five-year-flashback'].picks['still-matters']
+    ).toBe('options:1');
   });
 
   it('a reflect step with nothing noted offers a gentle way on', () => {
     renderFlow('five-year-flashback');
     fireEvent.press(screen.getByTestId('practice-next')); // → options (blank)
-    fireEvent.press(screen.getByTestId('practice-next')); // → from-above
+    fireEvent.press(screen.getByTestId('practice-next')); // → changed
     expect(screen.getByText(/Nothing noted under/)).toBeTruthy();
   });
 });

@@ -140,13 +140,42 @@ describe('JudgmentFlowScreen', () => {
 });
 
 describe('ExperimentsScreen layout', () => {
-  it('groups practices into overlined sections with a gentle intro and footer', async () => {
+  it('structures the page by kind: Practices, Learn, Reminders', async () => {
     renderScreen(<ExperimentsScreen />);
     await screen.findByTestId('screen-experiments');
     expect(screen.getByText(/Small practices for meeting what/)).toBeTruthy();
-    expect(screen.getByText('Guided practices')).toBeTruthy();
-    expect(screen.getByText('Perspective practices')).toBeTruthy();
+    // All four exercises live under ONE Practices section; Name it is a
+    // schedule, so it sits under Reminders at the end (user, 2026-07-17).
+    expect(screen.getByText('Practices')).toBeTruthy();
+    expect(screen.getByText('Learn')).toBeTruthy();
+    expect(screen.getByText('Reminders')).toBeTruthy();
+    expect(screen.queryByText('Guided practices')).toBeNull();
     expect(screen.getByText(/Nothing here is a test/)).toBeTruthy();
+  });
+
+  it('lists an archived practice sitting under Past reflections', async () => {
+    useExperimentStore.setState((s) => ({
+      ...s,
+      practiceSessions: [
+        {
+          id: 'ps-1',
+          practiceId: 'problem-solution',
+          createdAt: '2026-07-15T20:00:00.000Z',
+          work: {
+            entries: { problem: ['no time'] },
+            marks: {},
+            picks: {},
+          },
+        },
+      ],
+    }));
+    renderScreen(<ExperimentsScreen />);
+    expect(await screen.findByText('Past reflections')).toBeTruthy();
+    const row = screen.getByTestId('practice-session-0');
+    // Collapsed: the step summary stays hidden until tapped.
+    expect(screen.queryByText('no time')).toBeNull();
+    fireEvent.press(row);
+    expect(await screen.findByText('no time')).toBeTruthy();
   });
 
   it('shows the Past reflections section only once there is a reflection', async () => {

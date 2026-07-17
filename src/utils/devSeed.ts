@@ -1,13 +1,16 @@
-// DEV-ONLY: seed ~a month of plausible check-ins + a few judgment entries so
-// the quilt, experiments, and insights screens can be reviewed with real
-// density. Reached from a __DEV__-gated Settings row; never shipped behaviour.
-// Deterministic (seeded PRNG) so repeated seeding paints the same month.
+// Sample-month painter: ~30 days of plausible history across EVERY store —
+// check-ins, judgment reflections, practice sittings, circle people — so the
+// app can be previewed as if someone had lived in it for a month (user,
+// 2026-07-17: release builds too, via Settings → "Preview a sample month";
+// local-only app, nothing here touches a network). Deterministic (seeded
+// PRNG) so repeated seeding paints the same month.
 
 import { MASKING_STATES } from '@/content/emotions';
 import { useCheckInStore } from '@/store/checkInStore';
-import { useExperimentStore } from '@/store/experimentStore';
+import { useCircleStore } from '@/store/circleStore';
+import { useExperimentStore, type PracticeSession } from '@/store/experimentStore';
 import { useInsightStore } from '@/store/insightStore';
-import type { CheckIn, EmotionSelection, Intensity, JudgmentEntry, ResistanceTellId } from '@/types/models';
+import type { CheckIn, CirclePerson, EmotionSelection, Intensity, JudgmentEntry, ResistanceTellId } from '@/types/models';
 import { dayKey } from '@/utils/dates';
 import { generateUUID } from '@/utils/ids';
 
@@ -120,8 +123,55 @@ export function seedMonth(now: Date = new Date()): number {
     uncoveredFeelings: [j.feeling],
   }));
 
+  // Two archived practice sittings, so Past reflections shows both kinds.
+  const sessions: PracticeSession[] = [
+    {
+      id: generateUUID(),
+      practiceId: 'problem-solution',
+      createdAt: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6, 21, 10).toISOString(),
+      work: {
+        entries: {
+          problem: ['never enough hours in the day'],
+          cannot: ['the days are already full', 'nobody else can take it on'],
+          ideas: ['ask for help with one thing', 'a robot does the chores', 'drop one standing meeting'],
+          'small-step': ['ask about moving the Monday call'],
+        },
+        marks: { fantastical: ['ideas:1'] },
+        picks: { 'one-step': 'ideas:2' },
+      },
+    },
+    {
+      id: generateUUID(),
+      practiceId: 'five-year-flashback',
+      createdAt: new Date(now.getFullYear(), now.getMonth(), now.getDate() - 12, 20, 40).toISOString(),
+      work: {
+        entries: {
+          decision: ['whether to move closer to family'],
+          options: ['stay where we are', 'move north this year'],
+          changed: [
+            'settled, but still far away for every birthday',
+            'harder year up front, closer for all the ones after',
+          ],
+        },
+        marks: {},
+        picks: { 'still-matters': 'options:1' },
+      },
+    },
+  ];
+
+  // A small circle — sharing previews without sending anything anywhere.
+  const people: CirclePerson[] = [
+    { id: generateUUID(), name: 'Maya', relationship: 'Partner', sees: 'colours-words', frequency: 'evening' },
+    { id: generateUUID(), name: 'Appa', relationship: 'Family', sees: 'colours', frequency: 'weekly' },
+  ];
+
   useCheckInStore.setState({ checkIns });
-  useExperimentStore.setState((s) => ({ ...s, judgmentEntries: judgments }));
+  useExperimentStore.setState((s) => ({
+    ...s,
+    judgmentEntries: judgments,
+    practiceSessions: sessions,
+  }));
+  useCircleStore.setState((s) => ({ ...s, people }));
   // Wipe generated cards + the week marker so the next Insights focus
   // regenerates against the seeded month.
   useInsightStore.setState({ cards: [], lastGeneratedWeekKey: null });

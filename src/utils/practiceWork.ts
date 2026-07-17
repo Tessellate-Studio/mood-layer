@@ -126,3 +126,59 @@ export function setPick(work: PracticeWork, pickStepId: string, key: string): Pr
   }
   return { ...work, picks };
 }
+
+/** Resolve an item key ("stepId:index") back to its text, if any. */
+function keyText(work: PracticeWork, key: string): string | undefined {
+  const sep = key.lastIndexOf(':');
+  const text = entriesFor(work, key.slice(0, sep))[Number(key.slice(sep + 1))]?.trim();
+  return text && text.length > 0 ? text : undefined;
+}
+
+/**
+ * A finished sitting, readable: one {title, body} line per step that holds
+ * anything — used by the "Past reflections" list to show an archived
+ * practice session without replaying the whole flow.
+ */
+export function sessionLines(
+  practice: Practice,
+  work: PracticeWork
+): { title: string; body: string }[] {
+  const lines: { title: string; body: string }[] = [];
+  for (const step of practice.steps) {
+    switch (step.kind) {
+      case 'write': {
+        const text = entriesFor(work, step.id)[0]?.trim();
+        if (text) lines.push({ title: step.title, body: text });
+        break;
+      }
+      case 'list': {
+        const items = notedItems(work, step.id).map((i) => i.text);
+        if (items.length > 0) lines.push({ title: step.title, body: items.join(' · ') });
+        break;
+      }
+      case 'reflect': {
+        const source = entriesFor(work, step.sourceStepId);
+        const pairs = notedItems(work, step.id).map((r) => {
+          const point = source[r.index]?.trim();
+          return point ? `${point} → ${r.text}` : r.text;
+        });
+        if (pairs.length > 0) lines.push({ title: step.title, body: pairs.join('\n') });
+        break;
+      }
+      case 'mark': {
+        const marked = (work.marks[step.id] ?? [])
+          .map((key) => keyText(work, key))
+          .filter((t): t is string => t !== undefined);
+        if (marked.length > 0) lines.push({ title: step.title, body: marked.join(' · ') });
+        break;
+      }
+      case 'pick': {
+        const key = work.picks[step.id];
+        const text = key ? keyText(work, key) : undefined;
+        if (text) lines.push({ title: step.title, body: text });
+        break;
+      }
+    }
+  }
+  return lines;
+}

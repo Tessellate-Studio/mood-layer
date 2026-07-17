@@ -3,7 +3,6 @@ import {
   canProceed,
   finishEarly,
   initialFlowState,
-  MAX_EMOTIONS,
   nextStep,
   prevStep,
   setIntensity,
@@ -25,7 +24,8 @@ describe('checkInFlow reducer', () => {
 
   it('walks steps forward and back, clamped at the ends', () => {
     let s = initialFlowState('manual');
-    const order = ['feel', 'intensity', 'body', 'resistance', 'note', 'stitch'];
+    // No intensity step — temperature is set on the word in the feel step.
+    const order = ['feel', 'body', 'resistance', 'note', 'stitch'];
     for (let i = 1; i < order.length; i++) {
       s = nextStep(s);
       expect(s.step).toBe(order[i]);
@@ -55,12 +55,13 @@ describe('checkInFlow reducer', () => {
     expect(canProceed(s)).toBe(true);
   });
 
-  it('caps selections at MAX_EMOTIONS', () => {
+  it('has NO selection cap — we always feel multiple feelings at a time', () => {
+    // The old max-5 had no basis in the literature (Practicing EQ p.15);
+    // removed at the user's direction 2026-07-17.
     let s = initialFlowState('manual');
-    const ids = ['a', 'b', 'c', 'd', 'e', 'f'];
+    const ids = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
     for (const id of ids) s = toggleEmotion(s, id, 'fear');
-    expect(s.selections).toHaveLength(MAX_EMOTIONS);
-    expect(s.selections.map((x) => x.emotionId)).not.toContain('f');
+    expect(s.selections).toHaveLength(ids.length);
   });
 
   it('sets a default intensity that can be changed', () => {
@@ -73,13 +74,13 @@ describe('checkInFlow reducer', () => {
 
   it('only allows finish-early for name-it flows mid-stream', () => {
     let manual = initialFlowState('manual');
-    manual = nextStep(nextStep(manual)); // body
+    manual = nextStep(manual); // body
     expect(canFinishEarly(manual)).toBe(false);
     expect(finishEarly(manual).step).toBe('body');
 
     let nameIt = initialFlowState('name-it');
     expect(canFinishEarly(nameIt)).toBe(false); // feel step
-    nameIt = nextStep(nextStep(nameIt)); // body
+    nameIt = nextStep(nameIt); // body
     expect(canFinishEarly(nameIt)).toBe(true);
     expect(finishEarly(nameIt).step).toBe('stitch');
   });

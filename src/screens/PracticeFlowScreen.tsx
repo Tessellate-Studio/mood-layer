@@ -11,7 +11,15 @@
 // loses nothing and reopening resumes where you left off.
 
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Line } from 'react-native-svg';
@@ -71,6 +79,10 @@ export default function PracticeFlowScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-practice">
       <PaperTexture />
+      {/* Edge-to-edge Android never resizes the window for the keyboard, so
+          without this the writing boxes hide behind it and the page can't
+          scroll (device feedback 2026-07-17). */}
+      <KeyboardAvoidingView style={styles.avoider} behavior="padding">
       <ModalHeader
         title={practice.title}
         closeTestID="practice-close"
@@ -127,6 +139,9 @@ export default function PracticeFlowScreen() {
           style={styles.primaryBtn}
           onPress={() => {
             if (isLast) {
+              // Archive this sitting and clear the page — next visit starts
+              // fresh instead of resurfacing old answers (user, 2026-07-17).
+              useExperimentStore.getState().completePractice(practice.id);
               navigation.goBack();
             } else {
               setStepIndex((i) => i + 1);
@@ -136,6 +151,7 @@ export default function PracticeFlowScreen() {
           <Text style={styles.primaryText}>{isLast ? 'Set it down' : 'Continue'}</Text>
         </Pressable>
       </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -170,48 +186,8 @@ function StepBody({
         />
       );
 
-    case 'list': {
-      // Always at least one open row, so the step never reads as closed.
-      const texts = entriesFor(work, step.id);
-      const rows = texts.length > 0 ? texts : [''];
-      return (
-        <View style={styles.stepGap}>
-          {rows.map((text, i) => (
-            <View key={i} style={styles.listRow}>
-              <TextInput
-                testID={`practice-item-${step.id}-${i}`}
-                style={styles.listInput}
-                placeholder={step.placeholder}
-                placeholderTextColor={colors.inkMuted}
-                value={text}
-                onChangeText={(t) => update((w) => setEntry(w, step.id, i, t))}
-                accessibilityLabel={`${step.itemNoun} ${i + 1}`}
-              />
-              {rows.length > 1 ? (
-                <Pressable
-                  testID={`practice-remove-${step.id}-${i}`}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Remove ${step.itemNoun} ${i + 1}`}
-                  style={styles.removeBtn}
-                  onPress={() => update((w) => removeListItem(practice, w, step.id, i))}
-                >
-                  <Text style={styles.removeGlyph}>×</Text>
-                </Pressable>
-              ) : null}
-            </View>
-          ))}
-          <Pressable
-            testID={`practice-add-${step.id}`}
-            accessibilityRole="button"
-            accessibilityLabel={`Add another ${step.itemNoun}`}
-            style={styles.addBtn}
-            onPress={() => update((w) => addEntry(texts.length > 0 ? w : setEntry(w, step.id, 0, ''), step.id))}
-          >
-            <Text style={styles.addText}>+ another {step.itemNoun}</Text>
-          </Pressable>
-        </View>
-      );
-    }
+    case 'list':
+      return <ListStepBody practice={practice} step={step} work={work} update={update} />;
 
     case 'reflect': {
       const points = notedItems(work, step.sourceStepId);
@@ -326,11 +302,82 @@ function StepBody({
   }
 }
 
+/** A list step's working area — its own component so the "+ another" button
+ *  can move focus straight into the row it just added (device feedback:
+ *  otherwise the cursor stays on the previous point). */
+function ListStepBody({
+  practice,
+  step,
+  work,
+  update,
+}: {
+  practice: Practice;
+  step: Extract<PracticeStep, { kind: 'list' }>;
+  work: PracticeWork;
+  update: (fn: (w: PracticeWork) => PracticeWork) => void;
+}) {
+  const inputRefs = React.useRef<(TextInput | null)[]>([]);
+  // Always at least one open row, so the step never reads as closed.
+  const texts = entriesFor(work, step.id);
+  const rows = texts.length > 0 ? texts : [''];
+
+  const addRow = () => {
+    const nextIndex = rows.length;
+    update((w) => addEntry(texts.length > 0 ? w : setEntry(w, step.id, 0, ''), step.id));
+    // Focus lands after the new row has rendered.
+    setTimeout(() => inputRefs.current[nextIndex]?.focus(), 80);
+  };
+
+  return (
+    <View style={styles.stepGap}>
+      {rows.map((text, i) => (
+        <View key={i} style={styles.listRow}>
+          <TextInput
+            ref={(el) => {
+              inputRefs.current[i] = el;
+            }}
+            testID={`practice-item-${step.id}-${i}`}
+            style={styles.listInput}
+            placeholder={step.placeholder}
+            placeholderTextColor={colors.inkMuted}
+            value={text}
+            onChangeText={(t) => update((w) => setEntry(w, step.id, i, t))}
+            accessibilityLabel={`${step.itemNoun} ${i + 1}`}
+          />
+          {rows.length > 1 ? (
+            <Pressable
+              testID={`practice-remove-${step.id}-${i}`}
+              accessibilityRole="button"
+              accessibilityLabel={`Remove ${step.itemNoun} ${i + 1}`}
+              style={styles.removeBtn}
+              onPress={() => update((w) => removeListItem(practice, w, step.id, i))}
+            >
+              <Text style={styles.removeGlyph}>×</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ))}
+      <Pressable
+        testID={`practice-add-${step.id}`}
+        accessibilityRole="button"
+        accessibilityLabel={`Add another ${step.itemNoun}`}
+        style={styles.addBtn}
+        onPress={addRow}
+      >
+        <Text style={styles.addText}>+ another {step.itemNoun}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.paper,
     paddingHorizontal: spacing.md,
+  },
+  avoider: {
+    flex: 1,
   },
   progress: {
     marginTop: spacing.sm,
