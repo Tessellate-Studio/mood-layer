@@ -89,13 +89,16 @@ Package id: `com.tessellate.moodlayer`.
 
 ### What this app is
 
-**The Mood Layer — track your emotional quilt.** Consumer emotion-tracking
+**The Mood Layer — your feelings, in layers.** Consumer emotion-tracking
 Android app (Expo SDK 55, RN 0.83, React 19, portrait). Two grounding concepts:
 
 - **Emotional quilt (Paul Ekman):** we always feel several emotions at once. A
   check-in captures 1–5 co-occurring emotions, each with intensity 1–4; the home
-  screen renders them as a growing monochrome quilt (one patch per check-in,
-  subdivided per emotion).
+  screen renders them as translucent overlapping layers (one cluster per
+  check-in, one cloth piece per emotion). **Copy rule (user, 2026-07-17): the
+  app SPEAKS in layer language** — "Layer it in", "Your mood layers", never
+  stitch/quilt/sew in user-facing strings. The quilt stays named exactly one
+  place: Settings → About the ideas, as the Ekman inspiration.
 - **Emotional fluidity (Joe Hudson):** resilience comes from feeling emotions in
   the body instead of resisting them. Four resistance tells (looping thoughts,
   harsh judgment, binary stuckness, better/worse-than comparison); resisted

@@ -171,7 +171,7 @@ describe('shareSummary', () => {
 
   it('a truly empty week says so, at every level', () => {
     for (const level of SEES_ORDER) {
-      expect(shareSummary(level, stats())).toBe('A quiet week — nothing stitched in yet.');
+      expect(shareSummary(level, stats())).toBe('A quiet week — nothing layered in yet.');
     }
   });
 });
@@ -187,6 +187,8 @@ describe('homeWeeklySummary', () => {
       enjoyment: 3,
       surprise: 0,
       contempt: 0,
+      anticipation: 0,
+      trust: 0,
     },
   });
 
@@ -210,7 +212,7 @@ describe('homeWeeklySummary', () => {
     const twoOnly = { ...week, familyCounts: { ...week.familyCounts, fear: 0 } };
     expect(homeWeeklySummary(twoOnly)).toEqual({
       headline: 'Tender',
-      body: 'Sadness and Enjoyment, sewn side by side.',
+      body: 'Sadness and Enjoyment, layered side by side.',
       families: ['sadness', 'enjoyment'],
     });
   });
@@ -219,7 +221,7 @@ describe('homeWeeklySummary', () => {
     // week already carries fear (1) as the third family.
     const out = homeWeeklySummary(week);
     expect(out?.body).toBe(
-      'Sadness and Enjoyment, sewn side by side — with a thread of Fear too.'
+      'Sadness and Enjoyment, layered side by side — with a trace of Fear too.'
     );
     expect(out?.families).toEqual(['sadness', 'enjoyment', 'fear']);
   });

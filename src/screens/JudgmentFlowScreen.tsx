@@ -22,7 +22,8 @@ import { borderRadius, colors, fonts, hitTarget, spacing, typography } from '@/c
 import PaperTexture from '@/components/PaperTexture';
 import SectionHeader from '@/components/SectionHeader';
 import ThreadCard from '@/components/ThreadCard';
-import { EMOTION_FAMILIES, findEmotionWord } from '@/content/emotions';
+import { EMOTION_FAMILIES, type EmotionWord } from '@/content/emotions';
+import { allWordsForFamily, findVocabularyWord } from '@/content/vocabulary';
 import { JUDGMENT_EXAMPLES } from '@/content/judgmentExamples';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { useExperimentStore } from '@/store/experimentStore';
@@ -41,7 +42,7 @@ const EXAMPLES = JUDGMENT_EXAMPLES.slice(0, 4);
 // closing stitch line.
 function feelingSummary(feelings: EmotionSelection[]): string {
   const labels = feelings.map(
-    (f) => (findEmotionWord(f.emotionId)?.word.label ?? f.emotionId).toLowerCase()
+    (f) => (findVocabularyWord(f.emotionId)?.word.label ?? f.emotionId).toLowerCase()
   );
   if (labels.length <= 1) return labels[0] ?? '';
   return `${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}`;
@@ -200,10 +201,13 @@ export default function JudgmentFlowScreen() {
               <Text style={styles.stitchStrong}>{stitchJudgment}</Text>, I would feel…
             </Text>
             {Object.values(EMOTION_FAMILIES).map((family) => {
-              const selectedInFamily = family.gradient.filter((w) =>
+              // Full vocabulary, same as the check-in — recognising the exact
+              // word is the practice.
+              const words = allWordsForFamily(family.id);
+              const selectedInFamily = words.filter((w) =>
                 feelings.some((f) => f.emotionId === w.id)
               );
-              const renderChip = (word: (typeof family.gradient)[number]) => (
+              const renderChip = (word: EmotionWord) => (
                 // EmotionChip stamps its own testID `chip-${id}`; passing a
                 // composite id yields the contract testID
                 // `chip-judgment-feeling-{wordId}`.
@@ -230,7 +234,7 @@ export default function JudgmentFlowScreen() {
                     ) : undefined
                   }
                 >
-                  <View style={styles.chipWrap}>{family.gradient.map(renderChip)}</View>
+                  <View style={styles.chipWrap}>{words.map(renderChip)}</View>
                 </FamilyGroup>
               );
             })}
@@ -238,7 +242,7 @@ export default function JudgmentFlowScreen() {
               // One card per named feeling — the same word-plus-shade-dial the
               // check-in uses, so several feelings read as a set, not a count.
               feelings.map((feeling) => {
-                const label = findEmotionWord(feeling.emotionId)?.word.label ?? feeling.emotionId;
+                const label = findVocabularyWord(feeling.emotionId)?.word.label ?? feeling.emotionId;
                 return (
                   // The card wears the named feeling's muted layer — same
                   // treatment as the check-in's intensity step.

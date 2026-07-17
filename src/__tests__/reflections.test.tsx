@@ -1,5 +1,5 @@
 // Reflections: swipe actions (edit / remove), edit-mode judgment flow, and
-// the Atlas practices living inline on the Experiments screen.
+// the Atlas practice cards opening their guided flows.
 
 import React from 'react';
 import { Alert } from 'react-native';
@@ -56,45 +56,16 @@ describe('experiment store editing', () => {
 });
 
 describe('ExperimentsScreen', () => {
-  it('renders the Atlas practices as sibling cards that unfold in place', () => {
+  it('each Atlas practice card opens its own guided flow', () => {
     render(
       <NavigationContainer>
         <ExperimentsScreen />
       </NavigationContainer>
     );
-    const first = PRACTICES[0];
-    expect(screen.getByTestId(`practice-${first.id}`)).toBeTruthy();
-    // Steps hidden until opened.
-    expect(screen.queryByText(first.steps[0])).toBeNull();
-    fireEvent.press(screen.getByTestId(`practice-${first.id}`));
-    expect(screen.getByText(first.steps[0])).toBeTruthy();
-    expect(screen.getByText(first.closing)).toBeTruthy();
-  });
-
-  it('a practice offers a scratch pad per step that persists what you write', () => {
-    const first = PRACTICES[0];
-    render(
-      <NavigationContainer>
-        <ExperimentsScreen />
-      </NavigationContainer>
-    );
-    // No writing box until the practice is opened.
-    expect(screen.queryByTestId(`practice-${first.id}-note-0`)).toBeNull();
-
-    fireEvent.press(screen.getByTestId(`practice-${first.id}`));
-    fireEvent.changeText(
-      screen.getByTestId(`practice-${first.id}-note-0`),
-      'what my future self sees'
-    );
-
-    // Saved locally, keyed to that practice + step.
-    expect(useExperimentStore.getState().practiceNotes[first.id][0]).toBe(
-      'what my future self sees'
-    );
-    // And it stays in the field (reads back from the store).
-    expect(screen.getByTestId(`practice-${first.id}-note-0`).props.value).toBe(
-      'what my future self sees'
-    );
+    for (const practice of PRACTICES) {
+      fireEvent.press(screen.getByTestId(`practice-${practice.id}`));
+      expect(mockNavigate).toHaveBeenCalledWith('PracticeFlow', { practiceId: practice.id });
+    }
   });
 
   it('swipe actions: edit navigates with the entry id, remove confirms then deletes', () => {

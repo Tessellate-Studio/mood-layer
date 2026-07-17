@@ -195,10 +195,10 @@ export default function InsightsScreen() {
       {visible.length === 0 ? (
         <View style={styles.empty}>
           <Text style={styles.emptyText}>
-            Not enough stitches yet — check in a few more times this week.
+            Not enough layers yet — check in a few more times this week.
           </Text>
           <Text style={styles.emptyCaption}>
-            Patterns appear here once a week, when there is enough quilt to read.
+            Patterns appear here once a week, when there are enough layers to read.
           </Text>
         </View>
       ) : (
@@ -217,7 +217,7 @@ export default function InsightsScreen() {
           )}
           ListFooterComponent={
             <View testID="insights-footer">
-              <LogoDivider tip="Insights stay gentle. Two a week, at most — the rest is just your quilt, quietly growing." />
+              <LogoDivider tip="Insights stay gentle. Two a week, at most — the rest is just your layers, quietly building." />
             </View>
           }
         />

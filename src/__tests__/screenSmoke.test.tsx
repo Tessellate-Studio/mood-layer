@@ -84,10 +84,11 @@ describe('AppNavigator (real navigator)', () => {
 });
 
 describe('screen skeletons render their landmarks', () => {
-  // CheckInFlowScreen and JudgmentFlowScreen are intentionally absent: both
-  // read route params via useRoute, which throws outside a real navigator
-  // screen. They're covered with route mocks in checkInFlowScreen.test.tsx /
-  // experiments.test.tsx / reflections.test.tsx.
+  // CheckInFlowScreen, JudgmentFlowScreen, and PracticeFlowScreen are
+  // intentionally absent: they read route params via useRoute, which throws
+  // outside a real navigator screen. They're covered with route mocks in
+  // checkInFlowScreen.test.tsx / experiments.test.tsx / reflections.test.tsx /
+  // practiceFlowScreen.test.tsx.
   const cases: [string, React.ComponentType][] = [
     ['screen-quilt', QuiltScreen],
     ['screen-experiments', ExperimentsScreen],
@@ -114,7 +115,7 @@ describe('screen skeletons render their landmarks', () => {
         <QuiltScreen />
       </NavigationContainer>
     );
-    expect(await screen.findByText('Your quilt begins with one square.')).toBeTruthy();
+    expect(await screen.findByText('Your layers begin with a single check-in.')).toBeTruthy();
   });
 
   it('quilt renders an accessible patch when a check-in exists', async () => {
@@ -176,7 +177,7 @@ describe('ScreenErrorBoundary', () => {
         <Bomb />
       </ScreenErrorBoundary>
     );
-    expect(screen.getByText('Something tore a stitch')).toBeTruthy();
+    expect(screen.getByText('Something slipped out of place')).toBeTruthy();
     shouldThrow = false;
     fireEvent.press(screen.getByTestId('error-retry'));
     expect(screen.getByText('recovered')).toBeTruthy();

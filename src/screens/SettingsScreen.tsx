@@ -37,14 +37,18 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 /** Shown at the foot of the screen; bump alongside app.json on release. */
 const APP_VERSION = 'v0.2.0';
 
+// The one place the quilt inspiration stays by name (user, 2026-07-17): the
+// app speaks in layers everywhere else, and this section says where the idea
+// comes from.
 const ABOUT_TEXT =
-  'The quilt comes from Paul Ekman, who showed we rarely feel one thing at a ' +
-  'time — several feelings arrive together, stitched into one moment. The ' +
-  "quilt's colours follow the Atlas of Emotions, the map of feeling Ekman " +
-  'built with the Dalai Lama (atlasofemotions.org). The practice of feeling ' +
-  'instead of resisting comes from Joe Hudson: emotions that are allowed to ' +
-  'move through the body pass on their own, and letting them builds ' +
-  'resilience. This app is a practice companion, not therapy or diagnosis.';
+  'The layered check-ins come from Paul Ekman’s idea of the emotional ' +
+  'quilt: we rarely feel one thing at a time — several feelings arrive ' +
+  'together, woven into one moment. The colours follow the Atlas of ' +
+  'Emotions, the map of feeling Ekman built with the Dalai Lama ' +
+  '(atlasofemotions.org). The practice of feeling instead of resisting ' +
+  'comes from Joe Hudson: emotions that are allowed to move through the ' +
+  'body pass on their own, and letting them builds resilience. This app is ' +
+  'a practice companion, not therapy or diagnosis.';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -68,6 +72,7 @@ export default function SettingsScreen() {
             exportedAt: new Date().toISOString(),
             checkIns: useCheckInStore.getState().checkIns,
             judgmentEntries: useExperimentStore.getState().judgmentEntries,
+            practiceWork: useExperimentStore.getState().practiceWork,
             nameIt: useExperimentStore.getState().nameIt,
             insightCards: useInsightStore.getState().cards,
             settings: {

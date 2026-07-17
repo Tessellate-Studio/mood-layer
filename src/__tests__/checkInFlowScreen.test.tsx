@@ -51,6 +51,17 @@ describe('CheckInFlowScreen', () => {
     expect(screen.queryByTestId('chip-down')).toBeNull();
   });
 
+  it('offers the FULL vocabulary, not just the short gradient', () => {
+    renderScreen();
+    fireEvent.press(screen.getByTestId('family-sadness'));
+    // 'heartbroken' lives only in EXTENDED_VOCABULARY — selectable since
+    // 2026-07-17 (the point is learning emotional vocabulary).
+    fireEvent.press(screen.getByTestId('chip-heartbroken'));
+    fireEvent.press(screen.getByTestId('flow-next')); // → intensity
+    // The intensity step resolves the extended word's label too.
+    expect(screen.getByText('Heartbroken')).toBeTruthy();
+  });
+
   it('keeps a chosen word pinned when its family folds', () => {
     renderScreen();
     fireEvent.press(screen.getByTestId('family-sadness'));

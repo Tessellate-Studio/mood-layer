@@ -24,7 +24,8 @@ import {
 import PaperTexture from '@/components/PaperTexture';
 import WeeklySummaryCard from '@/components/WeeklySummaryCard';
 import { homeWeeklySummary } from '@/content/circle';
-import { EMOTION_FAMILIES, findEmotionWord } from '@/content/emotions';
+import { EMOTION_FAMILIES } from '@/content/emotions';
+import { findVocabularyWord } from '@/content/vocabulary';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import QuiltWeek from '@/components/QuiltWeek';
 import { selectWeekStats, useCheckInStore } from '@/store/checkInStore';
@@ -49,7 +50,7 @@ const GEAR_SPOKES = Array.from({ length: 8 }, (_, i) => {
 });
 
 function wordLabel(emotionId: string): string {
-  return findEmotionWord(emotionId)?.word.label ?? emotionId;
+  return findVocabularyWord(emotionId)?.word.label ?? emotionId;
 }
 
 function uniqueFamilies(checkIn: CheckIn): EmotionFamilyId[] {
@@ -60,11 +61,11 @@ function uniqueFamilies(checkIn: CheckIn): EmotionFamilyId[] {
   return seen;
 }
 
-function stitchedTime(iso: string): string {
+function layeredTime(iso: string): string {
   const d = new Date(iso);
   const hh = `${d.getHours()}`.padStart(2, '0');
   const mm = `${d.getMinutes()}`.padStart(2, '0');
-  return `stitched ${hh}:${mm}`;
+  return `layered ${hh}:${mm}`;
 }
 
 export default function QuiltScreen() {
@@ -111,7 +112,7 @@ export default function QuiltScreen() {
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-quilt">
       <PaperTexture />
       <View style={styles.headerRow}>
-        <Text style={styles.title}>Your emotional quilt</Text>
+        <Text style={styles.title}>Your mood layers</Text>
         <Pressable
           testID="open-settings"
           accessibilityRole="button"
@@ -153,7 +154,7 @@ export default function QuiltScreen() {
               strokeDasharray={[...textures.stitchDash]}
             />
           </Svg>
-          <Text style={styles.emptyText}>Your quilt begins with one square.</Text>
+          <Text style={styles.emptyText}>Your layers begin with a single check-in.</Text>
         </View>
       ) : (
         <FlatList
@@ -244,7 +245,7 @@ export default function QuiltScreen() {
                     ))}
                   </View>
                 ) : null}
-                <Text style={styles.stitchedAt}>{stitchedTime(selected.createdAt)}</Text>
+                <Text style={styles.stitchedAt}>{layeredTime(selected.createdAt)}</Text>
                 {uniqueFamilies(selected).map((fam) => (
                   <Pressable
                     key={fam}

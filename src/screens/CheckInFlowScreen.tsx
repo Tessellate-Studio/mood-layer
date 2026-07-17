@@ -28,7 +28,8 @@ import { borderRadius, colors, hitTarget, spacing, typography } from '@/constant
 import PaperTexture from '@/components/PaperTexture';
 import SectionHeader from '@/components/SectionHeader';
 import ThreadCard from '@/components/ThreadCard';
-import { EMOTION_FAMILIES, findEmotionWord, MASKING_STATES } from '@/content/emotions';
+import { EMOTION_FAMILIES, MASKING_STATES, type EmotionWord } from '@/content/emotions';
+import { allWordsForFamily, findVocabularyWord } from '@/content/vocabulary';
 import { RESISTANCE_TELLS } from '@/content/resistance';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { useCheckInStore } from '@/store/checkInStore';
@@ -73,7 +74,7 @@ const STEP_TITLES: Record<CheckInStep, string> = {
   body: 'Where do you feel it?',
   resistance: 'Any of these today?',
   note: 'A note to your future self',
-  stitch: 'Stitch it in',
+  stitch: 'Layer it in',
 };
 
 export default function CheckInFlowScreen() {
@@ -174,7 +175,7 @@ export default function CheckInFlowScreen() {
             style={styles.primaryBtn}
             onPress={stitchItIn}
           >
-            <Text style={styles.primaryText}>Stitch it in</Text>
+            <Text style={styles.primaryText}>Layer it in</Text>
           </Pressable>
         ) : (
           <Pressable
@@ -210,10 +211,13 @@ function FeelStep({ state, setState }: StepProps) {
         Open whichever sounds close — naming even one word is plenty.
       </Text>
       {Object.values(EMOTION_FAMILIES).map((family) => {
-        const selectedInFamily = family.gradient.filter((w) =>
+        // The FULL mild→intense vocabulary, not just the short gradient — the
+        // whole point is learning to recognise more words (user, 2026-07-17).
+        const words = allWordsForFamily(family.id);
+        const selectedInFamily = words.filter((w) =>
           state.selections.some((x) => x.emotionId === w.id)
         );
-        const renderChip = (word: (typeof family.gradient)[number]) => (
+        const renderChip = (word: EmotionWord) => (
           <EmotionChip
             key={word.id}
             id={word.id}
@@ -235,7 +239,7 @@ function FeelStep({ state, setState }: StepProps) {
               ) : undefined
             }
           >
-            <View style={styles.chipWrap}>{family.gradient.map(renderChip)}</View>
+            <View style={styles.chipWrap}>{words.map(renderChip)}</View>
           </FamilyGroup>
         );
       })}
@@ -270,7 +274,7 @@ function FeelStep({ state, setState }: StepProps) {
                   <LearnLink family={familyId} testID={`underneath-learn-${familyId}`} />
                 </View>
                 <View style={styles.chipWrap}>
-                  {family.gradient.map((word) => (
+                  {allWordsForFamily(familyId).map((word) => (
                     <EmotionChip
                       key={word.id}
                       id={`under-${word.id}`}
@@ -296,7 +300,7 @@ function IntensityStep({ state, setState }: StepProps) {
   return (
     <View style={styles.stepGap}>
       {state.selections.map((sel) => {
-        const label = findEmotionWord(sel.emotionId)?.word.label ?? sel.emotionId;
+        const label = findVocabularyWord(sel.emotionId)?.word.label ?? sel.emotionId;
         return (
           // The card wears its emotion's muted layer, so weighing an anger
           // word already happens on anger's hue.
@@ -412,11 +416,11 @@ function NoteStep({ state, setState }: StepProps) {
 
 function StitchStep({ state }: { state: FlowState }) {
   const words = state.selections
-    .map((sel) => `${findEmotionWord(sel.emotionId)?.word.label ?? sel.emotionId} · ${sel.intensity}`)
+    .map((sel) => `${findVocabularyWord(sel.emotionId)?.word.label ?? sel.emotionId} · ${sel.intensity}`)
     .join('    ');
   return (
     <View style={styles.stitchWrap}>
-      <PatchPreview emotions={state.selections} size={160} a11yLabel="Your patch, ready to stitch in" />
+      <PatchPreview emotions={state.selections} size={160} a11yLabel="Your layers, ready to add" />
       <Text style={styles.stitchWords}>{words}</Text>
     </View>
   );

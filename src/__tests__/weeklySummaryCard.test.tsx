@@ -8,7 +8,7 @@ import type { HomeWeeklySummary } from '@/content/circle';
 
 const summary: HomeWeeklySummary = {
   headline: 'Warm',
-  body: 'Enjoyment and sadness, sewn side by side.',
+  body: 'Enjoyment and sadness, layered side by side.',
   families: ['enjoyment', 'sadness'],
 };
 
@@ -17,7 +17,7 @@ describe('WeeklySummaryCard', () => {
     render(<WeeklySummaryCard summary={summary} />);
     expect(screen.getByText('This week, mostly')).toBeTruthy();
     expect(screen.getByText('Warm')).toBeTruthy();
-    expect(screen.getByText('Enjoyment and sadness, sewn side by side.')).toBeTruthy();
+    expect(screen.getByText('Enjoyment and sadness, layered side by side.')).toBeTruthy();
   });
 
   it('renders nothing when there is no summary', () => {
