@@ -9,7 +9,7 @@
 // (design handoff "Mood Layers"). The week/day row structure below still
 // positions each cluster; only the piece geometry changed.
 
-import { findEmotionWord } from '@/content/emotions';
+import { findVocabularyWord } from '@/content/vocabulary';
 import type { CheckIn, EmotionFamilyId, EmotionSelection, Intensity } from '@/types/models';
 import { dayKey, dayPartLabel, weekKey } from '@/utils/dates';
 
@@ -117,19 +117,41 @@ export function clothPieces(emotions: EmotionSelection[], w: number, h: number):
   // A lone piece sits dead-centre; a cluster spreads on a ring ~16% of the box.
   const radius = k === 1 ? 0 : Math.min(w, h) * 0.16;
 
-  return emotions.map((emotion, i) => {
+  // First pass: ideal sizes + ring offsets, starting at the top of the ring
+  // and stepping evenly around it.
+  const raw = emotions.map((emotion, i) => {
     const f = sizeFactor(emotion.intensity);
-    const pw = w * f;
-    const ph = h * f;
-    // Start at the top of the ring and step evenly around it.
     const angle = -Math.PI / 2 + (i * 2 * Math.PI) / k;
-    const ox = radius * Math.cos(angle);
-    const oy = radius * Math.sin(angle);
     return {
-      emotionId: emotion.emotionId,
-      family: emotion.family,
-      intensity: emotion.intensity,
-      rect: { x: cx + ox - pw / 2, y: cy + oy - ph / 2, w: pw, h: ph },
+      emotion,
+      pw: w * f,
+      ph: h * f,
+      ox: radius * Math.cos(angle),
+      oy: radius * Math.sin(angle),
+    };
+  });
+
+  // Intense pieces pushed onto the ring can reach past the box; the SVG then
+  // clips them into hard square corners (and clusters bleed into neighbours on
+  // the quilt). Scale sizes AND offsets down uniformly so every piece stays
+  // inside while the cluster keeps its overlap proportions.
+  let scale = 1;
+  for (const p of raw) {
+    scale = Math.min(
+      scale,
+      w / 2 / (Math.abs(p.ox) + p.pw / 2),
+      h / 2 / (Math.abs(p.oy) + p.ph / 2)
+    );
+  }
+
+  return raw.map((p) => {
+    const pw = p.pw * scale;
+    const ph = p.ph * scale;
+    return {
+      emotionId: p.emotion.emotionId,
+      family: p.emotion.family,
+      intensity: p.emotion.intensity,
+      rect: { x: cx + p.ox * scale - pw / 2, y: cy + p.oy * scale - ph / 2, w: pw, h: ph },
       rx: Math.min(pw, ph) * 0.35,
       opacity: CLOTH_OPACITY,
     };
@@ -142,7 +164,7 @@ export function buildPatchA11yLabel(checkIn: CheckIn): string {
   const weekday = WEEKDAYS_FULL[created.getDay()];
   const part = dayPartLabel(checkIn.createdAt);
   const items = checkIn.emotions.map((selection) => {
-    const word = findEmotionWord(selection.emotionId)?.word.label ?? selection.emotionId;
+    const word = findVocabularyWord(selection.emotionId)?.word.label ?? selection.emotionId;
     return `${word.toLowerCase()} ${selection.intensity}`;
   });
   return `${weekday} ${part}: ${items.join(', ')}`;

@@ -82,6 +82,27 @@ describe('clothPieces', () => {
     expect(distinct.size).toBeGreaterThan(1);
   });
 
+  it('keeps every piece fully inside the box, even 5 pressed-hard emotions', () => {
+    // Regression: intensity-4 pieces on the spread ring used to reach past the
+    // box — SVG clipped them into hard square corners on the preview and let
+    // clusters bleed into neighbours on the quilt (device screenshots,
+    // 2026-07-17).
+    for (let k = 1; k <= 5; k++) {
+      const emotions = Array.from({ length: k }, (_, i) => sel(`e${i}`, 'anger', 4));
+      for (const [w, h] of [
+        [100, 80],
+        [160, 160],
+      ] as const) {
+        for (const piece of clothPieces(emotions, w, h)) {
+          expect(piece.rect.x).toBeGreaterThanOrEqual(-1e-9);
+          expect(piece.rect.y).toBeGreaterThanOrEqual(-1e-9);
+          expect(piece.rect.x + piece.rect.w).toBeLessThanOrEqual(w + 1e-9);
+          expect(piece.rect.y + piece.rect.h).toBeLessThanOrEqual(h + 1e-9);
+        }
+      }
+    }
+  });
+
   it('is deterministic — repeat calls deep-equal', () => {
     const emotions = [sel('angry', 'anger', 3), sel('sad', 'sadness', 1), sel('glad', 'enjoyment', 4)];
     expect(clothPieces(emotions, 100, 80)).toEqual(clothPieces(emotions, 100, 80));
@@ -90,15 +111,20 @@ describe('clothPieces', () => {
 
 describe('buildPatchA11yLabel', () => {
   it('reads weekday + day part + lowercase words with intensity', () => {
-    // 2026-07-07 is a Tuesday; 09:30 local → morning. 'hopeful' is not in the
-    // taxonomy → falls back to the raw emotionId.
+    // 2026-07-07 is a Tuesday; 09:30 local → morning. 'hopeful' lives in the
+    // EXTENDED vocabulary (check-in-selectable since 2026-07-17) and must
+    // resolve; an unknown id falls back to itself.
     const label = buildPatchA11yLabel(
       checkIn({
         createdAt: '2026-07-07T09:30:00',
-        emotions: [sel('sad', 'sadness', 3), sel('hopeful', 'enjoyment', 2)],
+        emotions: [
+          sel('sad', 'sadness', 3),
+          sel('hopeful', 'anticipation', 2),
+          sel('not-a-word', 'enjoyment', 1),
+        ],
       })
     );
-    expect(label).toBe('Tuesday morning: sad 3, hopeful 2');
+    expect(label).toBe('Tuesday morning: sad 3, hopeful 2, not-a-word 1');
   });
 });
 
