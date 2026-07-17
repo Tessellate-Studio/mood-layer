@@ -28,7 +28,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # First real run (29563745748, 2026-07-17) proved a cold RN 0.83 release
+    # build does NOT fit in 45 min on a hosted runner — Gradle alone ran 44
+    # min before the timeout cancelled it. 90 gives cold builds room; the
+    # Gradle cache + single-ABI build below pull warm builds far under it.
+    timeout-minutes: 90
 
     steps:
       - uses: actions/checkout@v4
@@ -46,15 +50,24 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
+      # Caches Gradle wrapper + dependency/build caches between runs so only
+      # the first build after a dependency change pays the cold price.
+      - name: Setup Gradle (with caching)
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Install dependencies
         run: npm ci
 
       - name: Expo prebuild (generate android/)
         run: npx expo prebuild --platform android --no-install
 
-      - name: Build release APK
+      # arm64-v8a ONLY: this APK is sideloaded onto the user's own phone
+      # (arm64, like every Android released since ~2017) — compiling the
+      # other three ABIs quadruples native build time for nothing. Remove
+      # the -P flag if this ever needs to ship to a store or an x86 emulator.
+      - name: Build release APK (arm64-v8a)
         working-directory: android
-        run: ./gradlew assembleRelease --no-daemon
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
