@@ -34,18 +34,19 @@ import { JUDGMENT_EXAMPLES } from '@/content/judgmentExamples';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { useExperimentStore } from '@/store/experimentStore';
 import type { EmotionFamilyId, EmotionSelection, Intensity } from '@/types/models';
+import type { DraftSelection } from '@/utils/checkInFlow';
 
 const STEP_COUNT = 4;
-// No cap on named feelings — the temperature now sits inline on each word,
-// so more feelings no longer means a wall of separate dial cards.
-const DEFAULT_INTENSITY: Intensity = 2;
+// No cap on named feelings — the temperature sits inline on each word. A
+// named feeling starts UNWEIGHED (null) and blocks Continue until its
+// temperature is chosen (user, 2026-07-17: no defaults).
 // A rotating example seed so the placeholders + inline examples feel fresh but
 // stay deterministic within a session.
 const EXAMPLES = JUDGMENT_EXAMPLES.slice(0, 4);
 
 // Join named feelings into a lowercase phrase ("worried and hurt") for the
 // closing stitch line.
-function feelingSummary(feelings: EmotionSelection[]): string {
+function feelingSummary(feelings: { emotionId: string }[]): string {
   const labels = feelings.map(
     (f) => (findVocabularyWord(f.emotionId)?.word.label ?? f.emotionId).toLowerCase()
   );
@@ -70,7 +71,7 @@ export default function JudgmentFlowScreen() {
   const [step, setStep] = React.useState(0);
   const [target, setTarget] = React.useState(editing?.target ?? '');
   const [judgment, setJudgment] = React.useState(editing?.judgment ?? '');
-  const [feelings, setFeelings] = React.useState<EmotionSelection[]>(
+  const [feelings, setFeelings] = React.useState<DraftSelection[]>(
     editing?.uncoveredFeelings ?? []
   );
   const [freeWriting, setFreeWriting] = React.useState(editing?.freeWriting ?? '');
@@ -81,7 +82,13 @@ export default function JudgmentFlowScreen() {
   const example = EXAMPLES[0];
 
   const canProceed =
-    step === 0 ? target.trim().length > 0 : step === 1 ? judgment.trim().length > 0 : true;
+    step === 0
+      ? target.trim().length > 0
+      : step === 1
+        ? judgment.trim().length > 0
+        : step === 2
+          ? feelings.every((f) => f.intensity !== null)
+          : true;
 
   const goNext = () => {
     if (!canProceed) return;
@@ -90,10 +97,17 @@ export default function JudgmentFlowScreen() {
   const goBack = () => setStep((s) => Math.max(0, s - 1));
 
   const save = () => {
+    // The feeling step gates Continue on every temperature being set; the
+    // flatMap narrows the draft type.
+    const uncoveredFeelings: EmotionSelection[] = feelings.flatMap((f) =>
+      f.intensity === null
+        ? []
+        : [{ emotionId: f.emotionId, family: f.family, intensity: f.intensity }]
+    );
     const input = {
       target: target.trim(),
       judgment: judgment.trim(),
-      uncoveredFeelings: feelings,
+      uncoveredFeelings,
       freeWriting: freeWriting.trim() || undefined,
     };
     if (editId) {
@@ -105,12 +119,12 @@ export default function JudgmentFlowScreen() {
   };
 
   const toggleFeeling = (emotionId: string, family: EmotionSelection['family']) => {
-    // Multi-select: tap to add, tap again to clear.
+    // Multi-select: tap to add (unweighed), tap again to clear.
     setFeelings((prev) => {
       if (prev.some((f) => f.emotionId === emotionId)) {
         return prev.filter((f) => f.emotionId !== emotionId);
       }
-      return [...prev, { emotionId, family, intensity: DEFAULT_INTENSITY }];
+      return [...prev, { emotionId, family, intensity: null }];
     });
   };
 
@@ -258,7 +272,9 @@ export default function JudgmentFlowScreen() {
                           label={word.label}
                           selected={sel !== undefined}
                           fill={
-                            sel ? familyPalette[family.id].shades[sel.intensity] : undefined
+                            sel && sel.intensity !== null
+                              ? familyPalette[family.id].shades[sel.intensity]
+                              : undefined
                           }
                           onPress={() => toggleFeeling(word.id, family.id)}
                         />

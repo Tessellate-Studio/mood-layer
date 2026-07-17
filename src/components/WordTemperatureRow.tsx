@@ -15,7 +15,8 @@ interface Props {
   wordId: string;
   label: string;
   family: EmotionFamilyId;
-  intensity: Intensity;
+  /** null until the user weighs the word — the chip stays uncoloured. */
+  intensity: Intensity | null;
   /** Tap the chip to let the word go. */
   onToggle(): void;
   onChangeIntensity(intensity: Intensity): void;
@@ -43,7 +44,7 @@ export function WordTemperatureRow({
           id={chipId ?? `picked-${wordId}`}
           label={label}
           selected
-          fill={familyPalette[family].shades[intensity]}
+          fill={intensity !== null ? familyPalette[family].shades[intensity] : undefined}
           onPress={onToggle}
           onLongPress={onLongPress}
         />

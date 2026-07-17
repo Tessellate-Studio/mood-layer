@@ -11,7 +11,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import LogoDivider from '@/components/LogoDivider';
 import SectionHeader from '@/components/SectionHeader';
 import ThreadCard from '@/components/ThreadCard';
-import { colors, mutedPalette } from '@/constants/theme';
+import { colors, familyPalette, mutedPalette } from '@/constants/theme';
 import { EMOTION_FAMILIES } from '@/content/emotions';
 import type { EmotionFamilyId } from '@/types/models';
 
@@ -59,6 +59,18 @@ describe('mutedPalette tokens', () => {
       const { fill, thread } = mutedPalette[id];
       expect(contrast(thread, fill)).toBeGreaterThanOrEqual(3);
       expect(contrast(thread, colors.paper)).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('familyPalette threads clear 3:1 on paper, raised paper, and shade1', () => {
+    // These threads draw meaningful strokes (helper-sheet underline + border,
+    // logo band edges) — several sat below 3:1 until the 2026-07-17 contrast
+    // audit darkened them ("some colours do not pass WCAG", user).
+    for (const id of familyIds) {
+      const { shades, thread } = familyPalette[id];
+      expect(contrast(thread, colors.paper)).toBeGreaterThanOrEqual(3);
+      expect(contrast(thread, colors.paperRaised)).toBeGreaterThanOrEqual(3);
+      expect(contrast(thread, shades[1])).toBeGreaterThanOrEqual(3);
     }
   });
 });

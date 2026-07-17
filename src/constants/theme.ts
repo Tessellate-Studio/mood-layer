@@ -74,31 +74,31 @@ export const familyPalette: Record<EmotionFamilyId, FamilyPalette> = {
   },
   sadness: {
     shades: { 1: '#ECF1F7', 2: '#DFE8F1', 3: '#CCDAE9', 4: '#B4C8DE' },
-    thread: '#7793B4',
+    thread: '#718CAB',
   },
   disgust: {
     shades: { 1: '#EDF4EC', 2: '#E0EDDF', 3: '#CDE1CC', 4: '#B5D2B4' },
-    thread: '#7BA37A',
+    thread: '#6F936E',
   },
   enjoyment: {
     shades: { 1: '#FBF4E3', 2: '#F8ECCD', 3: '#F3E0AF', 4: '#ECD28F' },
-    thread: '#B99B54',
+    thread: '#A3884A',
   },
   surprise: {
     shades: { 1: '#FBF0E7', 2: '#F8E4D3', 3: '#F3D3B8', 4: '#ECBF99' },
-    thread: '#BE8B60',
+    thread: '#AF8058',
   },
   contempt: {
     shades: { 1: '#F4EEF2', 2: '#ECE2E9', 3: '#DFCFDA', 4: '#CFB8C7' },
-    thread: '#A18397',
+    thread: '#9E8094',
   },
   anticipation: {
     shades: { 1: '#EBF4F4', 2: '#DCECEC', 3: '#C6E0DF', 4: '#AACFCE' },
-    thread: '#6C9E9D',
+    thread: '#649392',
   },
   trust: {
     shades: { 1: '#F9EFF1', 2: '#F5E2E7', 3: '#EED0D9', 4: '#E4BAC7' },
-    thread: '#B37E90',
+    thread: '#AF7B8D',
   },
 };
 
@@ -296,7 +296,16 @@ export const motion = {
   spring: { damping: 18, stiffness: 180 },
   gentleMs: 350,
   stitchMs: 900,
-  /** Breathing pulse on "feel it" invitations. */
+  /** Breathing pulse on "feel it" invitations. The pulse dips DOWN to this
+   *  scale and back to 1 — the laid-out size is the MAXIMUM, so the swell
+   *  never overflows its container (device feedback 2026-07-17: the border
+   *  was getting eaten at max size). */
   breatheMs: 3200,
-  breatheScale: 1.02,
+  breatheScale: 0.98,
+  /** One box-breathing phase (in / hold / out / hold), 4 counts each. */
+  boxBreathePhaseMs: 4000,
+  /** How far the box-breathing square and the weekly mark contract on the
+   *  out-breath (scale at "empty lungs"; 1 = laid-out size at full breath). */
+  boxBreatheScale: 0.72,
+  boxBreatheMarkScale: 0.94,
 } as const;

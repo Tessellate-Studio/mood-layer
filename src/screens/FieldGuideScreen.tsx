@@ -108,6 +108,9 @@ export default function FieldGuideScreen() {
                 onToggle={() => setOpenFamily((cur) => (cur === family.id ? null : family.id))}
                 preview={family.essence}
               >
+                {/* The folded preview truncates to one line; unfolded, the
+                    essence reads in full above the words (user, 2026-07-17). */}
+                <Text style={typography.body}>{family.essence}</Text>
                 <View style={styles.chipWrap}>
                   {allWordsForFamily(family.id).map((word) => (
                     <EmotionChip

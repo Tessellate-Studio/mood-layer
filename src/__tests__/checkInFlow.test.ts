@@ -42,7 +42,7 @@ describe('checkInFlow reducer', () => {
   it('needs a named emotion to proceed — a masking state alone is a doorway', () => {
     let s = initialFlowState('manual');
     expect(canProceed(s)).toBe(false);
-    s = toggleEmotion(s, 'sad', 'sadness');
+    s = setIntensity(toggleEmotion(s, 'sad', 'sadness'), 'sad', 2);
     expect(canProceed(s)).toBe(true);
     s = toggleEmotion(s, 'sad', 'sadness'); // toggle off
     expect(s.selections).toHaveLength(0);
@@ -51,7 +51,7 @@ describe('checkInFlow reducer', () => {
     // panel so the user names the feeling beneath the surface word.
     s = toggleMasking(s, 'fine');
     expect(canProceed(s)).toBe(false);
-    s = toggleEmotion(s, 'sad', 'sadness');
+    s = setIntensity(toggleEmotion(s, 'sad', 'sadness'), 'sad', 2);
     expect(canProceed(s)).toBe(true);
   });
 
@@ -64,12 +64,15 @@ describe('checkInFlow reducer', () => {
     expect(s.selections).toHaveLength(ids.length);
   });
 
-  it('sets a default intensity that can be changed', () => {
+  it('a named word starts UNWEIGHED and blocks Continue until its dial is set', () => {
     let s = initialFlowState('manual');
     s = toggleEmotion(s, 'sad', 'sadness');
-    expect(s.selections[0].intensity).toBe(2);
+    // No default temperature — weighing is deliberate (user, 2026-07-17).
+    expect(s.selections[0].intensity).toBeNull();
+    expect(canProceed(s)).toBe(false);
     s = setIntensity(s, 'sad', 4);
     expect(s.selections[0].intensity).toBe(4);
+    expect(canProceed(s)).toBe(true);
   });
 
   it('only allows finish-early for name-it flows mid-stream', () => {
@@ -102,7 +105,7 @@ describe('checkInFlow reducer', () => {
 
   it('includes filled optionals', () => {
     let s = initialFlowState('name-it');
-    s = toggleEmotion(s, 'afraid', 'fear');
+    s = setIntensity(toggleEmotion(s, 'afraid', 'fear'), 'afraid', 2);
     s = toggleMasking(s, 'stressed');
     s = toggleBody(s, 'tight chest');
     s = toggleResistance(s, 'looping-thoughts');

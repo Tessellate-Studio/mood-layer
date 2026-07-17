@@ -32,6 +32,7 @@ import { BODY_MAP } from '@/content/bodyMap';
 import { EMOTION_FAMILIES, MASKING_STATES, type EmotionWord } from '@/content/emotions';
 import { noteReflection } from '@/content/noteReflection';
 import { allWordsForFamily, findVocabularyWord } from '@/content/vocabulary';
+import { useMotion } from '@/hooks/useMotion';
 import { RESISTANCE_TELLS } from '@/content/resistance';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { useCheckInStore } from '@/store/checkInStore';
@@ -75,6 +76,8 @@ export default function CheckInFlowScreen() {
 
   const hapticsEnabled = useSettingsStore((s) => s.hapticsEnabled);
   const addCheckIn = useCheckInStore((s) => s.addCheckIn);
+  const { reduced } = useMotion();
+  const scrollRef = React.useRef<ScrollView>(null);
 
   const [state, setState] = React.useState<FlowState>(() => initialFlowState(source));
 
@@ -120,8 +123,14 @@ export default function CheckInFlowScreen() {
         </Svg>
       </View>
 
-      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-        {state.step === 'feel' && <FeelStep state={state} setState={setState} />}
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+        {state.step === 'feel' && (
+          <FeelStep
+            state={state}
+            setState={setState}
+            scrollTo={(y) => scrollRef.current?.scrollTo({ y, animated: !reduced })}
+          />
+        )}
         {state.step === 'body' && <BodyStep state={state} setState={setState} />}
         {state.step === 'resistance' && <ResistanceStep state={state} setState={setState} />}
         {state.step === 'note' && <NoteStep state={state} setState={setState} />}
@@ -131,6 +140,13 @@ export default function CheckInFlowScreen() {
       {state.step === 'feel' && state.masking.length > 0 && state.selections.length === 0 ? (
         <Text style={styles.continueHint} testID="masking-continue-hint">
           Name what&apos;s underneath to continue.
+        </Text>
+      ) : null}
+      {state.step === 'feel' &&
+      state.selections.length > 0 &&
+      state.selections.some((sel) => sel.intensity === null) ? (
+        <Text style={styles.continueHint} testID="temperature-continue-hint">
+          Tap a swatch beside each word to set how strongly it&apos;s here.
         </Text>
       ) : null}
 
@@ -192,7 +208,11 @@ interface StepProps {
   setState: React.Dispatch<React.SetStateAction<FlowState>>;
 }
 
-function FeelStep({ state, setState }: StepProps) {
+function FeelStep({
+  state,
+  setState,
+  scrollTo,
+}: StepProps & { scrollTo(y: number): void }) {
   const selectedMasking = MASKING_STATES.filter((m) => state.masking.includes(m.id));
   // Families start folded (one open at a time) so the step reads as a short,
   // calm list instead of ~50 chips at once. Chosen words stay pinned under
@@ -200,6 +220,14 @@ function FeelStep({ state, setState }: StepProps) {
   // naming and weighing happen in one place (temperature-chip design,
   // user-approved 2026-07-17).
   const [openFamily, setOpenFamily] = React.useState<EmotionFamilyId | null>(null);
+  // Selecting a masking chip opens its "look underneath" panel BELOW the
+  // fold — without a nudge it's easy to miss (device feedback 2026-07-17).
+  // Remember which panel was just opened and scroll to it once it lays out.
+  const pendingScrollId = React.useRef<string | null>(null);
+  const toggleMaskingAndReveal = (id: string) => {
+    if (!state.masking.includes(id)) pendingScrollId.current = id;
+    setState((s) => toggleMasking(s, id));
+  };
   return (
     <View style={styles.stepGap}>
       <Text style={styles.feelHint}>
@@ -250,7 +278,11 @@ function FeelStep({ state, setState }: StepProps) {
                     id={word.id}
                     label={word.label}
                     selected={sel !== undefined}
-                    fill={sel ? familyPalette[family.id].shades[sel.intensity] : undefined}
+                    fill={
+                      sel && sel.intensity !== null
+                        ? familyPalette[family.id].shades[sel.intensity]
+                        : undefined
+                    }
                     onPress={() => setState((s) => toggleEmotion(s, word.id, family.id))}
                   />
                 );
@@ -270,7 +302,7 @@ function FeelStep({ state, setState }: StepProps) {
             label={m.label}
             dashed
             selected={state.masking.includes(m.id)}
-            onPress={() => setState((s) => toggleMasking(s, m.id))}
+            onPress={() => toggleMaskingAndReveal(m.id)}
           />
         ))}
       </View>
@@ -280,7 +312,17 @@ function FeelStep({ state, setState }: StepProps) {
           emotions it usually hides — so someone still learning to name what
           they feel has a guided way in, instead of a dead-end Continue. */}
       {selectedMasking.map((m) => (
-        <View key={m.id} style={styles.underneathPanel} testID={`underneath-${m.id}`}>
+        <View
+          key={m.id}
+          style={styles.underneathPanel}
+          testID={`underneath-${m.id}`}
+          onLayout={(e) => {
+            if (pendingScrollId.current === m.id) {
+              pendingScrollId.current = null;
+              scrollTo(Math.max(0, e.nativeEvent.layout.y - spacing.md));
+            }
+          }}
+        >
           <Text style={styles.underneathPrompt}>{m.prompt}</Text>
           {m.unpacksTo.map((familyId) => {
             const family = EMOTION_FAMILIES[familyId];
@@ -299,7 +341,11 @@ function FeelStep({ state, setState }: StepProps) {
                         id={`under-${word.id}`}
                         label={word.label}
                         selected={sel !== undefined}
-                        fill={sel ? familyPalette[familyId].shades[sel.intensity] : undefined}
+                        fill={
+                          sel && sel.intensity !== null
+                            ? familyPalette[familyId].shades[sel.intensity]
+                            : undefined
+                        }
                         onPress={() => setState((s) => toggleEmotion(s, word.id, familyId))}
                       />
                     );
@@ -433,12 +479,19 @@ function NoteStep({ state, setState }: StepProps) {
 }
 
 function StitchStep({ state }: { state: FlowState }) {
-  const words = state.selections
+  // The feel gate guarantees every temperature is set by now; the flatMap
+  // narrows DraftSelection → EmotionSelection for the preview.
+  const emotions = state.selections.flatMap((sel) =>
+    sel.intensity === null
+      ? []
+      : [{ emotionId: sel.emotionId, family: sel.family, intensity: sel.intensity }]
+  );
+  const words = emotions
     .map((sel) => `${findVocabularyWord(sel.emotionId)?.word.label ?? sel.emotionId} · ${sel.intensity}`)
     .join('    ');
   return (
     <View style={styles.stitchWrap}>
-      <PatchPreview emotions={state.selections} size={160} a11yLabel="Your layers, ready to add" />
+      <PatchPreview emotions={emotions} size={160} a11yLabel="Your layers, ready to add" />
       <Text style={styles.stitchWords}>{words}</Text>
     </View>
   );

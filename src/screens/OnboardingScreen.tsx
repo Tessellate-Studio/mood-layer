@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
 
 import { borderRadius, colors, hitTarget, motion, mutedPalette, spacing, textures, typography } from '@/constants/theme';
+import LayeredClusterVignette from '@/components/LayeredClusterVignette';
 import PaperTexture from '@/components/PaperTexture';
 import { ONBOARDING_SLIDES } from '@/content/onboarding';
 import { useMotion } from '@/hooks/useMotion';
@@ -29,43 +30,12 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 /** Stagger step between a slide's vignette / title / body entrances. */
 const STAGGER_MS = 90;
 
-// --- Vignettes: inline monochrome line art, one per slide, decorative only ---
+// --- Vignettes: one per slide, decorative only ---
 
-/** A lone dashed patch square with one filled shade2 segment. */
+/** The layered cluster in miniature — the app's real visual grammar, shown
+ *  from the very first slide (replaced the dashed patch square 2026-07-17). */
 function QuiltVignette() {
-  return (
-    <Svg width={88} height={88} viewBox="0 0 64 64">
-      <Rect
-        x={6}
-        y={6}
-        width={52}
-        height={52}
-        fill="none"
-        stroke={colors.ink}
-        strokeWidth={1.5}
-        strokeDasharray={[...textures.stitchDash]}
-      />
-      <Rect x={6} y={6} width={26} height={26} fill={colors.shade2} />
-      <Line
-        x1={32}
-        y1={6}
-        x2={32}
-        y2={58}
-        stroke={colors.ink}
-        strokeWidth={1}
-        strokeDasharray={[...textures.stitchDashFine]}
-      />
-      <Line
-        x1={6}
-        y1={32}
-        x2={58}
-        y2={32}
-        stroke={colors.ink}
-        strokeWidth={1}
-        strokeDasharray={[...textures.stitchDashFine]}
-      />
-    </Svg>
-  );
+  return <LayeredClusterVignette size={88} />;
 }
 
 /** An abstract circle-and-line figure with a gentle sine wave passing through. */

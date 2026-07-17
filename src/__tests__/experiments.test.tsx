@@ -95,10 +95,15 @@ describe('JudgmentFlowScreen', () => {
     // Multi-select: name two feelings, not one. Families start folded, so each
     // one is unfolded first. EmotionChip stamps `chip-${id}`, so
     // `judgment-feeling-worried` renders as `chip-judgment-feeling-worried`.
+    // A named feeling starts UNWEIGHED and blocks Continue until its dial is
+    // tapped (no default temperatures, 2026-07-17).
     fireEvent.press(screen.getByTestId('judgment-family-fear'));
     fireEvent.press(screen.getByTestId('chip-judgment-feeling-worried'));
     fireEvent.press(screen.getByTestId('judgment-family-sadness'));
     fireEvent.press(screen.getByTestId('chip-judgment-feeling-hurt'));
+    expect(screen.getByTestId('judgment-next').props.accessibilityState.disabled).toBe(true);
+    fireEvent.press(screen.getByTestId('dial-worried-2'));
+    fireEvent.press(screen.getByTestId('dial-hurt-3'));
     fireEvent.press(screen.getByTestId('judgment-next'));
 
     // Step 4 — optional free-writing, then save
@@ -111,6 +116,7 @@ describe('JudgmentFlowScreen', () => {
     expect(entry.judgment).toBe('being disorganized');
     expect(entry.uncoveredFeelings.map((f) => f.emotionId)).toEqual(['worried', 'hurt']);
     expect(entry.uncoveredFeelings.map((f) => f.family)).toEqual(['fear', 'sadness']);
+    expect(entry.uncoveredFeelings.map((f) => f.intensity)).toEqual([2, 3]);
     expect(entry.freeWriting).toBe('the deadline scares me');
   });
 

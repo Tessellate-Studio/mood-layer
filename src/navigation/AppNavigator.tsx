@@ -11,6 +11,7 @@ import ScreenErrorBoundary from '@/components/ScreenErrorBoundary';
 import { CircleIcon, ExperimentsIcon, InsightsIcon, QuiltIcon, type TabIconProps } from '@/components/TabIcon';
 import { colors, fonts } from '@/constants/theme';
 import { navigationRef } from '@/navigation/navigationRef';
+import BreathingScreen from '@/screens/BreathingScreen';
 import CheckInFlowScreen from '@/screens/CheckInFlowScreen';
 import CircleScreen from '@/screens/CircleScreen';
 import ExperimentsScreen from '@/screens/ExperimentsScreen';
@@ -32,6 +33,7 @@ export type RootStackParamList = {
   CheckInFlow: { source: 'manual' | 'name-it' } | undefined;
   JudgmentFlow: { editId?: string } | undefined;
   PracticeFlow: { practiceId: string };
+  Breathing: undefined;
   NameItSetup: undefined;
   FieldGuide: undefined;
   Settings: undefined;
@@ -71,6 +73,7 @@ const SafeOnboardingScreen = withBoundary('Onboarding', OnboardingScreen);
 const SafeCheckInFlowScreen = withBoundary('CheckInFlow', CheckInFlowScreen);
 const SafeJudgmentFlowScreen = withBoundary('JudgmentFlow', JudgmentFlowScreen);
 const SafePracticeFlowScreen = withBoundary('PracticeFlow', PracticeFlowScreen);
+const SafeBreathingScreen = withBoundary('Breathing', BreathingScreen);
 const SafeNameItSetupScreen = withBoundary('NameItSetup', NameItSetupScreen);
 const SafeFieldGuideScreen = withBoundary('FieldGuide', FieldGuideScreen);
 const SafeSettingsScreen = withBoundary('Settings', SettingsScreen);
@@ -148,6 +151,11 @@ export default function AppNavigator() {
         <Stack.Screen
           name="PracticeFlow"
           component={SafePracticeFlowScreen}
+          options={{ presentation: 'modal' }}
+        />
+        <Stack.Screen
+          name="Breathing"
+          component={SafeBreathingScreen}
           options={{ presentation: 'modal' }}
         />
         <Stack.Screen

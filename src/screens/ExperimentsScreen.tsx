@@ -18,6 +18,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Line } from 'react-native-svg';
 
 import { borderRadius, colors, hitTarget, mutedPalette, spacing, typography } from '@/constants/theme';
 import LogoDivider from '@/components/LogoDivider';
@@ -39,16 +40,23 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 // anticipation teal; Reminders = trust rose.
 const PRACTICES_FAMILY: EmotionFamilyId = 'sadness';
 const JUDGMENT_FAMILY: EmotionFamilyId = 'anger';
+const BREATHING_FAMILY: EmotionFamilyId = 'anticipation';
 const REFLECTIONS_FAMILY: EmotionFamilyId = 'contempt';
 const LEARN_FAMILY: EmotionFamilyId = 'anticipation';
 const REMINDERS_FAMILY: EmotionFamilyId = 'trust';
 
-/** The circled → marking a card that leads somewhere (opens a flow). */
+/** The circled → marking a card that leads somewhere (opens a flow). Drawn
+ *  as SVG lines — the monospace '→' glyph sat visibly off-centre inside the
+ *  ring (device feedback 2026-07-17). */
 function ArrowRing({ family }: { family: EmotionFamilyId }) {
   const palette = mutedPalette[family];
   return (
     <View style={[styles.arrowRing, { borderColor: palette.thread }]}>
-      <Text style={[styles.arrowGlyph, { color: palette.accent }]}>→</Text>
+      <Svg width={14} height={14} viewBox="0 0 14 14" fill="none">
+        <Line x1={1.5} y1={7} x2={12} y2={7} stroke={palette.accent} strokeWidth={1.6} strokeLinecap="round" />
+        <Line x1={7.5} y1={2.5} x2={12} y2={7} stroke={palette.accent} strokeWidth={1.6} strokeLinecap="round" />
+        <Line x1={7.5} y1={11.5} x2={12} y2={7} stroke={palette.accent} strokeWidth={1.6} strokeLinecap="round" />
+      </Svg>
     </View>
   );
 }
@@ -108,6 +116,18 @@ export default function ExperimentsScreen() {
               <Text style={styles.cardSub}>{practice.whenFor}</Text>
             </ThreadCard>
           ))}
+          <ThreadCard
+            family={BREATHING_FAMILY}
+            testID="card-breathing"
+            accessibilityLabel="Box breathing. For a nervous system that needs a minute."
+            onPress={() => navigation.navigate('Breathing')}
+          >
+            <View style={styles.cardTitleRow}>
+              <Text style={[typography.heading, styles.cardTitle]}>Box breathing</Text>
+              <ArrowRing family={BREATHING_FAMILY} />
+            </View>
+            <Text style={styles.cardSub}>For a nervous system that needs a minute</Text>
+          </ThreadCard>
           <Text style={styles.attribution}>
             Perspective practices adapted from Six Seconds&apos; Practicing EQ guide.
           </Text>
@@ -376,9 +396,6 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  arrowGlyph: {
-    ...typography.label,
   },
   cardSub: {
     ...typography.body,

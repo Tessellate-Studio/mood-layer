@@ -4,11 +4,20 @@
 // check-in animates in once (skipped under reduce-motion).
 
 import React from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import {
+  FlatList,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Circle, Line, Rect } from 'react-native-svg';
+import Svg, { Circle, Line } from 'react-native-svg';
 
 import {
   borderRadius,
@@ -18,9 +27,9 @@ import {
   motion,
   mutedPalette,
   spacing,
-  textures,
   typography,
 } from '@/constants/theme';
+import LayeredClusterVignette from '@/components/LayeredClusterVignette';
 import PaperTexture from '@/components/PaperTexture';
 import WeeklySummaryCard from '@/components/WeeklySummaryCard';
 import { homeWeeklySummary } from '@/content/circle';
@@ -142,18 +151,9 @@ export default function QuiltScreen() {
 
       {checkIns.length === 0 ? (
         <View style={styles.empty}>
-          <Svg width={64} height={64} viewBox="0 0 64 64" fill="none">
-            <Rect
-              x={1.5}
-              y={1.5}
-              width={61}
-              height={61}
-              rx={borderRadius.sm}
-              stroke={colors.inkFaint}
-              strokeWidth={1.5}
-              strokeDasharray={[...textures.stitchDash]}
-            />
-          </Svg>
+          {/* The layered cluster in miniature — what a first check-in will
+              look like (replaced the dashed placeholder square 2026-07-17). */}
+          <LayeredClusterVignette size={72} />
           <Text style={styles.emptyText}>Your layers begin with a single check-in.</Text>
         </View>
       ) : (
@@ -222,6 +222,14 @@ export default function QuiltScreen() {
                     { backgroundColor: mutedPalette[uniqueFamilies(selected)[0]].thread },
                   ]}
                 />
+                {/* A check-in with many emotions overflows the screen — the
+                    sheet caps its height and scrolls FROM THE TOP, instead of
+                    growing past the status bar (bug, 2026-07-17). */}
+                <ScrollView
+                  style={styles.sheetScroll}
+                  contentContainerStyle={styles.sheetScrollContent}
+                  showsVerticalScrollIndicator={false}
+                >
                 <Text style={styles.sheetTitle}>{buildTitle(selected)}</Text>
                 {selected.emotions.map((sel, i) => (
                   <View key={`${sel.emotionId}-${i}`} style={styles.emotionRow}>
@@ -263,6 +271,7 @@ export default function QuiltScreen() {
                     <Text style={styles.aboutText}>about {EMOTION_FAMILIES[fam].label} →</Text>
                   </Pressable>
                 ))}
+                </ScrollView>
               </>
             ) : null}
           </Pressable>
@@ -350,6 +359,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     // Clip the thread spine into the rounded top corner.
     overflow: 'hidden',
+    // Tall check-ins scroll inside instead of growing past the screen top.
+    maxHeight: '78%',
   },
   sheetSpine: {
     position: 'absolute',
@@ -357,6 +368,12 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 5,
+  },
+  sheetScroll: {
+    flexGrow: 0,
+  },
+  sheetScrollContent: {
+    gap: spacing.sm,
   },
   sheetTitle: {
     ...typography.heading,

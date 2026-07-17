@@ -82,12 +82,18 @@ describe('CheckInFlowScreen', () => {
     expect(screen.queryByTestId('chip-down')).toBeNull();
   });
 
-  it('keeps Continue disabled until an emotion is chosen', () => {
+  it('keeps Continue disabled until an emotion is chosen AND weighed', () => {
     renderScreen();
     expect(screen.getByTestId('flow-next').props.accessibilityState.disabled).toBe(true);
     fireEvent.press(screen.getByTestId('family-sadness'));
     fireEvent.press(screen.getByTestId('chip-sad'));
+    // Named but unweighed: still blocked, with a gentle hint (no default
+    // temperatures — user, 2026-07-17).
+    expect(screen.getByTestId('flow-next').props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByTestId('temperature-continue-hint')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('dial-sad-1'));
     expect(screen.getByTestId('flow-next').props.accessibilityState.disabled).toBe(false);
+    expect(screen.queryByTestId('temperature-continue-hint')).toBeNull();
   });
 
   it('walks feel → stitch and writes one check-in with the right emotion', () => {
@@ -114,6 +120,7 @@ describe('CheckInFlowScreen', () => {
     expect(screen.getByText('Can you name it?')).toBeTruthy();
     fireEvent.press(screen.getByTestId('family-fear'));
     fireEvent.press(screen.getByTestId('chip-afraid'));
+    fireEvent.press(screen.getByTestId('dial-afraid-2')); // weigh it (required)
     fireEvent.press(screen.getByTestId('flow-next')); // → body
     // From body, a name-it flow can finish early straight to stitch.
     expect(screen.getByTestId('flow-finish-early')).toBeTruthy();
