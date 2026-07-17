@@ -187,6 +187,8 @@ describe('homeWeeklySummary', () => {
       enjoyment: 3,
       surprise: 0,
       contempt: 0,
+      anticipation: 0,
+      trust: 0,
     },
   });
 

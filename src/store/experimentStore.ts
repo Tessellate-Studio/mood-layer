@@ -6,6 +6,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { JudgmentEntry, NameItSettings } from '@/types/models';
 import { generateUUID } from '@/utils/ids';
+import { emptyWork, type PracticeWork } from '@/utils/practiceWork';
 
 const NAME_IT_DEFAULTS: NameItSettings = {
   enabled: false,
@@ -20,16 +21,16 @@ interface ExperimentState {
   judgmentEntries: JudgmentEntry[];
   nameIt: NameItSettings;
   /**
-   * Free-writing kept beside the Atlas perspective practices — a scratch pad
-   * so a practice is something you *do*, not just read. Keyed
-   * practiceId → per-step text (index matches the practice's `steps`).
+   * Everything typed into a perspective practice's flow, keyed practiceId →
+   * PracticeWork (per-step entries / marks / picks — utils/practiceWork.ts).
+   * Saved live so closing a flow mid-way loses nothing.
    */
-  practiceNotes: Record<string, string[]>;
+  practiceWork: Record<string, PracticeWork>;
   addJudgmentEntry(input: Omit<JudgmentEntry, 'id' | 'createdAt'>): JudgmentEntry;
   updateJudgmentEntry(id: string, patch: Partial<Omit<JudgmentEntry, 'id' | 'createdAt'>>): void;
   removeJudgmentEntry(id: string): void;
   setNameIt(partial: Partial<NameItSettings>): void;
-  setPracticeNote(practiceId: string, stepIndex: number, text: string): void;
+  updatePracticeWork(practiceId: string, updater: (work: PracticeWork) => PracticeWork): void;
   clearAll(): void;
 }
 
@@ -38,7 +39,7 @@ export const useExperimentStore = create<ExperimentState>()(
     (set) => ({
       judgmentEntries: [],
       nameIt: NAME_IT_DEFAULTS,
-      practiceNotes: {},
+      practiceWork: {},
       addJudgmentEntry: (input) => {
         const entry: JudgmentEntry = {
           ...input,
@@ -59,22 +60,25 @@ export const useExperimentStore = create<ExperimentState>()(
           judgmentEntries: state.judgmentEntries.filter((e) => e.id !== id),
         })),
       setNameIt: (partial) => set((state) => ({ nameIt: { ...state.nameIt, ...partial } })),
-      setPracticeNote: (practiceId, stepIndex, text) =>
-        set((state) => {
-          const current = state.practiceNotes[practiceId] ?? [];
-          const next = current.slice();
-          next[stepIndex] = text;
-          return { practiceNotes: { ...state.practiceNotes, [practiceId]: next } };
-        }),
-      clearAll: () => set({ judgmentEntries: [], nameIt: NAME_IT_DEFAULTS, practiceNotes: {} }),
+      updatePracticeWork: (practiceId, updater) =>
+        set((state) => ({
+          practiceWork: {
+            ...state.practiceWork,
+            [practiceId]: updater(state.practiceWork[practiceId] ?? emptyWork()),
+          },
+        })),
+      clearAll: () => set({ judgmentEntries: [], nameIt: NAME_IT_DEFAULTS, practiceWork: {} }),
     }),
     {
       name: 'tml-experiments',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 1,
+      version: 2,
       // v1: `uncoveredFeeling: EmotionSelection | null` → `uncoveredFeelings:
       // EmotionSelection[]`. Wrap any single value a device saved before the
       // multi-select change so old reflections still render.
+      // v2: the inline scratch pad (`practiceNotes`, flat per-step strings)
+      // became structured `practiceWork`. Old free-form notes don't map onto
+      // the typed steps — they are dropped, the field removed.
       migrate: (persisted, version) => {
         const state = (persisted ?? {}) as Record<string, unknown>;
         if (version < 1 && Array.isArray(state.judgmentEntries)) {
@@ -93,8 +97,11 @@ export const useExperimentStore = create<ExperimentState>()(
             }
           );
         }
-        if (typeof state.practiceNotes !== 'object' || state.practiceNotes === null) {
-          state.practiceNotes = {};
+        if (version < 2) {
+          delete state.practiceNotes;
+        }
+        if (typeof state.practiceWork !== 'object' || state.practiceWork === null) {
+          state.practiceWork = {};
         }
         return state as unknown as ExperimentState;
       },

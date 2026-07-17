@@ -72,6 +72,7 @@ export default function SettingsScreen() {
             exportedAt: new Date().toISOString(),
             checkIns: useCheckInStore.getState().checkIns,
             judgmentEntries: useExperimentStore.getState().judgmentEntries,
+            practiceWork: useExperimentStore.getState().practiceWork,
             nameIt: useExperimentStore.getState().nameIt,
             insightCards: useInsightStore.getState().cards,
             settings: {

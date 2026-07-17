@@ -3,12 +3,13 @@
 // glyph tinted to its hue, every card is a ThreadCard — whisper-tint fill plus
 // a coloured thread spine — and the page closes with the three-band mark as a
 // divider over the tip. Two "Guided" practices (Name it, Under the judgment)
-// open a flow; three "Perspective" practices (Atlas of Emotions) unfold in
-// place with a scratch pad; "Past reflections" holds saved judgment entries
-// (expand on tap, swipe to edit or remove).
+// open a flow, with "Past reflections" (saved judgment entries; expand on tap,
+// swipe to edit or remove) directly beneath them so the exercise and its log
+// sit together (user, 2026-07-17). The three "Perspective" practices (Atlas
+// of Emotions) open their own guided flow too — PracticeFlowScreen.
 
 import React from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
@@ -20,7 +21,7 @@ import PaperTexture from '@/components/PaperTexture';
 import SectionHeader from '@/components/SectionHeader';
 import ThreadCard from '@/components/ThreadCard';
 import { findVocabularyWord } from '@/content/vocabulary';
-import { PRACTICES, type Practice } from '@/content/practices';
+import { PRACTICE_FAMILY, PRACTICES } from '@/content/practices';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { useExperimentStore } from '@/store/experimentStore';
 import type { EmotionFamilyId, JudgmentEntry } from '@/types/models';
@@ -29,11 +30,11 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 // Layer hues per the settled design: Guided = sadness blue (section + Name
 // it), anger rose for Under the judgment; Perspective = enjoyment amber with
-// its cards cycling amber → green → violet; Past reflections = contempt mauve.
+// its cards keyed per practice (PRACTICE_FAMILY, content/practices.ts);
+// Past reflections = contempt mauve.
 const GUIDED_FAMILY: EmotionFamilyId = 'sadness';
 const JUDGMENT_FAMILY: EmotionFamilyId = 'anger';
 const PERSPECTIVE_FAMILY: EmotionFamilyId = 'enjoyment';
-const PRACTICE_FAMILIES: EmotionFamilyId[] = ['enjoyment', 'disgust', 'fear'];
 const REFLECTIONS_FAMILY: EmotionFamilyId = 'contempt';
 const LEARN_FAMILY: EmotionFamilyId = 'anticipation';
 
@@ -54,7 +55,6 @@ export default function ExperimentsScreen() {
   const judgmentEntries = useExperimentStore((s) => s.judgmentEntries);
 
   const [expanded, setExpanded] = React.useState<string | null>(null);
-  const [openPractice, setOpenPractice] = React.useState<string | null>(null);
 
   return (
     // ScrollView sits inside a plain container so the paper grain stays fixed
@@ -71,8 +71,7 @@ export default function ExperimentsScreen() {
           Small practices for meeting what&apos;s here. Take one when it calls — none are homework.
         </Text>
 
-        {/* Guided: these open a flow. A ringed arrow marks that they lead
-            somewhere, unlike the perspective cards that unfold in place. */}
+        {/* Guided: a ringed arrow marks a card that leads into a flow. */}
         <View style={styles.section}>
           <SectionHeader family={GUIDED_FAMILY} label="Guided practices" />
           <ThreadCard
@@ -105,6 +104,26 @@ export default function ExperimentsScreen() {
           </ThreadCard>
         </View>
 
+        {/* Past reflections live directly under the judgment card that writes
+            them — doing the exercise and finding its log at the far end of the
+            page read as two different places (user, 2026-07-17). */}
+        {judgmentEntries.length > 0 ? (
+          <View style={styles.section}>
+            <SectionHeader family={REFLECTIONS_FAMILY} label="Past reflections" />
+            <Text style={styles.swipeHint}>Swipe a reflection to edit or remove it.</Text>
+            {judgmentEntries.map((entry, index) => (
+              <ReflectionRow
+                key={entry.id}
+                entry={entry}
+                index={index}
+                expanded={expanded === entry.id}
+                onToggle={() => setExpanded((cur) => (cur === entry.id ? null : entry.id))}
+                onEdit={() => navigation.navigate('JudgmentFlow', { editId: entry.id })}
+              />
+            ))}
+          </View>
+        ) : null}
+
         {/* Learn: the field guide — emotional education rather than practice.
             Word finder + the underneath map (surface state → resisted feeling).
             Anticipation teal — the layer hue for leaning toward what's new. */}
@@ -126,104 +145,33 @@ export default function ExperimentsScreen() {
           </ThreadCard>
         </View>
 
-        {/* Perspective practices from the Atlas of Emotions — they unfold in
-            place with a scratch pad rather than opening a flow. */}
+        {/* Perspective practices from the Atlas of Emotions — each opens its
+            own guided flow (multi-point steps, side-by-side reflection). */}
         <View style={styles.section}>
           <SectionHeader family={PERSPECTIVE_FAMILY} label="Perspective practices" />
-          {PRACTICES.map((practice, index) => (
-            <PracticeCard
+          {PRACTICES.map((practice) => (
+            <ThreadCard
               key={practice.id}
-              practice={practice}
-              family={PRACTICE_FAMILIES[index % PRACTICE_FAMILIES.length]}
-              open={openPractice === practice.id}
-              onToggle={() =>
-                setOpenPractice((cur) => (cur === practice.id ? null : practice.id))
-              }
-            />
+              family={PRACTICE_FAMILY[practice.id]}
+              testID={`practice-${practice.id}`}
+              accessibilityLabel={`${practice.title}. ${practice.whenFor}`}
+              onPress={() => navigation.navigate('PracticeFlow', { practiceId: practice.id })}
+            >
+              <View style={styles.cardTitleRow}>
+                <Text style={[typography.heading, styles.cardTitle]}>{practice.title}</Text>
+                <ArrowRing family={PRACTICE_FAMILY[practice.id]} />
+              </View>
+              <Text style={styles.cardSub}>{practice.whenFor}</Text>
+            </ThreadCard>
           ))}
           <Text style={styles.attribution}>
             Practices adapted from the Atlas of Emotions.
           </Text>
         </View>
 
-        {judgmentEntries.length > 0 ? (
-          <View style={styles.section}>
-            <SectionHeader family={REFLECTIONS_FAMILY} label="Past reflections" />
-            <Text style={styles.swipeHint}>Swipe a reflection to edit or remove it.</Text>
-            {judgmentEntries.map((entry, index) => (
-              <ReflectionRow
-                key={entry.id}
-                entry={entry}
-                index={index}
-                expanded={expanded === entry.id}
-                onToggle={() => setExpanded((cur) => (cur === entry.id ? null : entry.id))}
-                onEdit={() => navigation.navigate('JudgmentFlow', { editId: entry.id })}
-              />
-            ))}
-          </View>
-        ) : null}
-
         <LogoDivider tip="Nothing here is a test. Come back to a practice whenever it calls; the rest can wait." />
       </ScrollView>
     </View>
-  );
-}
-
-function PracticeCard({
-  practice,
-  family,
-  open,
-  onToggle,
-}: {
-  practice: Practice;
-  family: EmotionFamilyId;
-  open: boolean;
-  onToggle(): void;
-}) {
-  // Scratch pad: each step gets a place to actually write, saved locally so a
-  // practice is something you work through, not just read (device feedback).
-  const notes = useExperimentStore((s) => s.practiceNotes[practice.id]);
-  const setPracticeNote = useExperimentStore((s) => s.setPracticeNote);
-
-  return (
-    // Only the header toggles — the steps hold text inputs, so making the
-    // whole card pressable would collapse it every time you tapped to type.
-    <ThreadCard family={family}>
-      <Pressable
-        testID={`practice-${practice.id}`}
-        accessibilityRole="button"
-        accessibilityState={{ expanded: open }}
-        accessibilityLabel={`${practice.title}. ${practice.whenFor}`}
-        onPress={onToggle}
-      >
-        <Text style={typography.heading}>{practice.title}</Text>
-        <Text style={styles.cardSub}>{practice.whenFor}</Text>
-      </Pressable>
-      {open ? (
-        <View style={styles.practiceSteps}>
-          {practice.steps.map((step, i) => (
-            <View key={i} style={styles.stepBlock}>
-              <View style={styles.stepRow}>
-                <Text style={styles.stepNumber}>{i + 1}</Text>
-                <Text style={[typography.body, styles.stepText]}>{step}</Text>
-              </View>
-              <TextInput
-                testID={`practice-${practice.id}-note-${i}`}
-                style={styles.stepInput}
-                multiline
-                placeholder="write here…"
-                placeholderTextColor={colors.inkMuted}
-                value={notes?.[i] ?? ''}
-                onChangeText={(text) => setPracticeNote(practice.id, i, text)}
-                textAlignVertical="top"
-                accessibilityLabel={`Your notes for step ${i + 1}`}
-              />
-            </View>
-          ))}
-          <Text style={styles.practiceClosing}>{practice.closing}</Text>
-        </View>
-      ) : null}
-    </ThreadCard>
   );
 }
 
@@ -363,44 +311,6 @@ const styles = StyleSheet.create({
   attribution: {
     ...typography.caption,
     marginTop: spacing.sm,
-  },
-  practiceSteps: {
-    marginTop: spacing.sm,
-    gap: spacing.md,
-  },
-  stepBlock: {
-    gap: spacing.sm,
-  },
-  stepRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-  },
-  stepInput: {
-    ...typography.body,
-    color: colors.ink,
-    minHeight: 64,
-    // Raised paper so the writing box reads as a page laid on the tinted card.
-    backgroundColor: colors.paperRaised,
-    borderRadius: borderRadius.md,
-    borderWidth: 0.5,
-    borderColor: colors.inkFaint,
-    padding: spacing.sm,
-    // Indent the writing box under the step text, clear of the number gutter.
-    marginLeft: spacing.md + 22,
-  },
-  stepNumber: {
-    ...typography.title,
-    color: colors.inkMuted,
-    width: 22,
-  },
-  stepText: {
-    flex: 1,
-    flexWrap: 'wrap',
-  },
-  practiceClosing: {
-    ...typography.caption,
-    marginTop: spacing.xs,
   },
   swipeHint: {
     ...typography.caption,

@@ -19,6 +19,7 @@ import InsightsScreen from '@/screens/InsightsScreen';
 import JudgmentFlowScreen from '@/screens/JudgmentFlowScreen';
 import NameItSetupScreen from '@/screens/NameItSetupScreen';
 import OnboardingScreen from '@/screens/OnboardingScreen';
+import PracticeFlowScreen from '@/screens/PracticeFlowScreen';
 import QuiltScreen from '@/screens/QuiltScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -30,6 +31,7 @@ export type RootStackParamList = {
   Onboarding: undefined;
   CheckInFlow: { source: 'manual' | 'name-it' } | undefined;
   JudgmentFlow: { editId?: string } | undefined;
+  PracticeFlow: { practiceId: string };
   NameItSetup: undefined;
   FieldGuide: undefined;
   Settings: undefined;
@@ -68,6 +70,7 @@ const SafeCircleScreen = withBoundary('Circle', CircleScreen);
 const SafeOnboardingScreen = withBoundary('Onboarding', OnboardingScreen);
 const SafeCheckInFlowScreen = withBoundary('CheckInFlow', CheckInFlowScreen);
 const SafeJudgmentFlowScreen = withBoundary('JudgmentFlow', JudgmentFlowScreen);
+const SafePracticeFlowScreen = withBoundary('PracticeFlow', PracticeFlowScreen);
 const SafeNameItSetupScreen = withBoundary('NameItSetup', NameItSetupScreen);
 const SafeFieldGuideScreen = withBoundary('FieldGuide', FieldGuideScreen);
 const SafeSettingsScreen = withBoundary('Settings', SettingsScreen);
@@ -140,6 +143,11 @@ export default function AppNavigator() {
         <Stack.Screen
           name="JudgmentFlow"
           component={SafeJudgmentFlowScreen}
+          options={{ presentation: 'modal' }}
+        />
+        <Stack.Screen
+          name="PracticeFlow"
+          component={SafePracticeFlowScreen}
           options={{ presentation: 'modal' }}
         />
         <Stack.Screen

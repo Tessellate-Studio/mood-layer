@@ -1,4 +1,5 @@
 import { useExperimentStore } from '@/store/experimentStore';
+import { setEntry } from '@/utils/practiceWork';
 
 const initialState = useExperimentStore.getState();
 
@@ -57,34 +58,36 @@ describe('experimentStore', () => {
     expect(useExperimentStore.getState().nameIt.enabled).toBe(true);
   });
 
-  it('clearAll resets entries, name-it settings, and practice notes', () => {
+  it('clearAll resets entries, name-it settings, and practice work', () => {
     useExperimentStore.getState().addJudgmentEntry({
       target: 'my friend',
       judgment: 'canceling',
       uncoveredFeelings: [],
     });
     useExperimentStore.getState().setNameIt({ enabled: true });
-    useExperimentStore.getState().setPracticeNote('problem-solution', 0, 'the problem');
+    useExperimentStore
+      .getState()
+      .updatePracticeWork('problem-solution', (w) => setEntry(w, 'problem', 0, 'the problem'));
 
     useExperimentStore.getState().clearAll();
     expect(useExperimentStore.getState().judgmentEntries).toEqual([]);
     expect(useExperimentStore.getState().nameIt.enabled).toBe(false);
-    expect(useExperimentStore.getState().practiceNotes).toEqual({});
+    expect(useExperimentStore.getState().practiceWork).toEqual({});
   });
 
-  it('setPracticeNote writes per-step text without disturbing other steps', () => {
-    useExperimentStore.getState().setPracticeNote('five-year-flashback', 1, 'option A');
-    useExperimentStore.getState().setPracticeNote('five-year-flashback', 0, 'the decision');
-    expect(useExperimentStore.getState().practiceNotes['five-year-flashback']).toEqual([
-      'the decision',
-      'option A',
-    ]);
+  it('updatePracticeWork seeds empty work and updates one practice only', () => {
+    useExperimentStore
+      .getState()
+      .updatePracticeWork('five-year-flashback', (w) => setEntry(w, 'decision', 0, 'move or stay'));
+    useExperimentStore
+      .getState()
+      .updatePracticeWork('problem-solution', (w) => setEntry(w, 'problem', 0, 'no time'));
 
-    // Editing one step leaves the others intact.
-    useExperimentStore.getState().setPracticeNote('five-year-flashback', 0, 'a clearer decision');
-    expect(useExperimentStore.getState().practiceNotes['five-year-flashback']).toEqual([
-      'a clearer decision',
-      'option A',
-    ]);
+    const { practiceWork } = useExperimentStore.getState();
+    expect(practiceWork['five-year-flashback'].entries.decision).toEqual(['move or stay']);
+    expect(practiceWork['problem-solution'].entries.problem).toEqual(['no time']);
+    // Untouched fields stay in shape.
+    expect(practiceWork['five-year-flashback'].marks).toEqual({});
+    expect(practiceWork['five-year-flashback'].picks).toEqual({});
   });
 });

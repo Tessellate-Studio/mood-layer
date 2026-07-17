@@ -84,10 +84,11 @@ describe('AppNavigator (real navigator)', () => {
 });
 
 describe('screen skeletons render their landmarks', () => {
-  // CheckInFlowScreen and JudgmentFlowScreen are intentionally absent: both
-  // read route params via useRoute, which throws outside a real navigator
-  // screen. They're covered with route mocks in checkInFlowScreen.test.tsx /
-  // experiments.test.tsx / reflections.test.tsx.
+  // CheckInFlowScreen, JudgmentFlowScreen, and PracticeFlowScreen are
+  // intentionally absent: they read route params via useRoute, which throws
+  // outside a real navigator screen. They're covered with route mocks in
+  // checkInFlowScreen.test.tsx / experiments.test.tsx / reflections.test.tsx /
+  // practiceFlowScreen.test.tsx.
   const cases: [string, React.ComponentType][] = [
     ['screen-quilt', QuiltScreen],
     ['screen-experiments', ExperimentsScreen],
