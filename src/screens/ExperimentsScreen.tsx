@@ -19,7 +19,7 @@ import LogoDivider from '@/components/LogoDivider';
 import PaperTexture from '@/components/PaperTexture';
 import SectionHeader from '@/components/SectionHeader';
 import ThreadCard from '@/components/ThreadCard';
-import { findEmotionWord } from '@/content/emotions';
+import { findVocabularyWord } from '@/content/vocabulary';
 import { PRACTICES, type Practice } from '@/content/practices';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { useExperimentStore } from '@/store/experimentStore';
@@ -244,7 +244,7 @@ function ReflectionRow({
   const feelingLabel =
     entry.uncoveredFeelings.length > 0
       ? entry.uncoveredFeelings
-          .map((f) => findEmotionWord(f.emotionId)?.word.label ?? f.emotionId)
+          .map((f) => findVocabularyWord(f.emotionId)?.word.label ?? f.emotionId)
           .join(', ')
       : null;
 
