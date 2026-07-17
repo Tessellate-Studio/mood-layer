@@ -36,7 +36,7 @@
   },
   "devDependencies": {
     "@expo/ngrok": "^4.1.3",
-    "@tessellate-studio/rubric-sdk": "github:ramsaptami/rubric-sdk",
+    "@tessellate-studio/forge": "github:Tessellate-Studio/forge",
     "@testing-library/react-native": "^13.3.3",
     "@types/jest": "~29.5.14",
     "@types/react": "~19.2.2",
