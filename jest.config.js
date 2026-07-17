@@ -11,5 +11,9 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   testMatch: ['**/__tests__/**/*.test.[jt]s?(x)', '**/*.test.[jt]s?(x)'],
+  // Session worktrees checked out under the repo root carry their own copies of
+  // the test suite; without these ignores jest runs them too (stale duplicates).
+  testPathIgnorePatterns: ['/node_modules/', '/\\.claude/worktrees/', '/\\.worktrees/'],
+  modulePathIgnorePatterns: ['<rootDir>/\\.claude/worktrees/', '<rootDir>/\\.worktrees/'],
   collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.d.ts', '!src/**/index.ts'],
 };
