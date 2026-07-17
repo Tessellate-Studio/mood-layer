@@ -19,8 +19,10 @@ import Svg, { Line } from 'react-native-svg';
 
 import { borderRadius, colors, hitTarget, motion, spacing, typography } from '@/constants/theme';
 import LogoDivider from '@/components/LogoDivider';
+import LogoMark from '@/components/LogoMark';
 import PaperTexture from '@/components/PaperTexture';
 import ThreadCard from '@/components/ThreadCard';
+import { monthlyMoodDigest, monthlyPracticeDigest } from '@/content/monthlyDigest';
 import { RESISTANCE_TELLS } from '@/content/resistance';
 import { useMotion } from '@/hooks/useMotion';
 import { useCheckInStore } from '@/store/checkInStore';
@@ -145,6 +147,7 @@ export default function InsightsScreen() {
   const dismissCard = useInsightStore((s) => s.dismissCard);
   const checkIns = useCheckInStore((s) => s.checkIns);
   const judgmentEntries = useExperimentStore((s) => s.judgmentEntries);
+  const practiceSessions = useExperimentStore((s) => s.practiceSessions);
 
   const { reduced: reduceMotion } = useMotion();
 
@@ -181,26 +184,80 @@ export default function InsightsScreen() {
   const newestWeek = visible[0]?.weekKey;
   const summaryStats = newestWeek ? statsByWeek[newestWeek] : undefined;
 
+  // The week's mood, worn by the same mark the home screen breathes — the two
+  // screens read as one system (user, 2026-07-17).
+  const markFamilies = React.useMemo(() => {
+    if (!summaryStats) return undefined;
+    const top = (Object.entries(summaryStats.familyCounts) as [EmotionFamilyId, number][])
+      .filter(([, n]) => n > 0)
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([family]) => family);
+    return top.length > 0 ? top.slice(0, 3) : undefined;
+  }, [summaryStats]);
+
+  // Beyond the week: the month's texture + the practices taken up
+  // (user, 2026-07-17). Computed live, never stored; hidden while thin.
+  const moodDigest = React.useMemo(() => monthlyMoodDigest(checkIns), [checkIns]);
+  const practiceDigest = React.useMemo(
+    () => monthlyPracticeDigest(practiceSessions, judgmentEntries),
+    [practiceSessions, judgmentEntries]
+  );
+  const monthlyBlock =
+    moodDigest || practiceDigest ? (
+      <View style={styles.monthly} testID="insights-monthly">
+        {moodDigest ? (
+          <ThreadCard family="enjoyment" style={styles.cardBody}>
+            <Text style={styles.overline}>This month · Texture</Text>
+            <View style={styles.monthlyHeader}>
+              <LogoMark families={moodDigest.families} size={40} />
+              <Text style={[styles.cardTitle, styles.monthlyTitle]}>{moodDigest.title}</Text>
+            </View>
+            <Text style={styles.cardText}>{moodDigest.body}</Text>
+          </ThreadCard>
+        ) : null}
+        {practiceDigest ? (
+          <ThreadCard family="contempt" style={styles.cardBody}>
+            <Text style={styles.overline}>This month · Practices</Text>
+            <Text style={styles.cardTitle}>{practiceDigest.title}</Text>
+            <Text style={styles.cardText}>{practiceDigest.body}</Text>
+          </ThreadCard>
+        ) : null}
+      </View>
+    ) : null;
+
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-insights">
       <PaperTexture />
-      <Text style={typography.title}>This week</Text>
-      {summaryStats ? (
-        <Text style={styles.summary} testID="insights-summary">
-          {weekRangeLabel(newestWeek!)} · {plural(summaryStats.checkInCount, 'check-in', 'check-ins')}{' '}
-          across {plural(summaryStats.activeDayCount, 'day', 'days')}
-        </Text>
-      ) : null}
+      <View style={styles.headerRow}>
+        {markFamilies ? <LogoMark families={markFamilies} size={44} /> : null}
+        <View style={styles.headerText}>
+          <Text style={typography.title}>This week</Text>
+          {summaryStats ? (
+            <Text style={styles.summary} testID="insights-summary">
+              {weekRangeLabel(newestWeek!)} · {plural(summaryStats.checkInCount, 'check-in', 'check-ins')}{' '}
+              across {plural(summaryStats.activeDayCount, 'day', 'days')}
+            </Text>
+          ) : null}
+        </View>
+      </View>
 
       {visible.length === 0 ? (
-        <View style={styles.empty}>
-          <Text style={styles.emptyText}>
-            Not enough layers yet — check in a few more times this week.
-          </Text>
-          <Text style={styles.emptyCaption}>
-            Patterns appear here once a week, when there are enough layers to read.
-          </Text>
-        </View>
+        <FlatList
+          data={[] as InsightCardState[]}
+          renderItem={() => null}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={
+            <View style={styles.empty}>
+              <Text style={styles.emptyText}>
+                Not enough layers yet — check in a few more times this week.
+              </Text>
+              <Text style={styles.emptyCaption}>
+                Patterns appear here once a week, when there are enough layers to read.
+              </Text>
+            </View>
+          }
+          ListFooterComponent={monthlyBlock}
+        />
       ) : (
         <FlatList
           data={visible}
@@ -217,6 +274,7 @@ export default function InsightsScreen() {
           )}
           ListFooterComponent={
             <View testID="insights-footer">
+              {monthlyBlock}
               <LogoDivider tip="Insights stay gentle. Two a week, at most — the rest is just your layers, quietly building." />
             </View>
           }
@@ -254,6 +312,28 @@ const styles = StyleSheet.create({
   listContent: {
     paddingVertical: spacing.md,
     gap: spacing.md,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  headerText: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  monthly: {
+    gap: spacing.md,
+    marginTop: spacing.sm,
+  },
+  monthlyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  monthlyTitle: {
+    flex: 1,
+    flexWrap: 'wrap',
   },
   cardBody: {
     gap: spacing.sm,

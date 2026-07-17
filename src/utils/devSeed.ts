@@ -137,7 +137,7 @@ export function seedMonth(now: Date = new Date()): number {
           'small-step': ['ask about moving the Monday call'],
         },
         marks: { fantastical: ['ideas:1'] },
-        picks: { 'one-step': 'ideas:2' },
+        picks: { 'one-step': ['ideas:2'] },
       },
     },
     {
@@ -154,7 +154,7 @@ export function seedMonth(now: Date = new Date()): number {
           ],
         },
         marks: {},
-        picks: { 'still-matters': 'options:1' },
+        picks: { 'still-matters': ['options:1'] },
       },
     },
   ];

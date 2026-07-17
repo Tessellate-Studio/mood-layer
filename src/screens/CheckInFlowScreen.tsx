@@ -84,6 +84,12 @@ export default function CheckInFlowScreen() {
   const title = source === 'name-it' && state.step === 'feel' ? 'Can you name it?' : STEP_TITLES[state.step];
   const stepIndex = STEP_ORDER.indexOf(state.step);
 
+  // Each step is its own page — never inherit the previous step's scroll
+  // position (app-wide bug, 2026-07-17).
+  React.useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [state.step]);
+
   const goNext = () => setState((s) => nextStep(s));
   const goBack = () => setState((s) => prevStep(s));
 
@@ -220,6 +226,10 @@ function FeelStep({
   // naming and weighing happen in one place (temperature-chip design,
   // user-approved 2026-07-17).
   const [openFamily, setOpenFamily] = React.useState<EmotionFamilyId | null>(null);
+  // Rebalance (user, 2026-07-17: the flow felt front-loaded): an unfolded
+  // family shows its short curated gradient first; "+ more words" unfolds the
+  // extended vocabulary for whoever wants the finer shades.
+  const [moreWordsFor, setMoreWordsFor] = React.useState<Partial<Record<EmotionFamilyId, boolean>>>({});
   // Selecting a masking chip opens its "look underneath" panel BELOW the
   // fold — without a nudge it's easy to miss (device feedback 2026-07-17).
   // Remember which panel was just opened and scroll to it once it lays out.
@@ -235,11 +245,20 @@ function FeelStep({
         swatches beside a chosen word set how strongly it&apos;s here.
       </Text>
       {Object.values(EMOTION_FAMILIES).map((family) => {
-        // The FULL mild→intense vocabulary, not just the short gradient — the
-        // whole point is learning to recognise more words (user, 2026-07-17).
-        const words = allWordsForFamily(family.id);
+        // Full vocabulary reachable, gradient shown first: the curated words
+        // carry most check-ins; "+ more words" opens the extended list.
+        // A selected extended word always stays visible.
+        const allWords = allWordsForFamily(family.id);
+        const showAll = moreWordsFor[family.id] === true;
+        const words = showAll
+          ? allWords
+          : allWords.filter(
+              (w) =>
+                family.gradient.some((g) => g.id === w.id) ||
+                state.selections.some((sel) => sel.emotionId === w.id)
+            );
         const selectedInFamily = state.selections.filter((sel) =>
-          words.some((w) => w.id === sel.emotionId)
+          allWords.some((w) => w.id === sel.emotionId)
         );
         const temperatureRows =
           selectedInFamily.length > 0 ? (
@@ -287,6 +306,15 @@ function FeelStep({
                   />
                 );
               })}
+              <EmotionChip
+                id={`more-${family.id}`}
+                label={showAll ? '– fewer words' : '+ more words'}
+                dashed
+                selected={false}
+                onPress={() =>
+                  setMoreWordsFor((cur) => ({ ...cur, [family.id]: !showAll }))
+                }
+              />
             </View>
             {temperatureRows}
           </FamilyGroup>
@@ -326,14 +354,19 @@ function FeelStep({
           <Text style={styles.underneathPrompt}>{m.prompt}</Text>
           {m.unpacksTo.map((familyId) => {
             const family = EMOTION_FAMILIES[familyId];
+            const selectedHere = state.selections.filter((sel) =>
+              family.gradient.some((w) => w.id === sel.emotionId)
+            );
             return (
               <View key={familyId} style={styles.familyGroup}>
                 <View style={styles.underneathHeader}>
                   <Text style={styles.overline}>{family.label}</Text>
                   <LearnLink family={familyId} testID={`underneath-learn-${familyId}`} />
                 </View>
+                {/* The short gradient only — the panel is a doorway, not the
+                    library; the finer shades live in the family list above. */}
                 <View style={styles.chipWrap}>
-                  {allWordsForFamily(familyId).map((word) => {
+                  {family.gradient.map((word) => {
                     const sel = state.selections.find((x) => x.emotionId === word.id);
                     return (
                       <EmotionChip
@@ -351,6 +384,29 @@ function FeelStep({
                     );
                   })}
                 </View>
+                {/* The dial appears RIGHT HERE for words chosen from the
+                    panel — its twin under the folded family above is out of
+                    sight at this point (device feedback 2026-07-17). */}
+                {selectedHere.length > 0 ? (
+                  <View style={styles.temperatureRows}>
+                    {selectedHere.map((sel) => (
+                      <WordTemperatureRow
+                        key={sel.emotionId}
+                        wordId={sel.emotionId}
+                        chipId={`under-picked-${sel.emotionId}`}
+                        label={findVocabularyWord(sel.emotionId)?.word.label ?? sel.emotionId}
+                        family={sel.family}
+                        intensity={sel.intensity}
+                        onToggle={() =>
+                          setState((s) => toggleEmotion(s, sel.emotionId, sel.family))
+                        }
+                        onChangeIntensity={(intensity) =>
+                          setState((s) => setIntensity(s, sel.emotionId, intensity))
+                        }
+                      />
+                    ))}
+                  </View>
+                ) : null}
               </View>
             );
           })}

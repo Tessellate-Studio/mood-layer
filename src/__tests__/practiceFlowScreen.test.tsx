@@ -84,7 +84,7 @@ describe('PracticeFlowScreen — problem, then solution', () => {
     expect(session.work.entries.cannot).toEqual(['the days are full', 'nobody can help']);
     expect(session.work.entries.ideas).toEqual(['ask for help anyway', 'a robot does my chores']);
     expect(session.work.marks.fantastical).toEqual(['ideas:1']);
-    expect(session.work.picks['one-step']).toBe('ideas:0');
+    expect(session.work.picks['one-step']).toEqual(['ideas:0']);
     expect(session.work.entries['small-step']).toEqual(['ask about the Monday call']);
   });
 
@@ -132,12 +132,14 @@ describe('PracticeFlowScreen — five year flashback', () => {
     // Reflection saved at the SAME index as its option — alignment contract.
     expect(work.entries.changed[1]).toBe('harder year up front, closer after');
 
-    // Final step: pick which option still matters in five years.
+    // Final step: choose which options still matter in five years —
+    // MULTI-select (user, 2026-07-17): both can.
     fireEvent.press(screen.getByTestId('practice-next'));
     fireEvent.press(screen.getByTestId('practice-pick-still-matters-1'));
+    fireEvent.press(screen.getByTestId('practice-pick-still-matters-0'));
     expect(
       useExperimentStore.getState().practiceWork['five-year-flashback'].picks['still-matters']
-    ).toBe('options:1');
+    ).toEqual(['options:1', 'options:0']);
   });
 
   it('a reflect step with nothing noted offers a gentle way on', () => {

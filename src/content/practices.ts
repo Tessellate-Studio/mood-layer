@@ -98,7 +98,7 @@ export const PRACTICES: Practice[] = [
         id: 'still-matters',
         title: 'What still matters',
         prompt:
-          'Which option contributes to something that will still matter in five years?',
+          'Which options contribute to something that will still matter in five years? Choose any that do.',
         sourceStepId: 'options',
       },
     ],

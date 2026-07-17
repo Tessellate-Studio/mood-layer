@@ -54,8 +54,9 @@ describe('CheckInFlowScreen', () => {
   it('offers the FULL vocabulary, with the temperature dial on the word', () => {
     renderScreen();
     fireEvent.press(screen.getByTestId('family-sadness'));
-    // 'heartbroken' lives only in EXTENDED_VOCABULARY — selectable since
-    // 2026-07-17 (the point is learning emotional vocabulary).
+    // 'heartbroken' lives only in EXTENDED_VOCABULARY — reachable behind the
+    // family's "+ more words" unfold (rebalance, 2026-07-17).
+    fireEvent.press(screen.getByTestId('chip-more-sadness'));
     fireEvent.press(screen.getByTestId('chip-heartbroken'));
     // Selecting unfolds the word's own four-swatch dial right there — no
     // separate intensity step (temperature-chip design).

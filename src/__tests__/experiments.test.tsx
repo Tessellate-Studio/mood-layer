@@ -14,10 +14,14 @@ jest.mock('@/services/notifications', () => ({
 }));
 
 // JudgmentFlowScreen reads route params (edit mode); provide an empty route so
-// bare renders behave as "add" mode.
+// bare renders behave as "add" mode. Navigation is mocked so card presses can
+// be asserted without registering real navigator screens.
+const mockNavigate = jest.fn();
+const mockGoBack = jest.fn();
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
   useRoute: () => ({ params: {} }),
+  useNavigation: () => ({ navigate: mockNavigate, goBack: mockGoBack }),
 }));
 
 import * as notifications from '@/services/notifications';
@@ -73,58 +77,59 @@ describe('NameItSetupScreen', () => {
 });
 
 describe('JudgmentFlowScreen', () => {
-  it('walks the 4 steps and saves more than one feeling', async () => {
+  it('walks a TWO-judgment sitting: list → per-judgment feelings → free writing', async () => {
     renderScreen(<JudgmentFlowScreen />);
     expect(await screen.findByTestId('screen-judgment')).toBeTruthy();
 
-    // Step 1 — target
-    fireEvent.changeText(screen.getByTestId('judgment-target'), 'my coworker');
+    // Step 1 — the judgments list (worksheet: think of ~5 recent judgments).
+    fireEvent.changeText(screen.getByTestId('judgment-target-0'), 'my coworker');
+    fireEvent.changeText(screen.getByTestId('judgment-for-0'), 'being disorganized');
+    fireEvent.press(screen.getByTestId('judgment-add'));
+    fireEvent.changeText(screen.getByTestId('judgment-target-1'), 'myself');
+    fireEvent.changeText(screen.getByTestId('judgment-for-1'), 'being slow');
     fireEvent.press(screen.getByTestId('judgment-next'));
 
-    // Step 2 — judgment
-    fireEvent.changeText(await screen.findByTestId('judgment-judgment'), 'being disorganized');
-    fireEvent.press(screen.getByTestId('judgment-next'));
-
-    // Step 3 — the feeling step carries the previous two answers forward so
-    // "who" + "why" stay in view.
-    const stitch = await screen.findByTestId('judgment-stitch');
-    // Regex so the match searches across the nested <Text> spans (target +
-    // judgment are emphasised inline).
-    expect(stitch).toHaveTextContent(/my coworker.*being disorganized/);
-
-    // Multi-select: name two feelings, not one. Families start folded, so each
-    // one is unfolded first. EmotionChip stamps `chip-${id}`, so
-    // `judgment-feeling-worried` renders as `chip-judgment-feeling-worried`.
+    // Step 2 — first judgment's feelings, sentence carried forward.
+    expect(await screen.findByTestId('judgment-stitch')).toHaveTextContent(
+      /my coworker.*being disorganized/
+    );
     // A named feeling starts UNWEIGHED and blocks Continue until its dial is
     // tapped (no default temperatures, 2026-07-17).
     fireEvent.press(screen.getByTestId('judgment-family-fear'));
     fireEvent.press(screen.getByTestId('chip-judgment-feeling-worried'));
-    fireEvent.press(screen.getByTestId('judgment-family-sadness'));
-    fireEvent.press(screen.getByTestId('chip-judgment-feeling-hurt'));
     expect(screen.getByTestId('judgment-next').props.accessibilityState.disabled).toBe(true);
     fireEvent.press(screen.getByTestId('dial-worried-2'));
+    fireEvent.press(screen.getByTestId('judgment-next'));
+
+    // Step 3 — second judgment's feelings.
+    expect(await screen.findByTestId('judgment-stitch')).toHaveTextContent(/myself.*being slow/);
+    fireEvent.press(screen.getByTestId('judgment-family-sadness'));
+    fireEvent.press(screen.getByTestId('chip-judgment-feeling-hurt'));
     fireEvent.press(screen.getByTestId('dial-hurt-3'));
     fireEvent.press(screen.getByTestId('judgment-next'));
 
-    // Step 4 — optional free-writing, then save
+    // Step 4 — one shared free-writing about what came up, then save.
     fireEvent.changeText(await screen.findByTestId('judgment-freewriting'), 'the deadline scares me');
     fireEvent.press(screen.getByTestId('judgment-save'));
 
-    await waitFor(() => expect(useExperimentStore.getState().judgmentEntries).toHaveLength(1));
-    const entry = useExperimentStore.getState().judgmentEntries[0];
-    expect(entry.target).toBe('my coworker');
-    expect(entry.judgment).toBe('being disorganized');
-    expect(entry.uncoveredFeelings.map((f) => f.emotionId)).toEqual(['worried', 'hurt']);
-    expect(entry.uncoveredFeelings.map((f) => f.family)).toEqual(['fear', 'sadness']);
-    expect(entry.uncoveredFeelings.map((f) => f.intensity)).toEqual([2, 3]);
-    expect(entry.freeWriting).toBe('the deadline scares me');
+    await waitFor(() => expect(useExperimentStore.getState().judgmentEntries).toHaveLength(2));
+    const [first, second] = useExperimentStore.getState().judgmentEntries;
+    expect(first.target).toBe('my coworker');
+    expect(first.uncoveredFeelings).toEqual([
+      { emotionId: 'worried', family: 'fear', intensity: 2 },
+    ]);
+    expect(first.freeWriting).toBe('the deadline scares me');
+    expect(second.target).toBe('myself');
+    expect(second.uncoveredFeelings).toEqual([
+      { emotionId: 'hurt', family: 'sadness', intensity: 3 },
+    ]);
+    expect(second.sittingId).toBe(first.sittingId);
   });
 
   it('deselects a feeling when its chip is tapped again', async () => {
     renderScreen(<JudgmentFlowScreen />);
-    fireEvent.changeText(await screen.findByTestId('judgment-target'), 'myself');
-    fireEvent.press(screen.getByTestId('judgment-next'));
-    fireEvent.changeText(await screen.findByTestId('judgment-judgment'), 'being slow');
+    fireEvent.changeText(await screen.findByTestId('judgment-target-0'), 'myself');
+    fireEvent.changeText(screen.getByTestId('judgment-for-0'), 'being slow');
     fireEvent.press(screen.getByTestId('judgment-next'));
 
     fireEvent.press(await screen.findByTestId('judgment-family-fear'));
@@ -137,11 +142,13 @@ describe('JudgmentFlowScreen', () => {
     expect(useExperimentStore.getState().judgmentEntries[0].uncoveredFeelings).toEqual([]);
   });
 
-  it('cannot advance step 1 with an empty target', async () => {
+  it('cannot advance with no complete judgment', async () => {
     renderScreen(<JudgmentFlowScreen />);
-    fireEvent.press(await screen.findByTestId('judgment-next'));
-    // Still on step 1 — the judgment input hasn't appeared.
-    expect(screen.queryByTestId('judgment-judgment')).toBeNull();
+    // Half a judgment (target only) doesn't unlock Continue.
+    fireEvent.changeText(await screen.findByTestId('judgment-target-0'), 'myself');
+    expect(screen.getByTestId('judgment-next').props.accessibilityState.disabled).toBe(true);
+    fireEvent.press(screen.getByTestId('judgment-next'));
+    expect(screen.queryByTestId('judgment-stitch')).toBeNull();
   });
 });
 
@@ -159,7 +166,10 @@ describe('ExperimentsScreen layout', () => {
     expect(screen.getByText(/Nothing here is a test/)).toBeTruthy();
   });
 
-  it('lists an archived practice sitting under Past reflections', async () => {
+  it('offers ONE compact doorway into the Reflections catalog, with a count', async () => {
+    // Detailed catalog behaviour lives in reflections.test.tsx — here the
+    // page just counts sittings (2 practice + 1 judgment sitting = 3) and
+    // navigates. A twenty-sitting wall never renders inline (user, 2026-07-17).
     useExperimentStore.setState((s) => ({
       ...s,
       practiceSessions: [
@@ -167,24 +177,32 @@ describe('ExperimentsScreen layout', () => {
           id: 'ps-1',
           practiceId: 'problem-solution',
           createdAt: '2026-07-15T20:00:00.000Z',
-          work: {
-            entries: { problem: ['no time'] },
-            marks: {},
-            picks: {},
-          },
+          work: { entries: { problem: ['no time'] }, marks: {}, picks: {} },
+        },
+        {
+          id: 'ps-2',
+          practiceId: 'five-year-flashback',
+          createdAt: '2026-07-14T20:00:00.000Z',
+          work: { entries: { decision: ['move?'] }, marks: {}, picks: {} },
         },
       ],
     }));
+    useExperimentStore.getState().addJudgmentEntry({
+      target: 'my friend',
+      judgment: 'canceling',
+      uncoveredFeelings: [],
+    });
+
     renderScreen(<ExperimentsScreen />);
     expect(await screen.findByText('Past reflections')).toBeTruthy();
-    const row = screen.getByTestId('practice-session-0');
-    // Collapsed: the step summary stays hidden until tapped.
+    expect(screen.getByText(/3 sittings, kept/)).toBeTruthy();
+    // The sittings themselves stay OFF this page.
     expect(screen.queryByText('no time')).toBeNull();
-    fireEvent.press(row);
-    expect(await screen.findByText('no time')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('card-reflections'));
+    expect(mockNavigate).toHaveBeenCalledWith('Reflections');
   });
 
-  it('shows the Past reflections section only once there is a reflection', async () => {
+  it('shows the Past reflections doorway only once there is a reflection', async () => {
     renderScreen(<ExperimentsScreen />);
     await screen.findByTestId('screen-experiments');
     expect(screen.queryByText('Past reflections')).toBeNull();
@@ -195,45 +213,5 @@ describe('ExperimentsScreen layout', () => {
       uncoveredFeelings: [],
     });
     expect(await screen.findByText('Past reflections')).toBeTruthy();
-  });
-});
-
-describe('ExperimentsScreen past reflections', () => {
-  it('lists a past reflection and expands it on tap', async () => {
-    useExperimentStore.getState().addJudgmentEntry({
-      target: 'my friend',
-      judgment: 'canceling',
-      uncoveredFeelings: [{ emotionId: 'hurt', family: 'sadness', intensity: 3 }],
-      freeWriting: 'I felt unimportant.',
-    });
-
-    renderScreen(<ExperimentsScreen />);
-    const entry = await screen.findByTestId('judgment-entry-0');
-    expect(entry).toBeTruthy();
-    // Collapsed: free-writing hidden until tapped.
-    expect(screen.queryByText('I felt unimportant.')).toBeNull();
-    fireEvent.press(entry);
-    expect(await screen.findByText('I felt unimportant.')).toBeTruthy();
-  });
-
-  it('shows every named feeling under an expanded reflection', async () => {
-    useExperimentStore.getState().addJudgmentEntry({
-      target: 'my friend',
-      judgment: 'canceling',
-      uncoveredFeelings: [
-        { emotionId: 'hurt', family: 'sadness', intensity: 3 },
-        { emotionId: 'worried', family: 'fear', intensity: 2 },
-      ],
-    });
-
-    renderScreen(<ExperimentsScreen />);
-    fireEvent.press(await screen.findByTestId('judgment-entry-0'));
-    expect(await screen.findByText('Underneath: Hurt, Worried')).toBeTruthy();
-  });
-
-  it('shows no reflections section when the store is empty', async () => {
-    renderScreen(<ExperimentsScreen />);
-    await screen.findByTestId('screen-experiments');
-    expect(screen.queryByTestId('judgment-entry-0')).toBeNull();
   });
 });

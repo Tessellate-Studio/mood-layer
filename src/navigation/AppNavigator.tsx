@@ -22,6 +22,7 @@ import NameItSetupScreen from '@/screens/NameItSetupScreen';
 import OnboardingScreen from '@/screens/OnboardingScreen';
 import PracticeFlowScreen from '@/screens/PracticeFlowScreen';
 import QuiltScreen from '@/screens/QuiltScreen';
+import ReflectionsScreen from '@/screens/ReflectionsScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
 import { useSettingsStore } from '@/store/settingsStore';
 
@@ -36,6 +37,7 @@ export type RootStackParamList = {
   Breathing: undefined;
   NameItSetup: undefined;
   FieldGuide: undefined;
+  Reflections: undefined;
   Settings: undefined;
 };
 
@@ -76,6 +78,7 @@ const SafePracticeFlowScreen = withBoundary('PracticeFlow', PracticeFlowScreen);
 const SafeBreathingScreen = withBoundary('Breathing', BreathingScreen);
 const SafeNameItSetupScreen = withBoundary('NameItSetup', NameItSetupScreen);
 const SafeFieldGuideScreen = withBoundary('FieldGuide', FieldGuideScreen);
+const SafeReflectionsScreen = withBoundary('Reflections', ReflectionsScreen);
 const SafeSettingsScreen = withBoundary('Settings', SettingsScreen);
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -164,6 +167,7 @@ export default function AppNavigator() {
           options={{ presentation: 'modal' }}
         />
         <Stack.Screen name="FieldGuide" component={SafeFieldGuideScreen} />
+        <Stack.Screen name="Reflections" component={SafeReflectionsScreen} />
         <Stack.Screen name="Settings" component={SafeSettingsScreen} />
       </Stack.Navigator>
     </NavigationContainer>

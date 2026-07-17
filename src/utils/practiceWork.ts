@@ -12,8 +12,9 @@ export interface PracticeWork {
   entries: Record<string, string[]>;
   /** mark step id → point keys ("sourceStepId:index") currently marked. */
   marks: Record<string, string[]>;
-  /** pick step id → the one chosen point key, if any. */
-  picks: Record<string, string>;
+  /** pick step id → chosen point keys. Multi-select (user, 2026-07-17):
+   *  more than one option can still matter in five years. */
+  picks: Record<string, string[]>;
 }
 
 export function emptyWork(): PracticeWork {
@@ -99,9 +100,8 @@ export function removeListItem(
   }
 
   const picks: PracticeWork['picks'] = {};
-  for (const [stepId, key] of Object.entries(work.picks)) {
-    const next = reindexKey(key);
-    if (next !== null) picks[stepId] = next;
+  for (const [stepId, keys] of Object.entries(work.picks)) {
+    picks[stepId] = keys.map(reindexKey).filter((k): k is string => k !== null);
   }
 
   return { entries, marks, picks };
@@ -116,15 +116,14 @@ export function toggleMark(work: PracticeWork, markStepId: string, key: string):
   return { ...work, marks: { ...work.marks, [markStepId]: next } };
 }
 
-/** Choose a point on a pick step; choosing it again lets it go. */
-export function setPick(work: PracticeWork, pickStepId: string, key: string): PracticeWork {
-  const picks = { ...work.picks };
-  if (picks[pickStepId] === key) {
-    delete picks[pickStepId];
-  } else {
-    picks[pickStepId] = key;
-  }
-  return { ...work, picks };
+/** Toggle a point on a pick step — several can be chosen; tapping again
+ *  lets one go. */
+export function togglePick(work: PracticeWork, pickStepId: string, key: string): PracticeWork {
+  const current = work.picks[pickStepId] ?? [];
+  const next = current.includes(key)
+    ? current.filter((k) => k !== key)
+    : [...current, key];
+  return { ...work, picks: { ...work.picks, [pickStepId]: next } };
 }
 
 /** Resolve an item key ("stepId:index") back to its text, if any. */
@@ -173,9 +172,10 @@ export function sessionLines(
         break;
       }
       case 'pick': {
-        const key = work.picks[step.id];
-        const text = key ? keyText(work, key) : undefined;
-        if (text) lines.push({ title: step.title, body: text });
+        const texts = (work.picks[step.id] ?? [])
+          .map((key) => keyText(work, key))
+          .filter((t): t is string => t !== undefined);
+        if (texts.length > 0) lines.push({ title: step.title, body: texts.join(' · ') });
         break;
       }
     }

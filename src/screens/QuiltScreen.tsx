@@ -29,6 +29,7 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
+import FamilyLegend from '@/components/FamilyLegend';
 import LayeredClusterVignette from '@/components/LayeredClusterVignette';
 import PaperTexture from '@/components/PaperTexture';
 import WeeklySummaryCard from '@/components/WeeklySummaryCard';
@@ -148,6 +149,8 @@ export default function QuiltScreen() {
       </View>
 
       <WeeklySummaryCard summary={weeklySummary} />
+      {/* The quilt's key, on the quilt — tap a family to learn it. */}
+      <FamilyLegend />
 
       {checkIns.length === 0 ? (
         <View style={styles.empty}>
@@ -371,6 +374,10 @@ const styles = StyleSheet.create({
   },
   sheetScroll: {
     flexGrow: 0,
+    // MUST shrink inside the sheet's maxHeight — RN's default flexShrink of 0
+    // let long content overflow the hidden clip instead of scrolling, cutting
+    // off the bottom (device bug, 2026-07-17).
+    flexShrink: 1,
   },
   sheetScrollContent: {
     gap: spacing.sm,

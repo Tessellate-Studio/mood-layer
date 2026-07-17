@@ -46,8 +46,8 @@ import {
   notedItems,
   removeListItem,
   setEntry,
-  setPick,
   toggleMark,
+  togglePick,
   type PracticeWork,
 } from '@/utils/practiceWork';
 
@@ -60,6 +60,13 @@ export default function PracticeFlowScreen() {
   const practice = findPractice(route.params?.practiceId ?? '');
 
   const [stepIndex, setStepIndex] = React.useState(0);
+
+  // Each step is its own page — never inherit the previous step's scroll
+  // position (app-wide bug, 2026-07-17).
+  const scrollRef = React.useRef<ScrollView>(null);
+  React.useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [stepIndex]);
 
   if (!practice) {
     // A stale deep link — nothing to practise on; leave quietly.
@@ -111,7 +118,11 @@ export default function PracticeFlowScreen() {
         </Svg>
       </View>
 
-      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.body}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.stepGap}>
           <Text style={typography.heading} testID="practice-step-title">
             {step.title}
@@ -268,7 +279,7 @@ function StepBody({
 
     case 'pick': {
       const points = notedItems(work, step.sourceStepId);
-      const picked = work.picks[step.id];
+      const picked = work.picks[step.id] ?? [];
       if (points.length === 0) {
         return (
           <Text style={typography.caption}>
@@ -280,7 +291,7 @@ function StepBody({
         <View style={styles.stepGap}>
           {points.map((point) => {
             const key = itemKey(step.sourceStepId, point.index);
-            const isPicked = picked === key;
+            const isPicked = picked.includes(key);
             return (
               <Pressable
                 key={key}
@@ -289,7 +300,7 @@ function StepBody({
                 accessibilityState={{ selected: isPicked }}
                 accessibilityLabel={point.text}
                 style={[styles.pickCard, isPicked && styles.pickCardPicked]}
-                onPress={() => update((w) => setPick(w, step.id, key))}
+                onPress={() => update((w) => togglePick(w, step.id, key))}
               >
                 <Text style={[styles.pointText, styles.pickText]}>{point.text}</Text>
                 {isPicked ? <Text style={styles.pickGlyph}>✓</Text> : null}
