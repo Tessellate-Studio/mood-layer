@@ -114,7 +114,7 @@ describe('screen skeletons render their landmarks', () => {
         <QuiltScreen />
       </NavigationContainer>
     );
-    expect(await screen.findByText('Your quilt begins with one square.')).toBeTruthy();
+    expect(await screen.findByText('Your layers begin with a single check-in.')).toBeTruthy();
   });
 
   it('quilt renders an accessible patch when a check-in exists', async () => {
@@ -176,7 +176,7 @@ describe('ScreenErrorBoundary', () => {
         <Bomb />
       </ScreenErrorBoundary>
     );
-    expect(screen.getByText('Something tore a stitch')).toBeTruthy();
+    expect(screen.getByText('Something slipped out of place')).toBeTruthy();
     shouldThrow = false;
     fireEvent.press(screen.getByTestId('error-retry'));
     expect(screen.getByText('recovered')).toBeTruthy();

@@ -134,7 +134,7 @@ describe('InsightsScreen', () => {
     renderScreen();
     expect(
       await screen.findByText(
-        'Not enough stitches yet — check in a few more times this week.'
+        'Not enough layers yet — check in a few more times this week.'
       )
     ).toBeTruthy();
   });

@@ -134,8 +134,8 @@ export default function FieldGuideScreen() {
         </View>
 
         <Text style={styles.footer}>
-          Words adapted from a feelings-vocabulary wheel, arranged into the quilt&apos;s
-          families. None of them is a test — the closest word is close enough.
+          Words adapted from a feelings-vocabulary wheel, arranged into the app&apos;s
+          nine families. None of them is a test — the closest word is close enough.
         </Text>
       </ScrollView>
     </View>

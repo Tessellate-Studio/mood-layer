@@ -36,7 +36,7 @@ export class ScreenErrorBoundary extends React.Component<Props, State> {
     return (
       <View style={styles.container}>
         <Text accessibilityRole="header" style={styles.title}>
-          Something tore a stitch
+          Something slipped out of place
         </Text>
         <Text style={styles.body}>
           This screen hit a snag. Nothing you recorded is lost.

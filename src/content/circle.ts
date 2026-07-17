@@ -67,7 +67,7 @@ function joinTones(tones: string[]): string {
  * ("what they see") and the text handed to the share sheet.
  */
 export function shareSummary(sees: CircleSeesLevel, stats: WeekStats): string {
-  if (stats.checkInCount === 0) return 'A quiet week — nothing stitched in yet.';
+  if (stats.checkInCount === 0) return 'A quiet week — nothing layered in yet.';
 
   if (sees === 'count') {
     const checkins = stats.checkInCount === 1 ? '1 check-in' : `${stats.checkInCount} check-ins`;
@@ -120,8 +120,8 @@ export function homeWeeklySummary(stats: WeekStats): HomeWeeklySummary | null {
     body = `${labels[0]}, running through the week.`;
   } else {
     const third = top[2];
-    const tail = third ? ` — with a thread of ${EMOTION_FAMILIES[third].label} too.` : '.';
-    body = `${labels[0]} and ${labels[1]}, sewn side by side${tail}`;
+    const tail = third ? ` — with a trace of ${EMOTION_FAMILIES[third].label} too.` : '.';
+    body = `${labels[0]} and ${labels[1]}, layered side by side${tail}`;
   }
 
   return { headline, body, families };

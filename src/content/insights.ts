@@ -32,7 +32,7 @@ export const INSIGHT_TEMPLATES: InsightTemplate[] = [
       return {
         title: `${first} and ${second} keep arriving together`,
         body:
-          `More than once this week you named something ${first.toLowerCase()} and something ${second} in the same check-in. They are not opposites — your quilt is holding both at once. That is the whole point of a quilt; nothing here needs fixing.`,
+          `More than once this week you named something ${first.toLowerCase()} and something ${second} in the same check-in. They are not opposites — you were holding both at once. Layers can do that; nothing here needs fixing.`,
       };
     },
   },

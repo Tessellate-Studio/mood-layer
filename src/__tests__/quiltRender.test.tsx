@@ -158,7 +158,7 @@ describe('QuiltScreen', () => {
 
   it('shows the empty state with no check-ins', async () => {
     renderScreen();
-    expect(await screen.findByText('Your quilt begins with one square.')).toBeTruthy();
+    expect(await screen.findByText('Your layers begin with a single check-in.')).toBeTruthy();
     expect(screen.getByTestId('screen-quilt')).toBeTruthy();
     expect(screen.getByTestId('checkin-fab')).toBeTruthy();
     expect(screen.getByTestId('open-settings')).toBeTruthy();

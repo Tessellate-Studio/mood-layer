@@ -97,7 +97,7 @@ function MainTabs() {
       <Tab.Screen
         name="QuiltTab"
         component={SafeQuiltScreen}
-        options={{ title: 'Quilt', tabBarIcon: renderQuiltIcon }}
+        options={{ title: 'Layers', tabBarIcon: renderQuiltIcon }}
       />
       <Tab.Screen
         name="ExperimentsTab"
