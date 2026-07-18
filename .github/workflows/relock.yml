@@ -1,0 +1,35 @@
+name: Relock
+
+# Regenerate package-lock.json on a schedule to ensure Linux/macOS/Windows
+# compatibility. Runs `npm install` (not `npm ci`) to update the lockfile
+# to the latest compatible versions, solving the Windows npm install →
+# Linux npm ci incompatibility where lockfile format diverges.
+
+on:
+  schedule:
+    # Every Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
+  workflow_dispatch:
+
+jobs:
+  relock:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install -g npm@11
+      - run: npm install
+      - name: Commit and push if changed
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit"
+          else
+            git config user.email "action@github.com"
+            git config user.name "GitHub Action"
+            git add package-lock.json
+            git commit -m "chore: relock dependencies"
+            git push
+          fi
