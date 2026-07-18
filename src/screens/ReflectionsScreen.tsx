@@ -220,12 +220,16 @@ function JudgmentSittingCard({
         style={styles.entryBody}
       >
         {/* Every reflection reads the same way: the PRACTICE's name, then one
-            line of what it arrived at (user, 2026-07-18). */}
+            line of what it arrived at. The subtitle yields to the full detail
+            on expand — showing both repeated the first judgment (user,
+            2026-07-18). */}
         <Text style={styles.entryTitle}>Explore avoided emotions</Text>
-        <Text style={styles.entrySub} numberOfLines={expanded ? undefined : 1}>
-          {first.target} — {first.judgment}
-          {more > 0 ? `  ·  +${more} more` : ''}
-        </Text>
+        {!expanded ? (
+          <Text style={styles.entrySub} numberOfLines={1}>
+            {first.target} — {first.judgment}
+            {more > 0 ? `  ·  +${more} more` : ''}
+          </Text>
+        ) : null}
         {expanded ? (
           <View style={styles.entryDetail}>
             {entries.map((entry) => {
@@ -289,8 +293,8 @@ function PracticeSittingCard({
         style={styles.entryBody}
       >
         <Text style={styles.entryTitle}>{practice.title}</Text>
-        {conclusion ? (
-          <Text style={styles.entrySub} numberOfLines={expanded ? undefined : 1}>
+        {!expanded && conclusion ? (
+          <Text style={styles.entrySub} numberOfLines={1}>
             {conclusion}
           </Text>
         ) : null}

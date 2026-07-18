@@ -61,7 +61,7 @@ import {
 type CheckInRoute = RouteProp<RootStackParamList, 'CheckInFlow'>;
 
 const STEP_TITLES: Record<CheckInStep, string> = {
-  feel: "What's here right now?",
+  feel: 'What are you feeling right now?',
   body: 'Where do you feel it?',
   resistance: 'Any of these today?',
   note: 'A note to your future self',

@@ -20,10 +20,14 @@ export interface TabIconProps {
 
 const STROKE_WIDTH = 1.5;
 
-// The launcher mark's trio, top band first.
+// The launcher mark's trio, top band first. Strokes use the VIVID tones —
+// the muted threads read as grey at this size, which left Experiments and
+// Insights looking unselected (user, 2026-07-18).
 const BRAND_TRIO: EmotionFamilyId[] = ['anger', 'enjoyment', 'sadness'];
 const trioFill = (i: number) => familyPalette[BRAND_TRIO[i]].shades[3];
-const trioStroke = (i: number) => familyPalette[BRAND_TRIO[i]].thread;
+const trioStroke = (i: number) => familyPalette[BRAND_TRIO[i]].vivid;
+/** Focused line-work is drawn a touch heavier so the colour has body. */
+const FOCUS_STROKE_WIDTH = 2.1;
 
 // The app mark's three stacked bands — matches the logo handoff's
 // icon_mono.svg (240-unit viewBox).
@@ -57,11 +61,12 @@ export function QuiltIcon({ color, size, focused }: TabIconProps) {
 /** Hand-drawn asterisk — its three strokes take the trio when focused. */
 export function ExperimentsIcon({ color, size, focused }: TabIconProps) {
   const stroke = (i: number) => (focused ? trioStroke(i) : color);
+  const width = focused ? FOCUS_STROKE_WIDTH : STROKE_WIDTH;
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Line x1={12} y1={4} x2={12} y2={20} stroke={stroke(0)} strokeWidth={STROKE_WIDTH} strokeLinecap="round" />
-      <Line x1={5.1} y1={8} x2={18.9} y2={16} stroke={stroke(1)} strokeWidth={STROKE_WIDTH} strokeLinecap="round" />
-      <Line x1={18.9} y1={8} x2={5.1} y2={16} stroke={stroke(2)} strokeWidth={STROKE_WIDTH} strokeLinecap="round" />
+      <Line x1={12} y1={4} x2={12} y2={20} stroke={stroke(0)} strokeWidth={width} strokeLinecap="round" />
+      <Line x1={5.1} y1={8} x2={18.9} y2={16} stroke={stroke(1)} strokeWidth={width} strokeLinecap="round" />
+      <Line x1={18.9} y1={8} x2={5.1} y2={16} stroke={stroke(2)} strokeWidth={width} strokeLinecap="round" />
     </Svg>
   );
 }
@@ -107,7 +112,7 @@ export function InsightsIcon({ color, size, focused }: TabIconProps) {
           x2={row.x2}
           y2={row.y}
           stroke={focused ? trioStroke(i) : color}
-          strokeWidth={STROKE_WIDTH}
+          strokeWidth={focused ? FOCUS_STROKE_WIDTH : STROKE_WIDTH}
           strokeDasharray={[...textures.stitchDashFine]}
         />
       ))}

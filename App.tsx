@@ -10,6 +10,7 @@ import { FONT_ASSETS } from '@/constants/fontAssets';
 import { colors } from '@/constants/theme';
 import AppNavigator from '@/navigation/AppNavigator';
 import { navigate } from '@/navigation/navigationRef';
+import { registerCircleDelivery, runCircleDelivery } from '@/services/circleBackground';
 import { configureHandler, subscribeToNotificationTaps } from '@/services/notifications';
 import { syncCircleReminders, useCircleStore } from '@/store/circleStore';
 import { useHelperSheetStore } from '@/store/helperSheetStore';
@@ -52,8 +53,13 @@ export default function App() {
   React.useEffect(() => {
     const sync = () => {
       void syncCircleReminders();
+      // Automatic circle delivery, foreground catch-up half: send anything
+      // due + pull the inbox (no notification — the user is looking).
+      void runCircleDelivery(false);
     };
     sync();
+    // The OS background task carries the same delivery while the app sleeps.
+    void registerCircleDelivery();
     const unsubStore = useCircleStore.subscribe((state, prev) => {
       if (state.people !== prev.people) sync();
     });

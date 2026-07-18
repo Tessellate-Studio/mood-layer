@@ -53,6 +53,10 @@ export interface FamilyPalette {
   shades: Record<IntensityShade, string>;
   /** Deep same-hue tone for texture "thread" strokes over the fills. */
   thread: string;
+  /** Saturated mid-tone for SMALL coloured accents (focused tab-icon
+   *  strokes) where the muted thread reads as grey at 1.5–2 px. Decorative;
+   *  all hold ≥2.9:1 on raised paper. Added 2026-07-18. */
+  vivid: string;
 }
 
 /**
@@ -67,38 +71,47 @@ export const familyPalette: Record<EmotionFamilyId, FamilyPalette> = {
   anger: {
     shades: { 1: '#FAEDEA', 2: '#F6DFDA', 3: '#F1CCC4', 4: '#EAB6AB' },
     thread: '#B07A6C',
+    vivid: '#C4573F',
   },
   fear: {
     shades: { 1: '#F2EFF8', 2: '#E9E3F2', 3: '#DBD0EA', 4: '#C9BADF' },
     thread: '#8D7DB0',
+    vivid: '#7B5EA7',
   },
   sadness: {
     shades: { 1: '#ECF1F7', 2: '#DFE8F1', 3: '#CCDAE9', 4: '#B4C8DE' },
     thread: '#718CAB',
+    vivid: '#3F72A6',
   },
   disgust: {
     shades: { 1: '#EDF4EC', 2: '#E0EDDF', 3: '#CDE1CC', 4: '#B5D2B4' },
     thread: '#6F936E',
+    vivid: '#4E8B4C',
   },
   enjoyment: {
     shades: { 1: '#FBF4E3', 2: '#F8ECCD', 3: '#F3E0AF', 4: '#ECD28F' },
     thread: '#A3884A',
+    vivid: '#C08A1E',
   },
   surprise: {
     shades: { 1: '#FBF0E7', 2: '#F8E4D3', 3: '#F3D3B8', 4: '#ECBF99' },
     thread: '#AF8058',
+    vivid: '#C4763B',
   },
   contempt: {
     shades: { 1: '#F4EEF2', 2: '#ECE2E9', 3: '#DFCFDA', 4: '#CFB8C7' },
     thread: '#9E8094',
+    vivid: '#9A5F86',
   },
   anticipation: {
     shades: { 1: '#EBF4F4', 2: '#DCECEC', 3: '#C6E0DF', 4: '#AACFCE' },
     thread: '#649392',
+    vivid: '#2E8B88',
   },
   trust: {
     shades: { 1: '#F9EFF1', 2: '#F5E2E7', 3: '#EED0D9', 4: '#E4BAC7' },
     thread: '#AF7B8D',
+    vivid: '#C05C7E',
   },
 };
 
@@ -121,65 +134,65 @@ export interface MutedFamilyPalette {
  * can tell apart"). Chrome text/lines remain ink tiers; these tints are for
  * card fills, thread spines, section glyphs, and same-hue accents only.
  *
- * Re-tuned 2026-07-18 (user: the section backgrounds "look a bit too dull").
- * The old fills were the Atlas hues desaturated toward GREY, which read as
- * dirty paper rather than a colour. Each fill is now the family's true pastel
- * mixed 62% into cream — visibly its own hue, still soft — with the border at
- * full pastel. Every tier was re-derived against these fills and verified
- * computationally (designTreatment.test.tsx): ink ≥12.4:1, body ≥7.3:1,
- * captions ≥4.7:1, accents ≥4.5:1 on fill AND raised paper, threads ≥3:1.
+ * Re-tuned twice at the user's direction: 2026-07-18 morning the grey fills
+ * ("a bit too dull") became the family pastel mixed 62% into cream; by
+ * evening that read "a little too saturated", so fills settled at a 45% mix
+ * — the soothing register of the liked Insights page, hue still legible.
+ * Borders stay at the full pastel. Tiers verified computationally
+ * (designTreatment.test.tsx): captions ≥5.1:1 on every fill, accents ≥4.5:1
+ * on fill AND raised paper, threads ≥3:1.
  */
 export const mutedPalette: Record<EmotionFamilyId, MutedFamilyPalette> = {
   anger: {
-    fill: '#EFCEC5',
+    fill: '#F2D9D1',
     border: '#EAB6AB',
     thread: '#8F6F68',
     accent: '#6E5650',
   },
   fear: {
-    fill: '#DBD1E5',
+    fill: '#E3DBE8',
     border: '#C9BADF',
     thread: '#7B7188',
     accent: '#5E5769',
   },
   sadness: {
-    fill: '#CED9E5',
+    fill: '#D9E1E8',
     border: '#B4C8DE',
     thread: '#6E7A87',
     accent: '#555E68',
   },
   disgust: {
-    fill: '#CEE0CB',
+    fill: '#DAE6D5',
     border: '#B5D2B4',
     thread: '#6D7E6C',
     accent: '#556355',
   },
   enjoyment: {
-    fill: '#F1E0B4',
+    fill: '#F3E6C4',
     border: '#ECD28F',
     thread: '#8B7C54',
     accent: '#6D6142',
   },
   surprise: {
-    fill: '#F1D4BA',
+    fill: '#F3DDC9',
     border: '#ECBF99',
     thread: '#8E735C',
     accent: '#6F5A48',
   },
   contempt: {
-    fill: '#DFD0D7',
+    fill: '#E6DADE',
     border: '#CFB8C7',
     thread: '#80727B',
     accent: '#635860',
   },
   anticipation: {
-    fill: '#C8DEDB',
+    fill: '#D5E4E1',
     border: '#AACFCE',
     thread: '#687E7E',
     accent: '#506161',
   },
   trust: {
-    fill: '#ECD1D7',
+    fill: '#EFDBDE',
     border: '#E4BAC7',
     thread: '#8B7179',
     accent: '#6B575E',

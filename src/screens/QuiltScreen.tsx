@@ -30,6 +30,7 @@ import {
   typography,
 } from '@/constants/theme';
 import LayeredClusterVignette from '@/components/LayeredClusterVignette';
+import LogoMark from '@/components/LogoMark';
 import PaperTexture from '@/components/PaperTexture';
 import WeeklySummaryCard from '@/components/WeeklySummaryCard';
 import { homeWeeklySummary } from '@/content/circle';
@@ -140,6 +141,19 @@ export default function QuiltScreen() {
       <PaperTexture />
       <View style={styles.headerRow}>
         <Text style={styles.title}>Your mood layers</Text>
+        {/* Once check-ins exist, the field guide lives up here as the small
+            layered mark — colour among the ink chrome names it. */}
+        {checkIns.length > 0 ? (
+          <Pressable
+            testID="header-field-guide"
+            accessibilityRole="button"
+            accessibilityLabel="Field guide"
+            style={styles.iconButton}
+            onPress={() => navigation.navigate('FieldGuide')}
+          >
+            <LogoMark size={24} />
+          </Pressable>
+        ) : null}
         {/* Add lives up here as quiet chrome, twin to settings — no floating
             disc over the quilt (user, 2026-07-18). */}
         <Pressable
@@ -189,32 +203,33 @@ export default function QuiltScreen() {
 
       <WeeklySummaryCard summary={weeklySummary} />
 
-      {/* The field guide, offered where a new user actually is — on the home
-          screen (user, 2026-07-18). The nine-family key it used to duplicate
-          now lives INSIDE the guide, where the words are. */}
-      <Pressable
-        testID="home-field-guide"
-        accessibilityRole="button"
-        accessibilityLabel="Field guide. Learn the emotion families and find the right word."
-        style={styles.guideRow}
-        onPress={() => navigation.navigate('FieldGuide')}
-      >
-        <View style={styles.guideSwatches}>
-          {GUIDE_SWATCH_FAMILIES.map((family) => (
-            <View
-              key={family}
-              style={[styles.guideSwatch, { backgroundColor: familyPalette[family].shades[3] }]}
-            />
-          ))}
-        </View>
-        <Text style={styles.guideText}>Field guide — learn the words →</Text>
-      </Pressable>
+      {/* The field guide's home-screen doorway: a FULL row only while the
+          screen is brand new (it teaches where the guide lives); once the
+          first check-in exists it collapses into the header's layered icon —
+          the row was eating half the screen (user, 2026-07-18). */}
+      {checkIns.length === 0 ? (
+        <Pressable
+          testID="home-field-guide"
+          accessibilityRole="button"
+          accessibilityLabel="Field guide. Learn the emotion families and find the right word."
+          style={styles.guideRow}
+          onPress={() => navigation.navigate('FieldGuide')}
+        >
+          <View style={styles.guideSwatches}>
+            {GUIDE_SWATCH_FAMILIES.map((family) => (
+              <View
+                key={family}
+                style={[styles.guideSwatch, { backgroundColor: familyPalette[family].shades[3] }]}
+              />
+            ))}
+          </View>
+          <Text style={styles.guideText}>Field guide — learn the words →</Text>
+        </Pressable>
+      ) : null}
 
-      {/* Today's doorway, offered inline the moment the screen opens — the
-          floating disc shouted over the quilt (user, 2026-07-18); a quiet
-          dashed row where today's cluster will land says the same thing
-          softly. Once today holds an entry, the header + covers adding more. */}
-      {!todayHasEntry ? (
+      {/* First-ever entry doorway — gone for good once anything is layered
+          (user, 2026-07-18: the header + carries every entry after that). */}
+      {checkIns.length === 0 ? (
         <Pressable
           testID="checkin-today"
           accessibilityRole="button"

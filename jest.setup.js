@@ -189,6 +189,16 @@ jest.mock('expo-camera', () => ({
   CameraView: () => null,
   useCameraPermissions: () => [{ granted: true }, jest.fn()],
 }));
+// Background delivery: inert under jest — the pure scheduler (circleSchedule)
+// carries the logic coverage; the OS wake plumbing is device territory.
+jest.mock('expo-task-manager', () => ({
+  defineTask: jest.fn(),
+  isTaskDefined: jest.fn(() => false),
+}));
+jest.mock('expo-background-task', () => ({
+  registerTaskAsync: jest.fn(async () => {}),
+  BackgroundTaskResult: { Success: 1, Failed: 2 },
+}));
 jest.mock('react-native-qrcode-svg', () => 'QRCode');
 jest.mock('expo-crypto', () => ({
   getRandomBytes: (n) => new Uint8Array(require('crypto').randomBytes(n)),

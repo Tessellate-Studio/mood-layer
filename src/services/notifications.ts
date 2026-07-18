@@ -131,6 +131,27 @@ export async function ensureCircleChannel(): Promise<void> {
 }
 
 /**
+ * A week from a paired person arrived (background inbox sync) — one quiet
+ * IMMEDIATE local notification naming who, never what. Tapping deep-links to
+ * the Circle tab via the standard tap route. No-op under Expo Go.
+ */
+export async function notifyCircleReceived(names: string[]): Promise<void> {
+  const Notifications = getNotifications();
+  if (!Notifications || names.length === 0) return;
+  await ensureCircleChannel();
+  const who =
+    names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: `A week from ${who} arrived`,
+      body: 'Open your circle whenever you are ready.',
+      data: { route: 'Circle' },
+    },
+    trigger: null, // now
+  });
+}
+
+/**
  * (Re)schedule the Circle share nudges from the current people list. Returns a
  * personId → scheduled-ids map so the caller can persist it and cancel later.
  *

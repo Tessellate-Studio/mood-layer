@@ -19,6 +19,7 @@ import {
 import { useFocusEffect } from '@react-navigation/native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Circle, Line, Path } from 'react-native-svg';
 
 import { borderRadius, colors, hitTarget, mutedPalette, spacing, typography } from '@/constants/theme';
 import LogoDivider from '@/components/LogoDivider';
@@ -44,10 +45,9 @@ function initialOf(name: string): string {
   return name.trim().charAt(0).toUpperCase() || '?';
 }
 
-// Muted-layer treatment: people wear the soft sage green (closeness), the
-// invite form the warm amber (an opening door).
+// Muted-layer treatment: people wear the soft sage green (closeness). The
+// invite form stays plain raised paper — a form is chrome, not a layer.
 const PERSON_FAMILY: EmotionFamilyId = 'disgust';
-const INVITE_FAMILY: EmotionFamilyId = 'enjoyment';
 
 function PersonCard({ person, stats }: { person: CirclePerson; stats: WeekStats }) {
   const updatePerson = useCircleStore((s) => s.updatePerson);
@@ -194,92 +194,103 @@ function PersonCard({ person, stats }: { person: CirclePerson; stats: WeekStats 
             {preview}
           </Text>
 
-          {pairing ? (
-            <>
+          {/* One quiet icon row, not a stack of buttons (user, 2026-07-18):
+              send-to-app (when paired) · share-as-text · pair/unpair. */}
+          <View style={styles.actionIconRow}>
+            {sentAt ? (
+              <Text style={styles.sentNote} testID={`circle-sent-${person.id}`}>
+                sent ✓
+              </Text>
+            ) : null}
+            {pairing ? (
               <Pressable
                 testID={`circle-send-${person.id}`}
                 accessibilityRole="button"
                 accessibilityState={{ disabled: paused }}
                 disabled={paused}
                 accessibilityLabel={`Send this week to ${person.name}'s app`}
-                style={styles.shareBtn}
+                style={styles.iconBtn}
                 onPress={() => void sendToApp()}
               >
-                <Text style={styles.shareText}>
-                  {sentAt ? 'Sent to their app ✓' : 'Send to their app'}
-                </Text>
+                {/* Paper plane, thin-line language. */}
+                <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+                  <Path
+                    d="M3 11 L21 4 L14.5 21 L11 13.5 Z"
+                    stroke={colors.ink}
+                    strokeWidth={1.5}
+                    strokeLinejoin="round"
+                  />
+                  <Line x1={11} y1={13.5} x2={21} y2={4} stroke={colors.ink} strokeWidth={1.5} />
+                </Svg>
               </Pressable>
-              <View style={styles.linkRow}>
-                <Pressable
-                  testID={`circle-share-${person.id}`}
-                  accessibilityRole="button"
-                  accessibilityState={{ disabled: paused }}
-                  disabled={paused}
-                  accessibilityLabel={`Share this week with ${person.name} as text`}
-                  style={styles.linkBtn}
-                  onPress={shareNow}
-                >
-                  <Text style={styles.linkText}>share as text</Text>
-                </Pressable>
-                <Pressable
-                  testID={`circle-unpair-${person.id}`}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Unpair ${person.name}'s app`}
-                  style={styles.linkBtn}
-                  onPress={() =>
-                    Alert.alert(
-                      `Unpair ${person.name}?`,
-                      'Their app will stop receiving your weeks until you pair again.',
-                      [
-                        { text: 'Keep', style: 'cancel' },
-                        {
-                          text: 'Unpair',
-                          style: 'destructive',
-                          onPress: () => {
-                            const creds = pairing;
-                            removePairing(person.id);
-                            // Best-effort server-side cleanup.
-                            void import('@/services/circleRelay').then((m) =>
-                              m.unpair(creds).catch(() => {})
-                            );
-                          },
-                        },
-                      ]
-                    )
-                  }
-                >
-                  <Text style={styles.linkText}>unpair</Text>
-                </Pressable>
-              </View>
-            </>
-          ) : (
-            <>
-              <Pressable
-                testID={`circle-share-${person.id}`}
-                accessibilityRole="button"
-                accessibilityState={{ disabled: paused }}
-                disabled={paused}
-                accessibilityLabel={`Share this week with ${person.name}`}
-                style={styles.shareBtn}
-                onPress={shareNow}
-              >
-                <Text style={styles.shareText}>Share this week</Text>
-              </Pressable>
-              <Pressable
-                testID={`circle-pair-${person.id}`}
-                accessibilityRole="button"
-                accessibilityState={{ disabled: paused }}
-                disabled={paused}
-                accessibilityLabel={`Pair ${person.name}'s app for in-app sharing`}
-                style={styles.linkBtn}
-                onPress={() => setPairingOpen(true)}
-              >
-                <Text style={styles.linkText}>
-                  they have the app? pair it — no accounts, just a code
-                </Text>
-              </Pressable>
-            </>
-          )}
+            ) : null}
+            <Pressable
+              testID={`circle-share-${person.id}`}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: paused }}
+              disabled={paused}
+              accessibilityLabel={`Share this week with ${person.name} as text`}
+              style={styles.iconBtn}
+              onPress={shareNow}
+            >
+              {/* Share glyph: three nodes, two links. */}
+              <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+                <Circle cx={6} cy={12} r={2.4} stroke={colors.ink} strokeWidth={1.5} />
+                <Circle cx={17.5} cy={5.5} r={2.4} stroke={colors.ink} strokeWidth={1.5} />
+                <Circle cx={17.5} cy={18.5} r={2.4} stroke={colors.ink} strokeWidth={1.5} />
+                <Line x1={8.2} y1={10.9} x2={15.3} y2={6.6} stroke={colors.ink} strokeWidth={1.5} />
+                <Line x1={8.2} y1={13.1} x2={15.3} y2={17.4} stroke={colors.ink} strokeWidth={1.5} />
+              </Svg>
+            </Pressable>
+            <Pressable
+              testID={pairing ? `circle-unpair-${person.id}` : `circle-pair-${person.id}`}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: paused }}
+              disabled={paused}
+              accessibilityLabel={
+                pairing ? `Unpair ${person.name}'s app` : `Pair ${person.name}'s app — no accounts, just a code`
+              }
+              style={styles.iconBtn}
+              onPress={() => {
+                if (!pairing) {
+                  setPairingOpen(true);
+                  return;
+                }
+                Alert.alert(
+                  `Unpair ${person.name}?`,
+                  'Their app will stop receiving your weeks until you pair again.',
+                  [
+                    { text: 'Keep', style: 'cancel' },
+                    {
+                      text: 'Unpair',
+                      style: 'destructive',
+                      onPress: () => {
+                        const creds = pairing;
+                        removePairing(person.id);
+                        // Best-effort server-side cleanup.
+                        void import('@/services/circleRelay').then((m) =>
+                          m.unpair(creds).catch(() => {})
+                        );
+                      },
+                    },
+                  ]
+                );
+              }}
+            >
+              {/* QR corners; a filled centre dot marks "paired". */}
+              <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+                <Path d="M4 9 V4 H9" stroke={colors.ink} strokeWidth={1.5} />
+                <Path d="M15 4 H20 V9" stroke={colors.ink} strokeWidth={1.5} />
+                <Path d="M20 15 V20 H15" stroke={colors.ink} strokeWidth={1.5} />
+                <Path d="M9 20 H4 V15" stroke={colors.ink} strokeWidth={1.5} />
+                {pairing ? (
+                  <Circle cx={12} cy={12} r={2.6} fill={colors.ink} />
+                ) : (
+                  <Circle cx={12} cy={12} r={2.6} stroke={colors.ink} strokeWidth={1.5} />
+                )}
+              </Svg>
+            </Pressable>
+          </View>
         </View>
 
         <PairSheet
@@ -314,7 +325,10 @@ function InviteForm({ onDone }: { onDone: () => void }) {
   };
 
   return (
-    <ThreadCard family={INVITE_FAMILY} style={styles.cardBody}>
+    // Plain raised paper — the amber family tint fought the grey disabled
+    // button and read as an ugly clash (user, 2026-07-18). A form is chrome,
+    // not a layer.
+    <View style={styles.inviteCard}>
       <Text style={typography.heading}>Invite someone</Text>
       <TextInput
         testID="circle-add-name"
@@ -354,7 +368,7 @@ function InviteForm({ onDone }: { onDone: () => void }) {
           <Text style={styles.primaryText}>Add to circle</Text>
         </Pressable>
       </View>
-    </ThreadCard>
+    </View>
   );
 }
 
@@ -571,33 +585,29 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.ink,
   },
-  shareBtn: {
-    minHeight: hitTarget,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.ink,
-    // Raised paper so the button reads as a page laid on the tinted card.
+  inviteCard: {
     backgroundColor: colors.paperRaised,
-    marginTop: spacing.xs,
-  },
-  shareText: {
-    ...typography.label,
-    color: colors.ink,
-  },
-  linkRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    borderRadius: borderRadius.lg,
+    borderWidth: 0.5,
+    borderColor: colors.inkFaint,
+    padding: spacing.md,
     gap: spacing.sm,
   },
-  linkBtn: {
-    minHeight: hitTarget - 8,
+  actionIconRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: spacing.sm,
+  },
+  iconBtn: {
+    width: hitTarget,
+    height: hitTarget,
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  linkText: {
+  sentNote: {
     ...typography.caption,
-    color: colors.inkSoft,
+    marginRight: spacing.xs,
   },
   receivedBlock: {
     gap: spacing.sm,

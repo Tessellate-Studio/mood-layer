@@ -37,6 +37,15 @@ two-user relay project would pause constantly; alate's traffic keeps it awake.
    send → fetch (delete-on-read confirmed) → wrong-token 403 → unpair.
 5. **You:** nothing right now. To test for real: install the APK on a second
    phone, Circle → person → "pair it", scan the QR across phones, send.
+6. **Phase 2 (2026-07-18): automatic.** A background task sends due summaries
+   (evening after 6 pm / Sunday evening for weekly) and pulls the inbox,
+   with a local notification when a week arrives. Android's WorkManager
+   times the wakes (coarse under Doze); opening the app always catches up.
+7. **Deferred — instant push pokes (FCM):** true instant delivery needs
+   Firebase Cloud Messaging (a Firebase project + `google-services.json` you
+   would create) so the relay can poke the recipient's phone. Not needed for
+   the daily/weekly rhythm; revisit only if the background cadence feels
+   slow in practice.
 
 ## Device testing (Expo Go) — quick reference
 

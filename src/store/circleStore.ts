@@ -10,10 +10,23 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { shareSummary } from '@/content/circle';
+import {
+  fetchSealed,
+  getKeyPair,
+  open as openSealed,
+  seal,
+  sendSealed,
+  type PairingCredentials,
+} from '@/services/circleRelay';
 import { rescheduleCircle } from '@/services/notifications';
-import type { PairingCredentials } from '@/services/circleRelay';
+import { useCheckInStore } from '@/store/checkInStore';
+import { useExperimentStore } from '@/store/experimentStore';
 import type { CirclePerson } from '@/types/models';
+import { dueSends } from '@/utils/circleSchedule';
+import { weekKey } from '@/utils/dates';
 import { generateUUID } from '@/utils/ids';
+import { computeStatsForWeek } from '@/utils/insightEngine';
 
 /** One decrypted status received from a paired person. */
 export interface ReceivedStatus {
@@ -43,6 +56,8 @@ interface CircleState {
   pairings: Record<string, PairingCredentials>;
   /** Decrypted statuses from paired people, newest-first. */
   received: ReceivedStatus[];
+  /** personId → ISO time of the last AUTOMATIC send (dueSends dedupe). */
+  lastAutoSent: Record<string, string>;
   /** New people start Paused — sharing is off until the user turns it on. */
   addPerson(input: Omit<CirclePerson, 'id'>): CirclePerson;
   updatePerson(id: string, patch: Partial<Omit<CirclePerson, 'id'>>): void;
@@ -52,6 +67,7 @@ interface CircleState {
   clearPendingShare(): void;
   setPairing(personId: string, creds: PairingCredentials): void;
   removePairing(personId: string): void;
+  markAutoSent(personId: string, iso: string): void;
   /** Add decrypted statuses; keeps only the latest few per person. */
   addReceived(statuses: Omit<ReceivedStatus, 'id'>[]): void;
   clearAll(): void;
@@ -68,6 +84,7 @@ export const useCircleStore = create<CircleState>()(
       pendingSharePersonId: null,
       pairings: {},
       received: [],
+      lastAutoSent: {},
       addPerson: (input) => {
         const person: CirclePerson = { ...input, id: generateUUID() };
         set((state) => ({ people: [...state.people, person] }));
@@ -91,6 +108,8 @@ export const useCircleStore = create<CircleState>()(
       clearPendingShare: () => set({ pendingSharePersonId: null }),
       setPairing: (personId, creds) =>
         set((state) => ({ pairings: { ...state.pairings, [personId]: creds } })),
+      markAutoSent: (personId, iso) =>
+        set((state) => ({ lastAutoSent: { ...state.lastAutoSent, [personId]: iso } })),
       removePairing: (personId) =>
         set((state) => {
           const { [personId]: _dropped, ...pairings } = state.pairings;
@@ -118,6 +137,7 @@ export const useCircleStore = create<CircleState>()(
           pendingSharePersonId: null,
           pairings: {},
           received: [],
+          lastAutoSent: {},
         }),
     }),
     {
@@ -130,6 +150,7 @@ export const useCircleStore = create<CircleState>()(
         reminderIds: state.reminderIds,
         pairings: state.pairings,
         received: state.received,
+        lastAutoSent: state.lastAutoSent,
       }),
     }
   )
@@ -164,34 +185,83 @@ let inboxSyncInFlight = false;
  * Pull every pairing's pending sealed statuses off the relay, decrypt them on
  * this device, and file them under their person. Delete-on-fetch on the relay
  * side (send-and-forget). Failures are silent per pairing — a flaky network
- * must never break the Circle screen; the next focus retries.
+ * must never break the Circle screen; the next focus retries. Returns the
+ * names of people whose statuses just arrived, so the background task can
+ * raise a gentle local notification (the foreground callers ignore it).
  */
-export async function syncCircleInbox(): Promise<void> {
-  if (inboxSyncInFlight) return;
+export async function syncCircleInbox(): Promise<string[]> {
+  if (inboxSyncInFlight) return [];
   inboxSyncInFlight = true;
+  const arrivedFrom: string[] = [];
   try {
-    const { pairings } = useCircleStore.getState();
+    const { pairings, people } = useCircleStore.getState();
     const entries = Object.entries(pairings);
-    if (entries.length === 0) return;
-    // Lazy import keeps app start clear of crypto/secure-store work.
-    const relayModule = await import('@/services/circleRelay');
-    const pair = await relayModule.getKeyPair();
+    if (entries.length === 0) return [];
+    const pair = await getKeyPair();
     const receivedNow = new Date().toISOString();
     for (const [personId, creds] of entries) {
       try {
-        const sealedList = await relayModule.fetchSealed(creds);
+        const sealedList = await fetchSealed(creds);
         const opened = sealedList.flatMap((sealed) => {
-          const plain = relayModule.open(sealed, creds.peerPub, pair.secretKey);
+          const plain = openSealed(sealed, creds.peerPub, pair.secretKey);
           return plain === null
             ? []
             : [{ personId, message: plain, sentAt: sealed.sentAt, receivedAt: receivedNow }];
         });
-        if (opened.length > 0) useCircleStore.getState().addReceived(opened);
+        if (opened.length > 0) {
+          useCircleStore.getState().addReceived(opened);
+          const name = people.find((p) => p.id === personId)?.name;
+          if (name) arrivedFrom.push(name);
+        }
       } catch {
         // Skip this pairing this round.
       }
     }
+    return arrivedFrom;
   } finally {
     inboxSyncInFlight = false;
+  }
+}
+
+let autoSendInFlight = false;
+
+/**
+ * Automatic delivery (phase 2): seal + send the gated weekly summary to every
+ * paired person whose cadence is due (utils/circleSchedule). Runs from the
+ * background task AND on app foreground as a catch-up — the summary can only
+ * be built on this phone, so a send happens at the first wake after its
+ * moment. Same privacy boundary as a manual send (docs/SECURITY.md).
+ */
+export async function runCircleAutoSend(now: Date = new Date()): Promise<number> {
+  if (autoSendInFlight) return 0;
+  autoSendInFlight = true;
+  try {
+    const { people, pairings, lastAutoSent } = useCircleStore.getState();
+    const due = dueSends(people, pairings, lastAutoSent, now);
+    if (due.length === 0) return 0;
+
+    const stats = computeStatsForWeek(
+      useCheckInStore.getState().checkIns,
+      useExperimentStore.getState().judgmentEntries,
+      weekKey(now.toISOString())
+    );
+    const pair = await getKeyPair();
+    let sent = 0;
+    for (const personId of due) {
+      const person = people.find((p) => p.id === personId);
+      const creds = pairings[personId];
+      if (!person || !creds) continue;
+      try {
+        const summary = shareSummary(person.sees, stats);
+        await sendSealed(creds, seal(summary, creds.peerPub, pair.secretKey));
+        useCircleStore.getState().markAutoSent(personId, now.toISOString());
+        sent += 1;
+      } catch {
+        // Unreachable relay — the next wake retries (dedupe is by day/week).
+      }
+    }
+    return sent;
+  } finally {
+    autoSendInFlight = false;
   }
 }

@@ -31,6 +31,12 @@ The trust boundary, reviewed before code (BACKLOG P0 entry):
 - **Revocation:** unpair (either side) deletes the pairing server-side and
   cascades pending messages; removing a person locally also drops their
   pairing and received statuses.
+- **Automation (phase 2, 2026-07-18):** scheduled sends do NOT move where
+  anything happens — a periodic on-device background task (WorkManager)
+  builds and seals the same gated summary on the phone at the cadence the
+  user set per person (evening / weekly), and the same wake pulls the inbox,
+  raising a local notification that names WHO arrived, never what. No push
+  infrastructure; no new server knowledge.
 - **Residual risks accepted:** relay metadata (pairing ids, message timing,
   blob sizes) is visible to the server operator (the user themselves);
   tokens live in AsyncStorage alongside other app state.
