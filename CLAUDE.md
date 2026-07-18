@@ -118,6 +118,10 @@ between them.
   AsyncStorage). No accounts, no server, no analytics, no crash-reporting SDKs.
   Sending emotional data anywhere is an anti-pattern until the user explicitly
   decides otherwise (then it goes through the tracker + a privacy review).
+  **ONE sanctioned exception (user-decided 2026-07-18): the circle relay** —
+  the gated weekly summary (only), sealed on-device with nacl.box to a paired
+  peer's key, through the send-and-forget `moodlayer-relay` edge function.
+  Trust boundary + residual risks: `docs/SECURITY.md` → "Circle relay".
 - **Typewriter ink, Atlas hues in two registers (user-locked 2026-07-08,
   extended 2026-07-13 — "layers you can tell apart").** Every colour comes from
   `src/constants/theme.ts`. Text, lines, buttons, and backgrounds stay

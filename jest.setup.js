@@ -169,6 +169,31 @@ jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock')
 );
 
+// Circle pairing stack: secure store as an in-memory map, camera as inert
+// views (barcode scanning is exercised via decodeInviteQr unit tests, not the
+// native camera), QR render as a stub, and expo-crypto's randomness from Node
+// crypto so tweetnacl gets REAL entropy — seal/open round-trips genuinely.
+jest.mock('expo-secure-store', () => {
+  const vault = new Map();
+  return {
+    getItemAsync: jest.fn(async (k) => vault.get(k) ?? null),
+    setItemAsync: jest.fn(async (k, v) => {
+      vault.set(k, v);
+    }),
+    deleteItemAsync: jest.fn(async (k) => {
+      vault.delete(k);
+    }),
+  };
+});
+jest.mock('expo-camera', () => ({
+  CameraView: () => null,
+  useCameraPermissions: () => [{ granted: true }, jest.fn()],
+}));
+jest.mock('react-native-qrcode-svg', () => 'QRCode');
+jest.mock('expo-crypto', () => ({
+  getRandomBytes: (n) => new Uint8Array(require('crypto').randomBytes(n)),
+}));
+
 // Silence console warnings during tests
 global.console = {
   ...console,

@@ -5,6 +5,8 @@ import React from 'react';
 import { Alert, Share } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 
+import { NavigationContainer } from '@react-navigation/native';
+
 import CircleScreen from '@/screens/CircleScreen';
 import { useCircleStore } from '@/store/circleStore';
 import { useCheckInStore } from '@/store/checkInStore';
@@ -18,6 +20,14 @@ beforeEach(() => {
   useCircleStore.setState(initialCircle, true);
   useCheckInStore.setState(initialCheckIns, true);
 });
+
+// useFocusEffect (the inbox sync) needs a real navigation tree.
+const renderScreen = () =>
+  render(
+    <NavigationContainer>
+      <CircleScreen />
+    </NavigationContainer>
+  );
 
 function seedPerson() {
   return useCircleStore.getState().addPerson({
@@ -44,7 +54,7 @@ function thisWeekCheckIn(): CheckIn {
 
 describe('CircleScreen', () => {
   it('renders the reassurance and an invite affordance when empty', () => {
-    render(<CircleScreen />);
+    renderScreen();
     expect(screen.getByTestId('screen-circle')).toBeTruthy();
     expect(
       screen.getByText(/Nothing leaves your phone until you choose it/)
@@ -53,7 +63,7 @@ describe('CircleScreen', () => {
   });
 
   it('invites a person, who starts paused (sharing off until turned on)', () => {
-    render(<CircleScreen />);
+    renderScreen();
     fireEvent.press(screen.getByTestId('circle-invite'));
     fireEvent.changeText(screen.getByTestId('circle-add-name'), 'Priya');
     fireEvent.changeText(screen.getByTestId('circle-add-relationship'), 'Close friend');
@@ -67,7 +77,7 @@ describe('CircleScreen', () => {
 
   it('cycles what a person sees and how often on tap', () => {
     const p = seedPerson();
-    render(<CircleScreen />);
+    renderScreen();
     fireEvent.press(screen.getByTestId(`circle-sees-${p.id}`));
     expect(useCircleStore.getState().people[0].sees).toBe('count'); // colours → count
     fireEvent.press(screen.getByTestId(`circle-frequency-${p.id}`));
@@ -81,7 +91,7 @@ describe('CircleScreen', () => {
       .spyOn(Share, 'share')
       .mockResolvedValue({ action: 'sharedAction' } as Awaited<ReturnType<typeof Share.share>>);
 
-    render(<CircleScreen />);
+    renderScreen();
     fireEvent.press(screen.getByTestId(`circle-share-${p.id}`));
 
     expect(shareSpy).toHaveBeenCalledTimes(1);
@@ -97,7 +107,7 @@ describe('CircleScreen', () => {
       .spyOn(Share, 'share')
       .mockResolvedValue({ action: 'sharedAction' } as Awaited<ReturnType<typeof Share.share>>);
 
-    render(<CircleScreen />);
+    renderScreen();
     // Simulate App.tsx routing a tapped Circle reminder into the share intent.
     act(() => {
       useCircleStore.getState().requestShare(p.id);
@@ -117,7 +127,7 @@ describe('CircleScreen', () => {
       .spyOn(Share, 'share')
       .mockResolvedValue({ action: 'sharedAction' } as Awaited<ReturnType<typeof Share.share>>);
 
-    render(<CircleScreen />);
+    renderScreen();
     act(() => {
       useCircleStore.getState().requestShare('ghost-id');
     });
@@ -132,7 +142,7 @@ describe('CircleScreen', () => {
       buttons?.find((b) => b.style === 'destructive')?.onPress?.();
     });
 
-    render(<CircleScreen />);
+    renderScreen();
     fireEvent.press(screen.getByTestId(`circle-remove-${p.id}`));
 
     expect(alertSpy).toHaveBeenCalledTimes(1);

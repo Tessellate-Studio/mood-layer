@@ -37,6 +37,13 @@
           "icon": "./assets/notification-icon.png",
           "color": "#141414"
         }
+      ],
+      "expo-secure-store",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "The camera is only used to scan a circle invite QR from someone else's phone."
+        }
       ]
     ]
   }

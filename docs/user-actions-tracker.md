@@ -19,6 +19,25 @@ Legend: ✅ done · 🟡 in progress (action left) · 🔲 not started.
 Everything else is local-only by design — no backend, auth, analytics, or
 crash-reporting to configure.
 
+## Circle relay (Supabase, alate project) — decided + deployed 2026-07-18
+
+The one sanctioned off-device path (privacy review: `docs/SECURITY.md` →
+"Circle relay"). Peer-app delivery: QR pairing, on-device nacl.box encryption,
+send-and-forget relay. Piggybacks on the **alate** Supabase project
+deliberately — free-tier projects pause after ~1 week idle, and a dedicated
+two-user relay project would pause constantly; alate's traffic keeps it awake.
+
+1. Schema: `moodlayer` (tables `invites`, `pairings`, `outbox`; RLS deny-all;
+   NOT exposed via PostgREST) — migration `moodlayer_relay_schema` applied.
+2. Edge function: `moodlayer-relay` v2 (verify_jwt OFF — per-pairing bearer
+   tokens are the auth; talks to Postgres via `SUPABASE_DB_URL` directly).
+3. Endpoint (baked into the app as `RELAY_URL`, not a secret):
+   `https://ancuwmmivgdvommzigwv.supabase.co/functions/v1/moodlayer-relay`
+4. Verified 2026-07-18 by curl round-trip: invite → claim → invite-status →
+   send → fetch (delete-on-read confirmed) → wrong-token 403 → unpair.
+5. **You:** nothing right now. To test for real: install the APK on a second
+   phone, Circle → person → "pair it", scan the QR across phones, send.
+
 ## Device testing (Expo Go) — quick reference
 
 The PC's LAN IP changes between sessions (DHCP), and this Wi-Fi ("ElectricSheep")

@@ -16,6 +16,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -31,8 +32,9 @@ import {
   SEES_ORDER,
   shareSummary,
 } from '@/content/circle';
+import PairSheet from '@/components/PairSheet';
 import { useCheckInStore } from '@/store/checkInStore';
-import { useCircleStore } from '@/store/circleStore';
+import { syncCircleInbox, useCircleStore, type ReceivedStatus } from '@/store/circleStore';
 import { useExperimentStore } from '@/store/experimentStore';
 import type { CirclePerson, EmotionFamilyId, WeekStats } from '@/types/models';
 import { weekKey } from '@/utils/dates';
@@ -50,8 +52,28 @@ const INVITE_FAMILY: EmotionFamilyId = 'enjoyment';
 function PersonCard({ person, stats }: { person: CirclePerson; stats: WeekStats }) {
   const updatePerson = useCircleStore((s) => s.updatePerson);
   const removePerson = useCircleStore((s) => s.removePerson);
+  const pairing = useCircleStore((s) => s.pairings[person.id]);
+  const setPairing = useCircleStore((s) => s.setPairing);
+  const removePairing = useCircleStore((s) => s.removePairing);
+  const [pairingOpen, setPairingOpen] = React.useState(false);
+  const [sentAt, setSentAt] = React.useState<string | null>(null);
   const preview = shareSummary(person.sees, stats);
   const paused = person.frequency === 'paused';
+
+  // Peer-app delivery: seal the SAME gated summary on this device and drop it
+  // on the relay; their app decrypts it into their Circle screen. The one
+  // sanctioned exception to local-only (docs/SECURITY.md).
+  const sendToApp = async () => {
+    if (!pairing) return;
+    try {
+      const { getKeyPair, seal, sendSealed } = await import('@/services/circleRelay');
+      const pair = await getKeyPair();
+      await sendSealed(pairing, seal(preview, pairing.peerPub, pair.secretKey));
+      setSentAt(new Date().toISOString());
+    } catch {
+      Alert.alert('Could not send', 'The relay is unreachable right now — try again in a moment.');
+    }
+  };
 
   const confirmRemove = () => {
     Alert.alert(
@@ -172,18 +194,103 @@ function PersonCard({ person, stats }: { person: CirclePerson; stats: WeekStats 
             {preview}
           </Text>
 
-          <Pressable
-            testID={`circle-share-${person.id}`}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: paused }}
-            disabled={paused}
-            accessibilityLabel={`Share this week with ${person.name}`}
-            style={styles.shareBtn}
-            onPress={shareNow}
-          >
-            <Text style={styles.shareText}>Share this week</Text>
-          </Pressable>
+          {pairing ? (
+            <>
+              <Pressable
+                testID={`circle-send-${person.id}`}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: paused }}
+                disabled={paused}
+                accessibilityLabel={`Send this week to ${person.name}'s app`}
+                style={styles.shareBtn}
+                onPress={() => void sendToApp()}
+              >
+                <Text style={styles.shareText}>
+                  {sentAt ? 'Sent to their app ✓' : 'Send to their app'}
+                </Text>
+              </Pressable>
+              <View style={styles.linkRow}>
+                <Pressable
+                  testID={`circle-share-${person.id}`}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: paused }}
+                  disabled={paused}
+                  accessibilityLabel={`Share this week with ${person.name} as text`}
+                  style={styles.linkBtn}
+                  onPress={shareNow}
+                >
+                  <Text style={styles.linkText}>share as text</Text>
+                </Pressable>
+                <Pressable
+                  testID={`circle-unpair-${person.id}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Unpair ${person.name}'s app`}
+                  style={styles.linkBtn}
+                  onPress={() =>
+                    Alert.alert(
+                      `Unpair ${person.name}?`,
+                      'Their app will stop receiving your weeks until you pair again.',
+                      [
+                        { text: 'Keep', style: 'cancel' },
+                        {
+                          text: 'Unpair',
+                          style: 'destructive',
+                          onPress: () => {
+                            const creds = pairing;
+                            removePairing(person.id);
+                            // Best-effort server-side cleanup.
+                            void import('@/services/circleRelay').then((m) =>
+                              m.unpair(creds).catch(() => {})
+                            );
+                          },
+                        },
+                      ]
+                    )
+                  }
+                >
+                  <Text style={styles.linkText}>unpair</Text>
+                </Pressable>
+              </View>
+            </>
+          ) : (
+            <>
+              <Pressable
+                testID={`circle-share-${person.id}`}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: paused }}
+                disabled={paused}
+                accessibilityLabel={`Share this week with ${person.name}`}
+                style={styles.shareBtn}
+                onPress={shareNow}
+              >
+                <Text style={styles.shareText}>Share this week</Text>
+              </Pressable>
+              <Pressable
+                testID={`circle-pair-${person.id}`}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: paused }}
+                disabled={paused}
+                accessibilityLabel={`Pair ${person.name}'s app for in-app sharing`}
+                style={styles.linkBtn}
+                onPress={() => setPairingOpen(true)}
+              >
+                <Text style={styles.linkText}>
+                  they have the app? pair it — no accounts, just a code
+                </Text>
+              </Pressable>
+            </>
+          )}
         </View>
+
+        <PairSheet
+          visible={pairingOpen}
+          personName={person.name}
+          onPaired={(creds) => {
+            setPairing(person.id, creds);
+            setPairingOpen(false);
+          }}
+          onClose={() => setPairingOpen(false)}
+        />
       </ThreadCard>
     </ReanimatedSwipeable>
   );
@@ -251,12 +358,58 @@ function InviteForm({ onDone }: { onDone: () => void }) {
   );
 }
 
+/** The latest received status per paired person — a quiet strip, like
+ *  status rows on social apps, in the person's muted layer. */
+function ReceivedStrip({ people, received }: { people: CirclePerson[]; received: ReceivedStatus[] }) {
+  const latest = new Map<string, ReceivedStatus>();
+  for (const status of received) {
+    if (!latest.has(status.personId)) latest.set(status.personId, status);
+  }
+  if (latest.size === 0) return null;
+  return (
+    <View style={styles.receivedBlock} testID="circle-received">
+      <Text style={styles.overline}>From your circle</Text>
+      {[...latest.values()].map((status) => {
+        const person = people.find((p) => p.id === status.personId);
+        if (!person) return null;
+        return (
+          <ThreadCard
+            key={status.id}
+            family={PERSON_FAMILY}
+            testID={`received-${status.personId}`}
+            style={styles.receivedBody}
+          >
+            <Text style={typography.heading}>{person.name}</Text>
+            <Text style={typography.body}>{status.message}</Text>
+            <Text style={styles.receivedWhen}>
+              {new Date(status.sentAt).toLocaleDateString(undefined, {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+              })}
+            </Text>
+          </ThreadCard>
+        );
+      })}
+    </View>
+  );
+}
+
 export default function CircleScreen() {
   const insets = useSafeAreaInsets();
   const people = useCircleStore((s) => s.people);
+  const received = useCircleStore((s) => s.received);
   const checkIns = useCheckInStore((s) => s.checkIns);
   const judgmentEntries = useExperimentStore((s) => s.judgmentEntries);
   const [inviting, setInviting] = React.useState(false);
+
+  // Pull anything paired people sent since we last looked. Focus-driven in
+  // phase 1 (a push poke arrives with scheduled sends, phase 2).
+  useFocusEffect(
+    React.useCallback(() => {
+      void syncCircleInbox();
+    }, [])
+  );
 
   const pendingSharePersonId = useCircleStore((s) => s.pendingSharePersonId);
   const clearPendingShare = useCircleStore((s) => s.clearPendingShare);
@@ -294,6 +447,8 @@ export default function CircleScreen() {
           Nothing leaves your phone until you choose it. Sharing is off until you turn it on, per
           person.
         </Text>
+
+        <ReceivedStrip people={people} received={received} />
 
         {people.map((person) => (
           <PersonCard key={person.id} person={person} stats={stats} />
@@ -430,6 +585,29 @@ const styles = StyleSheet.create({
   shareText: {
     ...typography.label,
     color: colors.ink,
+  },
+  linkRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  linkBtn: {
+    minHeight: hitTarget - 8,
+    justifyContent: 'center',
+  },
+  linkText: {
+    ...typography.caption,
+    color: colors.inkSoft,
+  },
+  receivedBlock: {
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  receivedBody: {
+    gap: spacing.xs,
+  },
+  receivedWhen: {
+    ...typography.caption,
   },
   input: {
     ...typography.body,
