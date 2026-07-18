@@ -82,7 +82,7 @@ export const useExperimentStore = create<ExperimentState>()(
       migrate: (persisted, version) => {
         const state = (persisted ?? {}) as Record<string, unknown>;
         if (version < 1 && Array.isArray(state.judgmentEntries)) {
-          state.judgmentEntries = (state.judgmentEntries as Array<Record<string, unknown>>).map(
+          state.judgmentEntries = (state.judgmentEntries as Record<string, unknown>[]).map(
             (entry) => {
               const legacy = entry.uncoveredFeeling;
               const { uncoveredFeeling: _drop, ...rest } = entry;

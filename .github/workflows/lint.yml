@@ -1,0 +1,30 @@
+# Advisory ESLint gate (eslint-config-expo flat config).
+#
+# Advisory-first, matching the code-inspection workflow's posture: the lint
+# step carries continue-on-error so a finding reports without blocking the PR.
+# The config is tuned so `npm run lint` exits 0 today (0 errors, warnings only),
+# which means a NEW error is a real regression rather than pre-existing noise.
+# Flip continue-on-error to false once the warning backlog is worked down and
+# the signal is proven on this app.
+name: lint
+
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  eslint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run ESLint (advisory)
+        continue-on-error: true
+        run: npm run lint
