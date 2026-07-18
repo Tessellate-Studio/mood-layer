@@ -1,14 +1,25 @@
 name: Relock
 
-# Regenerate package-lock.json on a schedule to ensure Linux/macOS/Windows
-# compatibility. Runs `npm install` (not `npm ci`) to update the lockfile
-# to the latest compatible versions, solving the Windows npm install →
-# Linux npm ci incompatibility where lockfile format diverges.
-
+# Regenerate package-lock.json to ensure Linux/macOS/Windows compatibility.
+# Runs `npm install` (not `npm ci`) to update the lockfile to the latest
+# compatible versions, solving the Windows npm install → Linux npm ci
+# incompatibility where lockfile format diverges.
+#
+# MANUAL DISPATCH ONLY. The weekly `schedule: '0 0 * * 1'` was removed
+# 2026-07-18 under the platform rule (forge/standards/workflows.md ->
+# "CI spend"), after Tessellate-Studio exhausted its 2,000 included Actions
+# minutes and every private repo's CI stopped at once — this repo included,
+# though it was not a large consumer. Included minutes are one org-wide
+# monthly pool, so an unattended job here spends alate's budget.
+#
+# Worse, this job pushes a commit when the lockfile drifts, which then fires
+# every push- and PR-triggered workflow behind it. One unattended trigger,
+# several workflows, none of it asked for.
+#
+# Run it by hand when it is actually needed: after changing a dependency on
+# Windows, or when a Linux CI run fails on a lockfile mismatch. That is always
+# something someone just did, so a human is always there to press the button.
 on:
-  schedule:
-    # Every Monday at 00:00 UTC
-    - cron: '0 0 * * 1'
   workflow_dispatch:
 
 jobs:
