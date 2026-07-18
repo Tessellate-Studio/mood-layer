@@ -21,6 +21,12 @@ export const SEES_LABELS: Record<CircleSeesLevel, string> = {
 };
 
 export const FREQUENCY_ORDER: CircleFrequency[] = ['evening', 'weekly', 'paused'];
+/** What the "how often" chip cycles through — pausing is the TOGGLE's job
+ *  (one tap), never a stop on the cycle (user, 2026-07-18). */
+export const ACTIVE_FREQUENCY_ORDER: Exclude<CircleFrequency, 'paused'>[] = [
+  'evening',
+  'weekly',
+];
 export const FREQUENCY_LABELS: Record<CircleFrequency, string> = {
   evening: 'Every evening',
   weekly: 'Weekly summary',

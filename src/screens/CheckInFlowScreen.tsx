@@ -306,15 +306,19 @@ function FeelStep({
                   />
                 );
               })}
-              <EmotionChip
-                id={`more-${family.id}`}
-                label={showAll ? '– fewer words' : '+ more words'}
-                dashed
-                selected={false}
-                onPress={() =>
-                  setMoreWordsFor((cur) => ({ ...cur, [family.id]: !showAll }))
-                }
-              />
+              {/* Only when there ARE more words — contempt's unfold used to
+                  open onto nothing (user, 2026-07-18). */}
+              {allWords.length > family.gradient.length ? (
+                <EmotionChip
+                  id={`more-${family.id}`}
+                  label={showAll ? '– fewer words' : '+ more words'}
+                  dashed
+                  selected={false}
+                  onPress={() =>
+                    setMoreWordsFor((cur) => ({ ...cur, [family.id]: !showAll }))
+                  }
+                />
+              ) : null}
             </View>
             {temperatureRows}
           </FamilyGroup>

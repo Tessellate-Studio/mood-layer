@@ -95,6 +95,9 @@ export interface CirclePerson {
   relationship: string;
   sees: CircleSeesLevel;
   frequency: CircleFrequency;
+  /** What `frequency` was before the pause toggle switched it to 'paused' —
+   *  so unpausing restores the person's own rhythm, not a default. */
+  lastActiveFrequency?: Exclude<CircleFrequency, 'paused'>;
 }
 
 /** Settings for the "name it" prompts during waking hours. */

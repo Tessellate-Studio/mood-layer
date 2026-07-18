@@ -41,12 +41,10 @@ import { selectWeekStats, useCheckInStore } from '@/store/checkInStore';
 import { useHelperSheetStore } from '@/store/helperSheetStore';
 import type { CheckIn, EmotionFamilyId } from '@/types/models';
 import { useMotion } from '@/hooks/useMotion';
-import { weekKey } from '@/utils/dates';
+import { dayKey, weekKey } from '@/utils/dates';
 import { computeQuiltLayout, offsetForCheckIn, type WeekBlock } from '@/utils/quiltLayout';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
-
-const FAB_SIZE = hitTarget + 12;
 
 /** A hint of the palette on the field-guide row — the full key is inside. */
 const GUIDE_SWATCH_FAMILIES: EmotionFamilyId[] = ['anger', 'enjoyment', 'sadness', 'anticipation'];
@@ -102,6 +100,10 @@ export default function QuiltScreen() {
     const wk = weekKey(new Date().toISOString());
     return homeWeeklySummary(selectWeekStats(checkIns, 0, wk));
   }, [checkIns]);
+  const todayHasEntry = React.useMemo(
+    () => checkIns.some((c) => c.dayKey === dayKey(new Date().toISOString())),
+    [checkIns]
+  );
 
   // Stitch-in: when the newest check-in id changes (a fresh stitch, not a
   // rehydrate), flag it for the one-shot arrival animation, then clear.
@@ -138,6 +140,20 @@ export default function QuiltScreen() {
       <PaperTexture />
       <View style={styles.headerRow}>
         <Text style={styles.title}>Your mood layers</Text>
+        {/* Add lives up here as quiet chrome, twin to settings — no floating
+            disc over the quilt (user, 2026-07-18). */}
+        <Pressable
+          testID="checkin-fab"
+          accessibilityRole="button"
+          accessibilityLabel="Add a check-in"
+          style={styles.iconButton}
+          onPress={() => navigation.navigate('CheckInFlow', { source: 'manual' })}
+        >
+          <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+            <Line x1={12} y1={5} x2={12} y2={19} stroke={colors.ink} strokeWidth={1.5} strokeLinecap="round" />
+            <Line x1={5} y1={12} x2={19} y2={12} stroke={colors.ink} strokeWidth={1.5} strokeLinecap="round" />
+          </Svg>
+        </Pressable>
         <Pressable
           testID="open-settings"
           accessibilityRole="button"
@@ -194,6 +210,22 @@ export default function QuiltScreen() {
         <Text style={styles.guideText}>Field guide — learn the words →</Text>
       </Pressable>
 
+      {/* Today's doorway, offered inline the moment the screen opens — the
+          floating disc shouted over the quilt (user, 2026-07-18); a quiet
+          dashed row where today's cluster will land says the same thing
+          softly. Once today holds an entry, the header + covers adding more. */}
+      {!todayHasEntry ? (
+        <Pressable
+          testID="checkin-today"
+          accessibilityRole="button"
+          accessibilityLabel="Layer in today's first entry"
+          style={styles.todayRow}
+          onPress={() => navigation.navigate('CheckInFlow', { source: 'manual' })}
+        >
+          <Text style={styles.todayText}>+ layer in today&apos;s first entry</Text>
+        </Pressable>
+      ) : null}
+
       {checkIns.length === 0 ? (
         <View style={styles.empty}>
           {/* The layered cluster in miniature — what a first check-in will
@@ -221,19 +253,6 @@ export default function QuiltScreen() {
         />
       )}
 
-      <Pressable
-        testID="checkin-fab"
-        accessibilityRole="button"
-        accessibilityLabel="Add a check-in"
-        style={[styles.fab, { bottom: insets.bottom + spacing.lg }]}
-        onPress={() => navigation.navigate('CheckInFlow', { source: 'manual' })}
-      >
-        <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-          <Line x1={12} y1={5} x2={12} y2={19} stroke={colors.ink} strokeWidth={2} strokeLinecap="round" />
-          <Line x1={5} y1={12} x2={19} y2={12} stroke={colors.ink} strokeWidth={2} strokeLinecap="round" />
-        </Svg>
-      </Pressable>
-
       <Modal
         visible={selected !== null}
         transparent
@@ -255,18 +274,13 @@ export default function QuiltScreen() {
           {/* Plain View + a start-responder so taps on the card are swallowed
               (they'd otherwise fall through to the backdrop and dismiss),
               while the ScrollView below still wins the move gesture. */}
+          {/* Raised paper, deliberately NOT the family tint: with the
+              re-tuned (more saturated) fills the whole sheet read as a wall
+              of colour behind the words (user, 2026-07-18) — the thread
+              spine alone ties the sheet to its patch. */}
           <View
             onStartShouldSetResponder={() => true}
-            style={[
-              styles.sheet,
-              { paddingBottom: insets.bottom + spacing.lg },
-              // Muted-layer treatment: the sheet wears the check-in's leading
-              // family as a whisper tint + thread spine, tying the detail card
-              // to the patch that opened it.
-              selected
-                ? { backgroundColor: mutedPalette[uniqueFamilies(selected)[0]].fill }
-                : null,
-            ]}
+            style={[styles.sheet, { paddingBottom: insets.bottom + spacing.lg }]}
             testID="patch-detail"
           >
             {selected ? (
@@ -391,6 +405,20 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.inkSoft,
   },
+  todayRow: {
+    minHeight: hitTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: colors.inkFaint,
+    marginTop: spacing.xs,
+  },
+  todayText: {
+    ...typography.label,
+    color: colors.inkSoft,
+  },
   empty: {
     flex: 1,
     alignItems: 'center',
@@ -403,23 +431,8 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingVertical: spacing.md,
-    paddingBottom: FAB_SIZE + spacing.xxl,
+    paddingBottom: spacing.xxl,
     gap: spacing.lg,
-  },
-  fab: {
-    position: 'absolute',
-    // Tucked to the bottom-right so it doesn't dominate the centre of the
-    // quilt; a quiet paper button with a stitched ink outline, not a solid
-    // black disc (device feedback 2026-07-08).
-    right: spacing.lg,
-    width: FAB_SIZE,
-    height: FAB_SIZE,
-    borderRadius: FAB_SIZE / 2,
-    backgroundColor: colors.paperRaised,
-    borderWidth: 1,
-    borderColor: colors.ink,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   backdrop: {
     flex: 1,

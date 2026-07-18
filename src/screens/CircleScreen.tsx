@@ -5,7 +5,18 @@
 // the OS share sheet. Removing someone forgets them entirely.
 
 import React from 'react';
-import { Alert, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { borderRadius, colors, hitTarget, mutedPalette, spacing, typography } from '@/constants/theme';
@@ -13,8 +24,8 @@ import LogoDivider from '@/components/LogoDivider';
 import PaperTexture from '@/components/PaperTexture';
 import ThreadCard from '@/components/ThreadCard';
 import {
+  ACTIVE_FREQUENCY_ORDER,
   FREQUENCY_LABELS,
-  FREQUENCY_ORDER,
   nextInCycle,
   SEES_LABELS,
   SEES_ORDER,
@@ -40,6 +51,7 @@ function PersonCard({ person, stats }: { person: CirclePerson; stats: WeekStats 
   const updatePerson = useCircleStore((s) => s.updatePerson);
   const removePerson = useCircleStore((s) => s.removePerson);
   const preview = shareSummary(person.sees, stats);
+  const paused = person.frequency === 'paused';
 
   const confirmRemove = () => {
     Alert.alert(
@@ -52,6 +64,21 @@ function PersonCard({ person, stats }: { person: CirclePerson; stats: WeekStats 
     );
   };
 
+  // The header toggle IS the pause switch: one tap to rest a person, one tap
+  // to resume at their own rhythm (user, 2026-07-18). 'Paused' left the
+  // how-often cycle entirely — cycling is for choosing a rhythm, not for
+  // stopping one.
+  const setActive = (active: boolean) => {
+    if (active) {
+      updatePerson(person.id, { frequency: person.lastActiveFrequency ?? 'weekly' });
+    } else if (!paused) {
+      updatePerson(person.id, {
+        frequency: 'paused',
+        lastActiveFrequency: person.frequency as Exclude<CirclePerson['frequency'], 'paused'>,
+      });
+    }
+  };
+
   const shareNow = () => {
     // On-demand only: the summary is built here and handed straight to the OS
     // share sheet. Nothing is persisted or sent automatically.
@@ -60,73 +87,105 @@ function PersonCard({ person, stats }: { person: CirclePerson; stats: WeekStats 
     });
   };
 
-  return (
-    <ThreadCard family={PERSON_FAMILY} testID={`circle-person-${person.id}`} style={styles.cardBody}>
-      <View style={styles.personHeader}>
-        <View style={[styles.avatar, { borderColor: mutedPalette[PERSON_FAMILY].thread }]}>
-          <Text style={styles.avatarText}>{initialOf(person.name)}</Text>
-        </View>
-        <View style={styles.personName}>
-          <Text style={typography.heading}>{person.name}</Text>
-          <Text style={styles.relationship}>{person.relationship}</Text>
-        </View>
-        <Pressable
-          testID={`circle-remove-${person.id}`}
-          accessibilityRole="button"
-          accessibilityLabel={`Remove ${person.name}`}
-          style={styles.remove}
-          onPress={confirmRemove}
-        >
-          <Text style={styles.removeText}>Remove</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.controlRow}>
-        <View style={styles.control}>
-          <Text style={styles.overline}>Sees</Text>
-          <Pressable
-            testID={`circle-sees-${person.id}`}
-            accessibilityRole="button"
-            accessibilityLabel={`What ${person.name} sees: ${SEES_LABELS[person.sees]}. Tap to change.`}
-            style={styles.optionChip}
-            onPress={() => updatePerson(person.id, { sees: nextInCycle(SEES_ORDER, person.sees) })}
-          >
-            <Text style={styles.optionText}>{SEES_LABELS[person.sees]}</Text>
-          </Pressable>
-        </View>
-        <View style={styles.control}>
-          <Text style={styles.overline}>How often</Text>
-          <Pressable
-            testID={`circle-frequency-${person.id}`}
-            accessibilityRole="button"
-            accessibilityLabel={`How often you share with ${person.name}: ${FREQUENCY_LABELS[person.frequency]}. Tap to change.`}
-            style={[styles.optionChip, person.frequency === 'paused' && styles.optionChipPaused]}
-            onPress={() =>
-              updatePerson(person.id, {
-                frequency: nextInCycle(FREQUENCY_ORDER, person.frequency),
-              })
-            }
-          >
-            <Text style={styles.optionText}>{FREQUENCY_LABELS[person.frequency]}</Text>
-          </Pressable>
-        </View>
-      </View>
-
-      <Text style={styles.overline}>What {person.name} sees</Text>
-      <Text style={styles.preview} testID={`circle-preview-${person.id}`}>
-        {preview}
-      </Text>
-
+  // Swipe-to-remove only — a always-visible Remove button made deleting a
+  // person one accidental tap away (user, 2026-07-18).
+  const renderActions = () => (
+    <View style={styles.actionsRow}>
       <Pressable
-        testID={`circle-share-${person.id}`}
+        testID={`circle-remove-${person.id}`}
         accessibilityRole="button"
-        accessibilityLabel={`Share this week with ${person.name}`}
-        style={styles.shareBtn}
-        onPress={shareNow}
+        accessibilityLabel={`Remove ${person.name}`}
+        style={styles.actionBtn}
+        onPress={confirmRemove}
       >
-        <Text style={styles.shareText}>Share this week</Text>
+        <Text style={styles.actionText}>Remove</Text>
       </Pressable>
-    </ThreadCard>
+    </View>
+  );
+
+  return (
+    <ReanimatedSwipeable renderRightActions={renderActions} overshootRight={false}>
+      <ThreadCard family={PERSON_FAMILY} testID={`circle-person-${person.id}`} style={styles.cardBody}>
+        <View style={styles.personHeader}>
+          <View style={[styles.avatar, { borderColor: mutedPalette[PERSON_FAMILY].thread }]}>
+            <Text style={styles.avatarText}>{initialOf(person.name)}</Text>
+          </View>
+          <View style={styles.personName}>
+            <Text style={typography.heading}>{person.name}</Text>
+            <Text style={styles.relationship}>{person.relationship}</Text>
+          </View>
+          <Switch
+            testID={`circle-active-${person.id}`}
+            accessibilityLabel={`Sharing with ${person.name}: ${paused ? 'paused' : 'on'}`}
+            value={!paused}
+            onValueChange={setActive}
+            trackColor={{ false: colors.inkFaint, true: colors.inkSoft }}
+            thumbColor={colors.paperRaised}
+          />
+        </View>
+
+        {/* Everything below the header rests with the person. */}
+        <View style={paused ? styles.dormant : undefined}>
+          <View style={styles.controlRow}>
+            <View style={styles.control}>
+              <Text style={styles.overline}>Sees</Text>
+              <Pressable
+                testID={`circle-sees-${person.id}`}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: paused }}
+                disabled={paused}
+                accessibilityLabel={`What ${person.name} sees: ${SEES_LABELS[person.sees]}. Tap to change.`}
+                style={styles.optionChip}
+                onPress={() =>
+                  updatePerson(person.id, { sees: nextInCycle(SEES_ORDER, person.sees) })
+                }
+              >
+                <Text style={styles.optionText}>{SEES_LABELS[person.sees]}</Text>
+              </Pressable>
+            </View>
+            <View style={styles.control}>
+              <Text style={styles.overline}>How often</Text>
+              <Pressable
+                testID={`circle-frequency-${person.id}`}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: paused }}
+                disabled={paused}
+                accessibilityLabel={
+                  paused
+                    ? `Sharing with ${person.name} is paused`
+                    : `How often you share with ${person.name}: ${FREQUENCY_LABELS[person.frequency]}. Tap to change.`
+                }
+                style={styles.optionChip}
+                onPress={() =>
+                  updatePerson(person.id, {
+                    frequency: nextInCycle(ACTIVE_FREQUENCY_ORDER, person.frequency),
+                  })
+                }
+              >
+                <Text style={styles.optionText}>{FREQUENCY_LABELS[person.frequency]}</Text>
+              </Pressable>
+            </View>
+          </View>
+
+          <Text style={styles.overline}>What {person.name} sees</Text>
+          <Text style={styles.preview} testID={`circle-preview-${person.id}`}>
+            {preview}
+          </Text>
+
+          <Pressable
+            testID={`circle-share-${person.id}`}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: paused }}
+            disabled={paused}
+            accessibilityLabel={`Share this week with ${person.name}`}
+            style={styles.shareBtn}
+            onPress={shareNow}
+          >
+            <Text style={styles.shareText}>Share this week</Text>
+          </Pressable>
+        </View>
+      </ThreadCard>
+    </ReanimatedSwipeable>
   );
 }
 
@@ -299,14 +358,30 @@ const styles = StyleSheet.create({
   relationship: {
     ...typography.caption,
   },
-  remove: {
+  dormant: {
+    // A paused person rests, visibly: the card's working area recedes while
+    // the header (name + toggle) stays fully present for the one-tap resume.
+    opacity: 0.45,
+    gap: spacing.sm,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    marginLeft: spacing.sm,
+  },
+  actionBtn: {
+    minWidth: hitTarget + 16,
     minHeight: hitTarget,
     justifyContent: 'center',
-    paddingLeft: spacing.sm,
+    alignItems: 'center',
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.ink,
+    backgroundColor: colors.paperRaised,
+    paddingHorizontal: spacing.sm,
   },
-  removeText: {
+  actionText: {
     ...typography.label,
-    color: colors.inkSoft,
   },
   controlRow: {
     flexDirection: 'row',
@@ -328,12 +403,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: borderRadius.md,
     borderWidth: 1,
+    // Always solid: the old dashed-when-paused border stuck around after
+    // cycling away on Android (borderStyle doesn't repaint) — pause state now
+    // reads from the toggle + the dormant fade, not a border style.
     borderColor: colors.ink,
     paddingHorizontal: spacing.md,
-  },
-  optionChipPaused: {
-    borderColor: colors.inkFaint,
-    borderStyle: 'dashed',
   },
   optionText: {
     ...typography.label,

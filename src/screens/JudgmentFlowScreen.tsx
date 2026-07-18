@@ -359,15 +359,17 @@ export default function JudgmentFlowScreen() {
                         />
                       );
                     })}
-                    <EmotionChip
-                      id={`judgment-more-${family.id}`}
-                      label={showAll ? '– fewer words' : '+ more words'}
-                      dashed
-                      selected={false}
-                      onPress={() =>
-                        setMoreWordsFor((cur) => ({ ...cur, [family.id]: !showAll }))
-                      }
-                    />
+                    {allWords.length > family.gradient.length ? (
+                      <EmotionChip
+                        id={`judgment-more-${family.id}`}
+                        label={showAll ? '– fewer words' : '+ more words'}
+                        dashed
+                        selected={false}
+                        onPress={() =>
+                          setMoreWordsFor((cur) => ({ ...cur, [family.id]: !showAll }))
+                        }
+                      />
+                    ) : null}
                   </View>
                   {temperatureRows}
                 </FamilyGroup>

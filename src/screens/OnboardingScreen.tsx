@@ -211,13 +211,14 @@ export default function OnboardingScreen() {
               {Vignette ? (
                 <FadeDrift active={active} reduceMotion={reduceMotion} order={0}>
                   {/* Decorative line art — hidden from screen readers. */}
+                  {/* Raised paper, not a family tint: the pastel cluster and
+                      the ink line art both washed out against the saturated
+                      fills (user, 2026-07-18) — the vignette carries its own
+                      colour, the panel stays paper. */}
                   <View
                     style={[
                       styles.vignette,
-                      {
-                        backgroundColor: mutedPalette[SLIDE_FAMILY[slide.id]].fill,
-                        borderColor: mutedPalette[SLIDE_FAMILY[slide.id]].border,
-                      },
+                      { borderColor: mutedPalette[SLIDE_FAMILY[slide.id]].border },
                     ]}
                     accessibilityElementsHidden
                     importantForAccessibility="no-hide-descendants"
@@ -288,6 +289,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
+    backgroundColor: colors.paperRaised,
   },
   slideTitle: {
     // typography.display sized down a notch so long titles fit small phones.
