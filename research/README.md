@@ -1,11 +1,11 @@
-# Research
+# Research sources
 
-Source material behind the app's practices and framing. These are references
-Claude Code can read at any time when building or refining features — cite the
-specific page (authoritative-claims rule) rather than paraphrasing from memory.
+Local reference material for building and refining features. PDFs stay
+UNTRACKED (gitignored) — they are third-party publications we can read from
+disk but must not redistribute in a public repo.
 
-| File | What it is | Feeds |
-|---|---|---|
-| `six-seconds-practicing-eq.pdf` | Six Seconds, *Practicing Emotional Intelligence* (Freedman, Miller & Freedman, 6sec.org). 44 pages. | The feelings quilt (p.15–17), Name It to Tame It (p.19), the KCG / "What do I truly want?" model (p.29–31), and every perspective practice — Problem-Solution (p.34–35), Empathic Respect (p.37–38), Five Year Flashback (p.41–42), plus "Explore avoided emotions" (the judgment worksheet). |
-
-Add new research documents here and note what they inform in the table above.
+- `six-seconds-practicing-eq.pdf` — "8 facts about emotional intelligence"
+  (Freedman, Miller & Freedman; Six Seconds, 6sec.org). Source of the
+  perspective-practice worksheets, the feelings quilt, name-it-to-tame-it,
+  the Body-Mind-Heart scan, and the KCG questions. Get it from 6sec.org if
+  this copy is missing.
