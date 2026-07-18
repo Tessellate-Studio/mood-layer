@@ -1,4 +1,5 @@
-# Advisory code-inspection gate (shared reusable workflow from code-standards).
+# Advisory code-inspection gate (shared reusable workflow from the forge
+# platform repo — code-standards merged into forge 2026-07-17).
 # fail_on_error stays false until the config is proven on this app; the app's
 # own tsc + jest gate is the blocking check (run locally pre-commit).
 name: code-inspection
@@ -8,6 +9,6 @@ on:
 
 jobs:
   inspect:
-    uses: Tessellate-Studio/code-standards/.github/workflows/code-inspection.yml@main
+    uses: Tessellate-Studio/forge/.github/workflows/code-inspection.yml@master
     with:
       fail_on_error: false

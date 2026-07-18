@@ -15,7 +15,6 @@
 import type { EmotionFamilyId, Intensity } from '@/types/models';
 import {
   EMOTION_FAMILIES,
-  findEmotionWord,
   type EmotionFamily,
   type EmotionWord,
 } from '@/content/emotions';

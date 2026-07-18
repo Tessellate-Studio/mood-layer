@@ -8,7 +8,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
-import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
+import { borderRadius, colors, spacing, typography } from '@/constants/theme';
 import { useSettingsStore } from '@/store/settingsStore';
 
 interface Props {

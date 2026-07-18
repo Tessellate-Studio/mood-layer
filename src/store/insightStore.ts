@@ -65,7 +65,7 @@ export const useInsightStore = create<InsightState>()(
         const state = (persisted ?? {}) as Record<string, unknown>;
         const RESISTANCE_IDS = ['stuck-decisions', 'looping-week', 'judgment-heavy'];
         if (version < 1 && Array.isArray(state.cards)) {
-          state.cards = (state.cards as Array<Record<string, unknown>>).map((card) => ({
+          state.cards = (state.cards as Record<string, unknown>[]).map((card) => ({
             ...card,
             kind: card.kind ?? (RESISTANCE_IDS.includes(card.templateId as string) ? 'resistance' : 'pattern'),
           }));
