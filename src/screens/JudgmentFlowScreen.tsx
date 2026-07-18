@@ -20,7 +20,6 @@ import IntensityDial from '@/components/IntensityDial';
 import ModalHeader from '@/components/ModalHeader';
 import { borderRadius, colors, fonts, hitTarget, spacing, typography } from '@/constants/theme';
 import PaperTexture from '@/components/PaperTexture';
-import SectionHeader from '@/components/SectionHeader';
 import ThreadCard from '@/components/ThreadCard';
 import { EMOTION_FAMILIES, type EmotionWord } from '@/content/emotions';
 import { allWordsForFamily, findVocabularyWord } from '@/content/vocabulary';

@@ -26,7 +26,6 @@ import ModalHeader from '@/components/ModalHeader';
 import { PatchPreview } from '@/components/QuiltPatch';
 import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
 import PaperTexture from '@/components/PaperTexture';
-import SectionHeader from '@/components/SectionHeader';
 import ThreadCard from '@/components/ThreadCard';
 import { EMOTION_FAMILIES, MASKING_STATES, type EmotionWord } from '@/content/emotions';
 import { allWordsForFamily, findVocabularyWord } from '@/content/vocabulary';
