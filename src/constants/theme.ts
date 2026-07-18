@@ -103,7 +103,8 @@ export const familyPalette: Record<EmotionFamilyId, FamilyPalette> = {
 };
 
 export interface MutedFamilyPalette {
-  /** Whisper-tint card fill — a layer you can tell apart, not a highlight. */
+  /** Soft-tint card fill — a layer you can tell apart, not a highlight.
+   *  Every ink tier holds AA on it (verified in designTreatment.test.tsx). */
   fill: string;
   /** 1px card border + the section header's dashed rule. */
   border: string;
@@ -117,67 +118,71 @@ export interface MutedFamilyPalette {
 
 /**
  * Muted layer palette — the design treatment settled 2026-07-13 ("layers you
- * can tell apart"). The Atlas hues, desaturated heavily toward grey so cards
- * and sections read as distinct layers while the tone stays somber and the
- * text stays ink. Chrome text/lines remain ink tiers; these tints are for
+ * can tell apart"). Chrome text/lines remain ink tiers; these tints are for
  * card fills, thread spines, section glyphs, and same-hue accents only.
- * Handoff accents were nudged darker to clear WCAG AA (design bundle
- * 2026-07-13; verified in designTreatment.test.tsx).
+ *
+ * Re-tuned 2026-07-18 (user: the section backgrounds "look a bit too dull").
+ * The old fills were the Atlas hues desaturated toward GREY, which read as
+ * dirty paper rather than a colour. Each fill is now the family's true pastel
+ * mixed 62% into cream — visibly its own hue, still soft — with the border at
+ * full pastel. Every tier was re-derived against these fills and verified
+ * computationally (designTreatment.test.tsx): ink ≥12.4:1, body ≥7.3:1,
+ * captions ≥4.7:1, accents ≥4.5:1 on fill AND raised paper, threads ≥3:1.
  */
 export const mutedPalette: Record<EmotionFamilyId, MutedFamilyPalette> = {
   anger: {
-    fill: '#F0ECEA',
-    border: '#D5CDC9',
-    thread: '#8F817C',
-    accent: '#6A5C56',
+    fill: '#EFCEC5',
+    border: '#EAB6AB',
+    thread: '#8F6F68',
+    accent: '#6E5650',
   },
   fear: {
-    fill: '#EDECF0',
-    border: '#CFCBD6',
-    thread: '#847E90',
-    accent: '#605A6C',
+    fill: '#DBD1E5',
+    border: '#C9BADF',
+    thread: '#7B7188',
+    accent: '#5E5769',
   },
   sadness: {
-    fill: '#EBEDEF',
-    border: '#CBCFD4',
-    thread: '#7C848E',
-    accent: '#59626C',
+    fill: '#CED9E5',
+    border: '#B4C8DE',
+    thread: '#6E7A87',
+    accent: '#555E68',
   },
   disgust: {
-    fill: '#EAEEE9',
-    border: '#CDD2CB',
-    thread: '#7E877C',
-    accent: '#586055',
+    fill: '#CEE0CB',
+    border: '#B5D2B4',
+    thread: '#6D7E6C',
+    accent: '#556355',
   },
   enjoyment: {
-    fill: '#F0EDE6',
-    border: '#D4CDBE',
-    thread: '#8C8468',
-    accent: '#665F4B',
+    fill: '#F1E0B4',
+    border: '#ECD28F',
+    thread: '#8B7C54',
+    accent: '#6D6142',
   },
   surprise: {
-    fill: '#F1EDE7',
-    border: '#D6CEC2',
-    thread: '#94836E',
-    accent: '#6C5D48',
+    fill: '#F1D4BA',
+    border: '#ECBF99',
+    thread: '#8E735C',
+    accent: '#6F5A48',
   },
   contempt: {
-    fill: '#EEECEE',
-    border: '#D3CCD0',
-    thread: '#877E83',
-    accent: '#62595E',
+    fill: '#DFD0D7',
+    border: '#CFB8C7',
+    thread: '#80727B',
+    accent: '#635860',
   },
   anticipation: {
-    fill: '#EAEEEE',
-    border: '#CBD3D3',
-    thread: '#7B8A89',
-    accent: '#576362',
+    fill: '#C8DEDB',
+    border: '#AACFCE',
+    thread: '#687E7E',
+    accent: '#506161',
   },
   trust: {
-    fill: '#F0ECED',
-    border: '#D5CBCE',
-    thread: '#8E7E83',
-    accent: '#6A585E',
+    fill: '#ECD1D7',
+    border: '#E4BAC7',
+    thread: '#8B7179',
+    accent: '#6B575E',
   },
 };
 

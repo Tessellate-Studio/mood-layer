@@ -22,14 +22,14 @@ import LogoDivider from '@/components/LogoDivider';
 import LogoMark from '@/components/LogoMark';
 import PaperTexture from '@/components/PaperTexture';
 import ThreadCard from '@/components/ThreadCard';
-import { monthlyMoodDigest, monthlyPracticeDigest } from '@/content/monthlyDigest';
+import { monthlyMoodDigest, monthlyPracticeReflection } from '@/content/monthlyDigest';
 import { RESISTANCE_TELLS } from '@/content/resistance';
 import { useMotion } from '@/hooks/useMotion';
 import { useCheckInStore } from '@/store/checkInStore';
 import { useExperimentStore } from '@/store/experimentStore';
 import { useInsightStore } from '@/store/insightStore';
 import type { EmotionFamilyId, InsightCardState, WeekStats } from '@/types/models';
-import { previousWeekKey, weekRangeLabel } from '@/utils/dates';
+import { previousWeekKey, weekKey, weekRangeLabel } from '@/utils/dates';
 import { computeStatsForWeek } from '@/utils/insightEngine';
 
 /** Stagger step between card entrances. */
@@ -195,15 +195,15 @@ export default function InsightsScreen() {
     return top.length > 0 ? top.slice(0, 3) : undefined;
   }, [summaryStats]);
 
-  // Beyond the week: the month's texture + the practices taken up
-  // (user, 2026-07-17). Computed live, never stored; hidden while thin.
+  // Beyond the week: the month's texture + what the practices surfaced
+  // (user, 2026-07-17/18). Computed live, never stored; hidden while thin.
   const moodDigest = React.useMemo(() => monthlyMoodDigest(checkIns), [checkIns]);
-  const practiceDigest = React.useMemo(
-    () => monthlyPracticeDigest(practiceSessions, judgmentEntries),
+  const practiceReflection = React.useMemo(
+    () => monthlyPracticeReflection(practiceSessions, judgmentEntries),
     [practiceSessions, judgmentEntries]
   );
   const monthlyBlock =
-    moodDigest || practiceDigest ? (
+    moodDigest || practiceReflection ? (
       <View style={styles.monthly} testID="insights-monthly">
         {moodDigest ? (
           <ThreadCard family="enjoyment" style={styles.cardBody}>
@@ -215,15 +215,38 @@ export default function InsightsScreen() {
             <Text style={styles.cardText}>{moodDigest.body}</Text>
           </ThreadCard>
         ) : null}
-        {practiceDigest ? (
+        {practiceReflection ? (
           <ThreadCard family="contempt" style={styles.cardBody}>
             <Text style={styles.overline}>This month · Practices</Text>
-            <Text style={styles.cardTitle}>{practiceDigest.title}</Text>
-            <Text style={styles.cardText}>{practiceDigest.body}</Text>
+            <Text style={styles.cardTitle}>{practiceReflection.title}</Text>
+            <Text style={styles.cardText}>{practiceReflection.body}</Text>
+            {practiceReflection.kept.length > 0 ? (
+              <View style={styles.keptList}>
+                {practiceReflection.kept.map((k, i) => (
+                  <View key={i} style={styles.keptRow}>
+                    <Text style={styles.keptPractice}>{k.practice}</Text>
+                    <Text style={styles.cardText}>{k.conclusion}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
           </ThreadCard>
         ) : null}
       </View>
     ) : null;
+
+  // This ISO week's own count, so the empty state tells the TRUE reason:
+  // "quiet week so far" vs "checked in, no pattern has surfaced yet" — the
+  // old copy claimed "not enough layers" even with a full month behind it
+  // (user, 2026-07-18).
+  const thisWeekCount = React.useMemo(
+    () => computeStatsForWeek(checkIns, judgmentEntries, weekKey(new Date().toISOString())).checkInCount,
+    [checkIns, judgmentEntries]
+  );
+  const emptyText =
+    thisWeekCount === 0
+      ? 'A quiet week so far — your first check-in starts this week’s layers.'
+      : 'Checked in, but no clear pattern has surfaced yet — insights stay quiet until one does.';
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-insights">
@@ -248,11 +271,12 @@ export default function InsightsScreen() {
           contentContainerStyle={styles.listContent}
           ListHeaderComponent={
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>
-                Not enough layers yet — check in a few more times this week.
+              <Text style={styles.emptyText} testID="insights-empty">
+                {emptyText}
               </Text>
               <Text style={styles.emptyCaption}>
                 Patterns appear here once a week, when there are enough layers to read.
+                {monthlyBlock ? ' Your month is below.' : ''}
               </Text>
             </View>
           }
@@ -334,6 +358,16 @@ const styles = StyleSheet.create({
   monthlyTitle: {
     flex: 1,
     flexWrap: 'wrap',
+  },
+  keptList: {
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  keptRow: {
+    gap: 2,
+  },
+  keptPractice: {
+    ...typography.overline,
   },
   cardBody: {
     gap: spacing.sm,

@@ -1,7 +1,8 @@
 // Monthly digests — pure generators for the Insights tab's beyond-the-week
 // sections. Date-stable: `now` is injected.
 
-import { monthlyMoodDigest, monthlyPracticeDigest, MONTHLY_MIN_CHECKINS } from '@/content/monthlyDigest';
+import { monthlyMoodDigest, monthlyPracticeReflection, MONTHLY_MIN_CHECKINS } from '@/content/monthlyDigest';
+import type { PracticeSession } from '@/store/experimentStore';
 import type { CheckIn, JudgmentEntry } from '@/types/models';
 import { dayKey } from '@/utils/dates';
 
@@ -70,25 +71,83 @@ describe('monthlyPracticeDigest', () => {
     },
   ];
 
-  it('is null with nothing practised — never guilt copy', () => {
-    expect(monthlyPracticeDigest([], [], NOW)).toBeNull();
+  const session = (
+    id: string,
+    practiceId: string,
+    daysAgo: number,
+    work: PracticeSession['work']
+  ): PracticeSession => ({
+    id,
+    practiceId,
+    createdAt: new Date(2026, 6, 17 - daysAgo, 20, 0).toISOString(),
+    work,
   });
 
-  it('counts sittings by practice, judgment sittings grouped not per-entry', () => {
-    const digest = monthlyPracticeDigest(
+  it('is null with nothing practised — never guilt copy', () => {
+    expect(monthlyPracticeReflection([], [], NOW)).toBeNull();
+  });
+
+  it('surfaces the feeling most often found under judgments, not a tally', () => {
+    // 'worried' waits under two of the sitting's judgments.
+    const entries: JudgmentEntry[] = [
+      {
+        id: 'j-a',
+        createdAt: new Date(2026, 6, 12, 20).toISOString(),
+        target: 'myself',
+        judgment: 'being slow',
+        uncoveredFeelings: [{ emotionId: 'worried', family: 'fear', intensity: 2 }],
+        sittingId: 's1',
+      },
+      {
+        id: 'j-b',
+        createdAt: new Date(2026, 6, 12, 20).toISOString(),
+        target: 'my week',
+        judgment: 'the mess',
+        uncoveredFeelings: [{ emotionId: 'worried', family: 'fear', intensity: 3 }],
+        sittingId: 's1',
+      },
+    ];
+    const reflection = monthlyPracticeReflection([], entries, NOW);
+    expect(reflection).not.toBeNull();
+    expect(reflection!.body).toContain('worried was waiting 2 times');
+  });
+
+  it('keeps the actual CONCLUSIONS of recent sittings, newest first', () => {
+    const reflection = monthlyPracticeReflection(
       [
-        { practiceId: 'problem-solution', createdAt: new Date(2026, 6, 10).toISOString() },
-        { practiceId: 'problem-solution', createdAt: new Date(2026, 6, 12).toISOString() },
-        { practiceId: 'five-year-flashback', createdAt: new Date(2026, 6, 14).toISOString() },
+        session('ps-old', 'problem-solution', 10, {
+          entries: { problem: ['no time'], ideas: ['ask for help'], 'small-step': ['email Sam'] },
+          marks: {},
+          picks: { 'one-step': ['ideas:0'] },
+        }),
+        session('ps-new', 'five-year-flashback', 2, {
+          entries: { decision: ['move?'], options: ['stay', 'go north'] },
+          marks: {},
+          picks: { 'still-matters': ['options:1'] },
+        }),
       ],
-      sitting(5, 's1'),
+      [],
       NOW
     );
-    expect(digest).not.toBeNull();
-    // 2 entries = ONE judgment sitting; 3 practice sessions → 4 total.
-    expect(digest!.body).toContain('4 sittings set down this month');
-    expect(digest!.body).toContain('Explore avoided emotions ×1');
-    expect(digest!.body).toContain('Problem, then solution ×2');
-    expect(digest!.body).toContain('Five year flashback ×1');
+    expect(reflection).not.toBeNull();
+    // Newest sitting first; conclusion = the chosen/closing line, not the setup.
+    expect(reflection!.kept[0]).toEqual({
+      practice: 'Five year flashback',
+      conclusion: 'go north',
+    });
+    expect(reflection!.kept[1].practice).toBe('Problem, then solution');
+  });
+
+  it('ignores sittings older than the 30-day window', () => {
+    const reflection = monthlyPracticeReflection(
+      [session('ps-stale', 'problem-solution', 45, {
+        entries: { problem: ['old'] },
+        marks: {},
+        picks: {},
+      })],
+      [],
+      NOW
+    );
+    expect(reflection).toBeNull();
   });
 });

@@ -28,7 +28,7 @@ import * as notifications from '@/services/notifications';
 import ExperimentsScreen from '@/screens/ExperimentsScreen';
 import JudgmentFlowScreen from '@/screens/JudgmentFlowScreen';
 import NameItSetupScreen from '@/screens/NameItSetupScreen';
-import { useExperimentStore } from '@/store/experimentStore';
+import { useExperimentStore, type PracticeSession } from '@/store/experimentStore';
 
 const initialExperiments = useExperimentStore.getState();
 
@@ -153,16 +153,18 @@ describe('JudgmentFlowScreen', () => {
 });
 
 describe('ExperimentsScreen layout', () => {
-  it('structures the page by kind: Practices, Learn, Reminders', async () => {
+  it('structures the page by kind: Deep work, Breath work, Learn, Reminders', async () => {
     renderScreen(<ExperimentsScreen />);
     await screen.findByTestId('screen-experiments');
     expect(screen.getByText(/Small practices for meeting what/)).toBeTruthy();
-    // All four exercises live under ONE Practices section; Name it is a
-    // schedule, so it sits under Reminders at the end (user, 2026-07-17).
-    expect(screen.getByText('Practices')).toBeTruthy();
+    // The sit-down exercises live under Deep work; box breathing regulates
+    // rather than excavates, so it has its own Breath work section; Name it
+    // is a schedule, so it sits under Reminders last (user, 2026-07-18).
+    expect(screen.getByText('Deep work')).toBeTruthy();
+    expect(screen.getByText('Breath work')).toBeTruthy();
     expect(screen.getByText('Learn')).toBeTruthy();
     expect(screen.getByText('Reminders')).toBeTruthy();
-    expect(screen.queryByText('Guided practices')).toBeNull();
+    expect(screen.queryByText('Practices')).toBeNull();
     expect(screen.getByText(/Nothing here is a test/)).toBeTruthy();
   });
 
@@ -170,23 +172,21 @@ describe('ExperimentsScreen layout', () => {
     // Detailed catalog behaviour lives in reflections.test.tsx — here the
     // page just counts sittings (2 practice + 1 judgment sitting = 3) and
     // navigates. A twenty-sitting wall never renders inline (user, 2026-07-17).
-    useExperimentStore.setState((s) => ({
-      ...s,
-      practiceSessions: [
-        {
-          id: 'ps-1',
-          practiceId: 'problem-solution',
-          createdAt: '2026-07-15T20:00:00.000Z',
-          work: { entries: { problem: ['no time'] }, marks: {}, picks: {} },
-        },
-        {
-          id: 'ps-2',
-          practiceId: 'five-year-flashback',
-          createdAt: '2026-07-14T20:00:00.000Z',
-          work: { entries: { decision: ['move?'] }, marks: {}, picks: {} },
-        },
-      ],
-    }));
+    const sessions: PracticeSession[] = [
+      {
+        id: 'ps-1',
+        practiceId: 'problem-solution',
+        createdAt: '2026-07-15T20:00:00.000Z',
+        work: { entries: { problem: ['no time'] }, marks: {}, picks: {} },
+      },
+      {
+        id: 'ps-2',
+        practiceId: 'five-year-flashback',
+        createdAt: '2026-07-14T20:00:00.000Z',
+        work: { entries: { decision: ['move?'] }, marks: {}, picks: {} },
+      },
+    ];
+    useExperimentStore.setState((s) => ({ ...s, practiceSessions: sessions }));
     useExperimentStore.getState().addJudgmentEntry({
       target: 'my friend',
       judgment: 'canceling',

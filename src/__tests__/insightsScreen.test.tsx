@@ -130,12 +130,30 @@ describe('InsightsScreen', () => {
     expect(screen.getByTestId('insights-footer')).toBeTruthy();
   });
 
-  it('shows the gentle empty state when there is nothing to show', async () => {
+  it('empty state names the TRUE reason: a quiet week vs no pattern yet', async () => {
+    // No check-ins at all → "quiet week so far", not a misleading "not enough
+    // layers" that ignored the month behind it (user, 2026-07-18).
+    useCheckInStore.setState({ checkIns: [] });
     renderScreen();
-    expect(
-      await screen.findByText(
-        'Not enough layers yet — check in a few more times this week.'
-      )
-    ).toBeTruthy();
+    expect(await screen.findByText(/quiet week so far/)).toBeTruthy();
+  });
+
+  it('empty state distinguishes "checked in but no pattern" from a quiet week', async () => {
+    // A check-in THIS week but no template match → the honest second message,
+    // never "not enough layers".
+    const now = new Date();
+    const thisWeek: CheckIn = {
+      id: 'tw-1',
+      createdAt: now.toISOString(),
+      dayKey: now.toISOString().slice(0, 10),
+      emotions: [{ emotionId: 'glad', family: 'enjoyment', intensity: 2 }],
+      resistanceFlags: [],
+      source: 'manual',
+    };
+    useCheckInStore.setState({ checkIns: [thisWeek] });
+    useInsightStore.setState({ lastGeneratedWeekKey: previousWeekKey(new Date()), cards: [] });
+    renderScreen();
+    expect(await screen.findByText(/no clear pattern has surfaced yet/)).toBeTruthy();
+    expect(screen.queryByText(/Not enough layers/)).toBeNull();
   });
 });

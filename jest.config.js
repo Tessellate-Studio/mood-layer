@@ -13,7 +13,16 @@ module.exports = {
   testMatch: ['**/__tests__/**/*.test.[jt]s?(x)', '**/*.test.[jt]s?(x)'],
   // Session worktrees checked out under the repo root carry their own copies of
   // the test suite; without these ignores jest runs them too (stale duplicates).
-  testPathIgnorePatterns: ['/node_modules/', '/\\.claude/worktrees/', '/\\.worktrees/'],
+  // MUST be <rootDir>-anchored: a bare '/\.claude/worktrees/' also matches the
+  // path of a worktree running its OWN suite, so jest silently discovers ZERO
+  // tests in every worktree session — a green run that tested nothing
+  // (regression 2026-07-18). Anchoring scopes the ignore to worktrees nested
+  // BELOW the current root, which is the actual intent.
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '<rootDir>/\\.claude/worktrees/',
+    '<rootDir>/\\.worktrees/',
+  ],
   modulePathIgnorePatterns: ['<rootDir>/\\.claude/worktrees/', '<rootDir>/\\.worktrees/'],
   collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.d.ts', '!src/**/index.ts'],
 };

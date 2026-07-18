@@ -158,6 +158,38 @@ export function clothPieces(emotions: EmotionSelection[], w: number, h: number):
   });
 }
 
+/**
+ * Vertical space a week block spends above its first row: the week label
+ * (overline line-height) plus its bottom margin. Mirrors QuiltWeek's header.
+ */
+export const WEEK_LABEL_BLOCK = 16 + 8;
+
+/**
+ * Scroll offset that brings a check-in's cluster into view inside the quilt
+ * list, or null when it isn't in these blocks. A fresh check-in lands at the
+ * BOTTOM of the current week (Saturday is the 6th row), which can sit below
+ * the fold — without scrolling there, a save looks like it did nothing
+ * (device feedback, 2026-07-18). `topPadding` is the list's content padding;
+ * `margin` leaves a little breathing room above the row.
+ */
+export function offsetForCheckIn(
+  blocks: WeekBlock[],
+  checkInId: string,
+  topPadding = 16,
+  margin = 24
+): number | null {
+  let blockTop = topPadding;
+  for (const block of blocks) {
+    for (const row of block.rows) {
+      if (row.patches.some((p) => p.checkInId === checkInId)) {
+        return Math.max(0, blockTop + WEEK_LABEL_BLOCK + row.y - margin);
+      }
+    }
+    blockTop += WEEK_LABEL_BLOCK + block.totalHeight;
+  }
+  return null;
+}
+
 /** 'Tuesday morning: sad 3, hopeful 2' — screen-reader summary of a patch. */
 export function buildPatchA11yLabel(checkIn: CheckIn): string {
   const created = new Date(checkIn.createdAt);

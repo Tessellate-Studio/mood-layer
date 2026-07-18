@@ -62,6 +62,30 @@ describe('mutedPalette tokens', () => {
     }
   });
 
+  it('every ink text tier stays AA on the tinted card fills', () => {
+    // The fills carry real hue since 2026-07-18 ("too dull"), so the tiers
+    // that print ON them — headings/ink, body/inkSoft, captions/inkMuted —
+    // are re-checked here rather than assumed from the paper background.
+    for (const id of familyIds) {
+      const { fill } = mutedPalette[id];
+      expect(contrast(colors.ink, fill)).toBeGreaterThanOrEqual(7);
+      expect(contrast(colors.inkSoft, fill)).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(colors.inkMuted, fill)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('fills carry visible hue — not grey (the "too dull" regression)', () => {
+    // Chroma proxy: the spread between the max and min RGB channel. The old
+    // desaturated fills sat at 2–6 (grey dust); the tuned ones run 15–61.
+    // Contempt's mauve is the low end at 15 — inherently near-neutral — so the
+    // guard sits at 12, cleanly above the old range and below every new fill.
+    for (const id of familyIds) {
+      const c = mutedPalette[id].fill.replace('#', '');
+      const [r, g, b] = [0, 2, 4].map((i) => parseInt(c.slice(i, i + 2), 16));
+      expect(Math.max(r, g, b) - Math.min(r, g, b)).toBeGreaterThanOrEqual(12);
+    }
+  });
+
   it('familyPalette threads clear 3:1 on paper, raised paper, and shade1', () => {
     // These threads draw meaningful strokes (helper-sheet underline + border,
     // logo band edges) — several sat below 3:1 until the 2026-07-17 contrast

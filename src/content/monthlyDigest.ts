@@ -7,12 +7,15 @@
 import { EMOTION_FAMILIES } from '@/content/emotions';
 import { PRACTICES } from '@/content/practices';
 import { RESISTANCE_TELLS } from '@/content/resistance';
+import { findVocabularyWord } from '@/content/vocabulary';
 import type {
   CheckIn,
   EmotionFamilyId,
   JudgmentEntry,
   ResistanceTellId,
 } from '@/types/models';
+import type { PracticeSession } from '@/store/experimentStore';
+import { sessionConclusion } from '@/utils/practiceWork';
 import { groupSittings } from '@/utils/sittings';
 
 const DAYS_30_MS = 30 * 24 * 60 * 60 * 1000;
@@ -82,38 +85,73 @@ export function monthlyMoodDigest(
   };
 }
 
+export interface PracticeReflection {
+  title: string;
+  /** The gentle lead line — what the month's practising pointed at. */
+  body: string;
+  /** Recent sittings, each as "practice → what it arrived at". */
+  kept: { practice: string; conclusion: string }[];
+}
+
 /**
- * What practising looked like this month: sittings set down, by practice.
+ * What the month's practising SURFACED — not a tally of how often you sat
+ * down (a count is scoreboard-shaped and says nothing, user 2026-07-18).
+ * Two useful things instead: the feeling that most often turned out to be
+ * under your judgments, and the actual conclusions the sittings reached, so
+ * a decision made three weeks ago is still in front of you.
  * Null when nothing was practised — no guilt copy, ever (anti-pattern #3).
  */
-export function monthlyPracticeDigest(
-  practiceSessions: { practiceId: string; createdAt: string }[],
+export function monthlyPracticeReflection(
+  practiceSessions: PracticeSession[],
   judgmentEntries: JudgmentEntry[],
   now: Date = new Date()
-): { title: string; body: string } | null {
+): PracticeReflection | null {
   const sittings = groupSittings(judgmentEntries).filter((s) =>
     inWindow(s.entries[0].createdAt, now)
-  ).length;
-  const byPractice = new Map<string, number>();
-  for (const session of practiceSessions) {
-    if (!inWindow(session.createdAt, now)) continue;
-    byPractice.set(session.practiceId, (byPractice.get(session.practiceId) ?? 0) + 1);
+  );
+  const recentSessions = practiceSessions
+    .filter((s) => inWindow(s.createdAt, now))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+  if (sittings.length === 0 && recentSessions.length === 0) return null;
+
+  // The feeling most often found under a judgment — the practice's whole
+  // point, made visible across a month instead of one sitting.
+  const feelingCounts = new Map<string, number>();
+  for (const sitting of sittings) {
+    for (const entry of sitting.entries) {
+      for (const feeling of entry.uncoveredFeelings) {
+        feelingCounts.set(feeling.emotionId, (feelingCounts.get(feeling.emotionId) ?? 0) + 1);
+      }
+    }
+  }
+  const topFeeling = [...feelingCounts.entries()].sort(
+    (a, b) => b[1] - a[1] || a[0].localeCompare(b[0])
+  )[0];
+
+  let body: string;
+  if (topFeeling && topFeeling[1] >= 2) {
+    const label = (findVocabularyWord(topFeeling[0])?.word.label ?? topFeeling[0]).toLowerCase();
+    body =
+      `Under the judgments you looked at this month, ${label} was waiting ` +
+      `${plural(topFeeling[1], 'time', 'times')}. Worth meeting it directly?`;
+  } else if (sittings.length > 0) {
+    body =
+      `${plural(sittings.length, 'judgment sitting', 'judgment sittings')} this month. ` +
+      'Naming what sits underneath is the whole practice — the rest can wait.';
+  } else {
+    body = 'What these sittings arrived at, kept where you can find it again.';
   }
 
-  const total = sittings + [...byPractice.values()].reduce((a, b) => a + b, 0);
-  if (total === 0) return null;
-
-  const parts: string[] = [];
-  if (sittings > 0) parts.push(`Explore avoided emotions ×${sittings}`);
-  for (const practice of PRACTICES) {
-    const n = byPractice.get(practice.id);
-    if (n) parts.push(`${practice.title} ×${n}`);
+  // Up to three most recent conclusions — a glance, not an archive.
+  const kept: PracticeReflection['kept'] = [];
+  for (const session of recentSessions) {
+    const practice = PRACTICES.find((p) => p.id === session.practiceId);
+    if (!practice) continue;
+    const conclusion = sessionConclusion(practice, session.work);
+    if (conclusion) kept.push({ practice: practice.title, conclusion });
+    if (kept.length === 3) break;
   }
 
-  return {
-    title: 'The practices, taken up',
-    body:
-      `${plural(total, 'sitting', 'sittings')} set down this month — ` +
-      `${parts.join(', ')}. Whatever they stirred is kept under Reflections.`,
-  };
+  return { title: 'What the practices surfaced', body, kept };
 }

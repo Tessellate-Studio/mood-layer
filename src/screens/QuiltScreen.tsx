@@ -29,7 +29,6 @@ import {
   spacing,
   typography,
 } from '@/constants/theme';
-import FamilyLegend from '@/components/FamilyLegend';
 import LayeredClusterVignette from '@/components/LayeredClusterVignette';
 import PaperTexture from '@/components/PaperTexture';
 import WeeklySummaryCard from '@/components/WeeklySummaryCard';
@@ -41,23 +40,26 @@ import QuiltWeek from '@/components/QuiltWeek';
 import { selectWeekStats, useCheckInStore } from '@/store/checkInStore';
 import { useHelperSheetStore } from '@/store/helperSheetStore';
 import type { CheckIn, EmotionFamilyId } from '@/types/models';
+import { useMotion } from '@/hooks/useMotion';
 import { weekKey } from '@/utils/dates';
-import { computeQuiltLayout } from '@/utils/quiltLayout';
+import { computeQuiltLayout, offsetForCheckIn, type WeekBlock } from '@/utils/quiltLayout';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 const FAB_SIZE = hitTarget + 12;
 
-// Gear: a circle with 8 spokes, same line language as the tab icons.
-const GEAR_SPOKES = Array.from({ length: 8 }, (_, i) => {
-  const angle = (i * Math.PI) / 4;
-  return {
-    x1: 12 + Math.cos(angle) * 6,
-    y1: 12 + Math.sin(angle) * 6,
-    x2: 12 + Math.cos(angle) * 9.5,
-    y2: 12 + Math.sin(angle) * 9.5,
-  };
-});
+/** A hint of the palette on the field-guide row — the full key is inside. */
+const GUIDE_SWATCH_FAMILIES: EmotionFamilyId[] = ['anger', 'enjoyment', 'sadness', 'anticipation'];
+
+// Settings glyph: three sliders with knobs. The previous gear — a small
+// circle with eight radiating spokes — read as a brightness/theme control at
+// 22px (device feedback 2026-07-18); sliders are unambiguously settings and
+// keep the app's thin-line language.
+const SLIDER_ROWS = [
+  { y: 7, knob: 15 },
+  { y: 12, knob: 9 },
+  { y: 17, knob: 16 },
+];
 
 function wordLabel(emotionId: string): string {
   return findVocabularyWord(emotionId)?.word.label ?? emotionId;
@@ -83,6 +85,7 @@ export default function QuiltScreen() {
   const navigation = useNavigation<Nav>();
   const checkIns = useCheckInStore((s) => s.checkIns);
   const { width } = useWindowDimensions();
+  const { reduced: reduceMotion } = useMotion();
 
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [animateId, setAnimateId] = React.useState<string | null>(null);
@@ -114,6 +117,18 @@ export default function QuiltScreen() {
     prevFirstId.current = firstId;
   }, [checkIns]);
 
+  // A fresh check-in lands at the bottom of the current week (Saturday is the
+  // 6th row) — often below the fold, so saving looked like nothing happened
+  // (user, 2026-07-18). Scroll it into view; the arrival animation then plays
+  // where the eye already is.
+  const listRef = React.useRef<FlatList<WeekBlock>>(null);
+  React.useEffect(() => {
+    if (!animateId) return;
+    const offset = offsetForCheckIn(blocks, animateId, spacing.md, spacing.lg);
+    if (offset === null) return;
+    listRef.current?.scrollToOffset({ offset, animated: !reduceMotion });
+  }, [animateId, blocks, reduceMotion]);
+
   const selected = selectedId
     ? checkIns.find((c) => c.id === selectedId) ?? null
     : null;
@@ -131,26 +146,53 @@ export default function QuiltScreen() {
           onPress={() => navigation.navigate('Settings')}
         >
           <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-            <Circle cx={12} cy={12} r={4} stroke={colors.ink} strokeWidth={1.5} />
-            {GEAR_SPOKES.map((spoke, index) => (
-              <Line
-                key={index}
-                x1={spoke.x1}
-                y1={spoke.y1}
-                x2={spoke.x2}
-                y2={spoke.y2}
-                stroke={colors.ink}
-                strokeWidth={1.5}
-                strokeLinecap="round"
-              />
+            {SLIDER_ROWS.map((row) => (
+              <React.Fragment key={row.y}>
+                <Line
+                  x1={4}
+                  y1={row.y}
+                  x2={20}
+                  y2={row.y}
+                  stroke={colors.ink}
+                  strokeWidth={1.5}
+                  strokeLinecap="round"
+                />
+                <Circle
+                  cx={row.knob}
+                  cy={row.y}
+                  r={2.6}
+                  fill={colors.paper}
+                  stroke={colors.ink}
+                  strokeWidth={1.5}
+                />
+              </React.Fragment>
             ))}
           </Svg>
         </Pressable>
       </View>
 
       <WeeklySummaryCard summary={weeklySummary} />
-      {/* The quilt's key, on the quilt — tap a family to learn it. */}
-      <FamilyLegend />
+
+      {/* The field guide, offered where a new user actually is — on the home
+          screen (user, 2026-07-18). The nine-family key it used to duplicate
+          now lives INSIDE the guide, where the words are. */}
+      <Pressable
+        testID="home-field-guide"
+        accessibilityRole="button"
+        accessibilityLabel="Field guide. Learn the emotion families and find the right word."
+        style={styles.guideRow}
+        onPress={() => navigation.navigate('FieldGuide')}
+      >
+        <View style={styles.guideSwatches}>
+          {GUIDE_SWATCH_FAMILIES.map((family) => (
+            <View
+              key={family}
+              style={[styles.guideSwatch, { backgroundColor: familyPalette[family].shades[3] }]}
+            />
+          ))}
+        </View>
+        <Text style={styles.guideText}>Field guide — learn the words →</Text>
+      </Pressable>
 
       {checkIns.length === 0 ? (
         <View style={styles.empty}>
@@ -161,6 +203,7 @@ export default function QuiltScreen() {
         </View>
       ) : (
         <FlatList
+          ref={listRef}
           data={blocks}
           keyExtractor={(item) => item.weekKey}
           contentContainerStyle={styles.listContent}
@@ -197,14 +240,23 @@ export default function QuiltScreen() {
         animationType="fade"
         onRequestClose={() => setSelectedId(null)}
       >
-        <Pressable
-          style={styles.backdrop}
-          accessibilityRole="button"
-          accessibilityLabel="Close check-in details"
-          onPress={() => setSelectedId(null)}
-        >
-          {/* Inner press is swallowed so tapping the card doesn't dismiss. */}
+        {/* The backdrop is a SIBLING behind the sheet, never its parent: a
+            Pressable ancestor claims the pan gesture on Android, so a
+            ScrollView nested inside one cannot scroll at all (this bug was
+            reported three times before the ancestry — not the flex sizing —
+            was identified as the cause, 2026-07-18). */}
+        <View style={styles.backdrop}>
           <Pressable
+            style={StyleSheet.absoluteFill}
+            accessibilityRole="button"
+            accessibilityLabel="Close check-in details"
+            onPress={() => setSelectedId(null)}
+          />
+          {/* Plain View + a start-responder so taps on the card are swallowed
+              (they'd otherwise fall through to the backdrop and dismiss),
+              while the ScrollView below still wins the move gesture. */}
+          <View
+            onStartShouldSetResponder={() => true}
             style={[
               styles.sheet,
               { paddingBottom: insets.bottom + spacing.lg },
@@ -277,8 +329,8 @@ export default function QuiltScreen() {
                 </ScrollView>
               </>
             ) : null}
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </Modal>
     </View>
   );
@@ -318,6 +370,26 @@ const styles = StyleSheet.create({
     minHeight: hitTarget,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  guideRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    minHeight: hitTarget,
+    paddingVertical: spacing.xs,
+  },
+  guideSwatches: {
+    flexDirection: 'row',
+    gap: 3,
+  },
+  guideSwatch: {
+    width: 10,
+    height: 10,
+    borderRadius: borderRadius.sm,
+  },
+  guideText: {
+    ...typography.caption,
+    color: colors.inkSoft,
   },
   empty: {
     flex: 1,

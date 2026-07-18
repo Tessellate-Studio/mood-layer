@@ -21,7 +21,7 @@ import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { useExperimentStore, type PracticeSession } from '@/store/experimentStore';
 import type { EmotionFamilyId, JudgmentEntry } from '@/types/models';
 import { weekKey, weekRangeLabel } from '@/utils/dates';
-import { sessionLines } from '@/utils/practiceWork';
+import { sessionConclusion, sessionLines } from '@/utils/practiceWork';
 import { groupSittings } from '@/utils/sittings';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -219,7 +219,10 @@ function JudgmentSittingCard({
         onPress={onToggle}
         style={styles.entryBody}
       >
-        <Text style={styles.entryLine} numberOfLines={expanded ? undefined : 1}>
+        {/* Every reflection reads the same way: the PRACTICE's name, then one
+            line of what it arrived at (user, 2026-07-18). */}
+        <Text style={styles.entryTitle}>Explore avoided emotions</Text>
+        <Text style={styles.entrySub} numberOfLines={expanded ? undefined : 1}>
           {first.target} — {first.judgment}
           {more > 0 ? `  ·  +${more} more` : ''}
         </Text>
@@ -261,6 +264,7 @@ function PracticeSittingCard({
   const practice = findPractice(session.practiceId);
   if (!practice) return null;
   const lines = sessionLines(practice, session.work);
+  const conclusion = sessionConclusion(practice, session.work);
 
   const confirmRemove = () => {
     Alert.alert('Remove this sitting?', 'It will be gone from this phone.', [
@@ -284,9 +288,12 @@ function PracticeSittingCard({
         onPress={onToggle}
         style={styles.entryBody}
       >
-        <Text style={styles.entryLine} numberOfLines={expanded ? undefined : 1}>
-          {practice.title}
-        </Text>
+        <Text style={styles.entryTitle}>{practice.title}</Text>
+        {conclusion ? (
+          <Text style={styles.entrySub} numberOfLines={expanded ? undefined : 1}>
+            {conclusion}
+          </Text>
+        ) : null}
         {expanded ? (
           <View style={styles.entryDetail}>
             {lines.map((line) => (
@@ -348,9 +355,11 @@ const styles = StyleSheet.create({
   entryBody: {
     gap: spacing.sm,
   },
-  entryLine: {
+  entryTitle: {
+    ...typography.heading,
+  },
+  entrySub: {
     ...typography.body,
-    color: colors.ink,
   },
   entryDetail: {
     gap: spacing.sm,

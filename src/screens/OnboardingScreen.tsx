@@ -16,9 +16,10 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
 
-import { borderRadius, colors, hitTarget, motion, mutedPalette, spacing, textures, typography } from '@/constants/theme';
+import { borderRadius, colors, familyPalette, hitTarget, motion, mutedPalette, spacing, textures, typography } from '@/constants/theme';
 import LayeredClusterVignette from '@/components/LayeredClusterVignette';
 import PaperTexture from '@/components/PaperTexture';
+import { EMOTION_FAMILIES } from '@/content/emotions';
 import { ONBOARDING_SLIDES } from '@/content/onboarding';
 import { useMotion } from '@/hooks/useMotion';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
@@ -91,10 +92,32 @@ function PrivacyVignette() {
   );
 }
 
+/** The field-guide slide: a spread of nine tiny family swatches — a glimpse
+ *  of the vocabulary the guide holds. */
+function GuideVignette() {
+  const families = Object.values(EMOTION_FAMILIES);
+  return (
+    <Svg width={88} height={88} viewBox="0 0 64 64">
+      {families.map((family, i) => (
+        <Rect
+          key={family.id}
+          x={8 + (i % 3) * 17}
+          y={8 + Math.floor(i / 3) * 17}
+          width={13}
+          height={13}
+          rx={3}
+          fill={familyPalette[family.id].shades[3]}
+        />
+      ))}
+    </Svg>
+  );
+}
+
 const VIGNETTES: Record<string, () => React.JSX.Element> = {
   quilt: QuiltVignette,
   fluidity: FluidityVignette,
   privacy: PrivacyVignette,
+  guide: GuideVignette,
 };
 
 // Muted-layer treatment: each slide's vignette sits on its own whisper-tint
@@ -103,6 +126,7 @@ const SLIDE_FAMILY: Record<string, EmotionFamilyId> = {
   quilt: 'sadness',
   fluidity: 'disgust',
   privacy: 'fear',
+  guide: 'anticipation',
 };
 
 /**

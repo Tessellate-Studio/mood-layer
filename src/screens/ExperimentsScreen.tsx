@@ -82,10 +82,11 @@ export default function ExperimentsScreen() {
           Small practices for meeting what&apos;s here. Take one when it calls — none are homework.
         </Text>
 
-        {/* Practices: the four exercises, one uniform card each. A ringed
-            arrow marks a card that leads into a flow. */}
+        {/* Deep work: the sit-down exercises that ask something of you. Box
+            breathing is NOT one of these — it regulates rather than
+            excavates, so it has its own section below (user, 2026-07-18). */}
         <View style={styles.section}>
-          <SectionHeader family={PRACTICES_FAMILY} label="Practices" />
+          <SectionHeader family={PRACTICES_FAMILY} label="Deep work" />
           <ThreadCard
             family={JUDGMENT_FAMILY}
             testID="card-judgment"
@@ -113,6 +114,15 @@ export default function ExperimentsScreen() {
               <Text style={styles.cardSub}>{practice.whenFor}</Text>
             </ThreadCard>
           ))}
+          <Text style={styles.attribution}>
+            Perspective practices adapted from Six Seconds&apos; Practicing EQ guide.
+          </Text>
+        </View>
+
+        {/* Breath work: regulation, not excavation — reachable in a minute
+            when the nervous system needs settling first. */}
+        <View style={styles.section}>
+          <SectionHeader family={BREATHING_FAMILY} label="Breath work" />
           <ThreadCard
             family={BREATHING_FAMILY}
             testID="card-breathing"
@@ -125,9 +135,6 @@ export default function ExperimentsScreen() {
             </View>
             <Text style={styles.cardSub}>For a nervous system that needs a minute</Text>
           </ThreadCard>
-          <Text style={styles.attribution}>
-            Perspective practices adapted from Six Seconds&apos; Practicing EQ guide.
-          </Text>
         </View>
 
         {/* Reflections live in their own catalog screen (week-by-week, like

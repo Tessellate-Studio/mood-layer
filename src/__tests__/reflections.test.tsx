@@ -123,7 +123,7 @@ describe('ReflectionsScreen', () => {
     alertSpy.mockRestore();
   });
 
-  it('shows an archived practice sitting with its per-step summary on expand', () => {
+  it('shows practice name + conclusion collapsed, full per-step summary on expand', () => {
     useExperimentStore.setState((s) => ({
       ...s,
       practiceSessions: [
@@ -131,7 +131,11 @@ describe('ReflectionsScreen', () => {
           id: 'ps-1',
           practiceId: 'problem-solution',
           createdAt: new Date().toISOString(),
-          work: { entries: { problem: ['no time'] }, marks: {}, picks: {} },
+          work: {
+            entries: { problem: ['no time'], 'small-step': ['email Sam'] },
+            marks: {},
+            picks: {},
+          },
         },
       ],
     }));
@@ -140,8 +144,13 @@ describe('ReflectionsScreen', () => {
         <ReflectionsScreen />
       </NavigationContainer>
     );
-    expect(screen.queryByText('no time')).toBeNull();
+    // Collapsed: the practice NAME and its conclusion subtitle (the last thing
+    // written — the small step) show; the step LABELS stay hidden.
+    expect(screen.getByText('Problem, then solution')).toBeTruthy();
+    expect(screen.getByText('email Sam')).toBeTruthy();
+    expect(screen.queryByText('The problem')).toBeNull();
     fireEvent.press(screen.getByTestId('reflection-practice-ps-1'));
+    expect(screen.getByText('The problem')).toBeTruthy();
     expect(screen.getByText('no time')).toBeTruthy();
   });
 });
