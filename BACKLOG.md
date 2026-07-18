@@ -11,23 +11,12 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
 
 ## P0 — now (this week)
 
-- **Circle: scheduled-share reminders (no-backend version)** — **BUILT
-  2026-07-13** (decided the same day: do the local, no-backend version first).
-  Instead of *delivering* a summary on a schedule (needs a server, breaks
-  local-only), we schedule a **local push notification on the user's own phone**
-  at each non-paused person's cadence (`evening` → daily 20:00, `weekly` →
-  Sunday 20:00). Tapping the nudge deep-links to the Circle tab and opens the OS
-  share sheet pre-loaded with that person's gated `shareSummary` — the user
-  still taps share, so **nothing leaves the phone on its own** and local-only is
-  preserved. Reuses the name-it notification pattern
-  (`utils/notificationPlanner` → `services/notifications.rescheduleCircle` →
-  ids persisted on `circleStore`, cancelled/rescheduled on
-  remove/pause/recadence and on app foreground). Per-id cancellation (never
-  `cancelAll`) so it never wipes the name-it reminders sharing the same OS queue.
-  ⚠️ **On-device firing needs a dev build** — Expo Go can't fire local
-  scheduled notifications (regression-log #4); every circle service fn no-ops
-  under Expo Go. Cross-ref the EAS dev-build item under "Post-launch" — the same
-  build unblocks device verification of both name-it and circle reminders.
+- ~~**Circle: scheduled-share reminders (no-backend version)**~~ — shipped
+  2026-07-13, PR #13 (`c547258`).
+  **Still open:** on-device firing is unverified — Expo Go can't fire local
+  scheduled notifications (regression-log #4), so every circle service fn
+  no-ops under it. Needs the EAS dev build tracked under "Post-launch" (the
+  same build unblocks name-it reminder verification).
 
 - **Circle: true auto-deliver to recipient (backend automation)** — *separate,
   larger, and a deliberate break of local-only* — **not started**, keep only if
@@ -49,16 +38,10 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
 
 ## P1 — do next
 
-- **Install the app icons from the logo handoff** — **BUILT 2026-07-13.** The
-  logo-handoff assets (`icons/` PNGs + `svg/` sources) landed on this branch;
-  `app.json` now points at them (`assets/icon.png`, `assets/adaptive-icon.png`,
-  `assets/splash-icon.png`, `assets/favicon.png`), the Android adaptive icon
-  background is the flat `#F8F6F0` paper token, and the Quilt tab icon now
-  draws the designed mono three-band mark (`src/components/TabIcon.tsx`)
-  instead of the old grid glyph. The in-app mark
-  (`src/components/LogoMark.tsx`) matches the launcher icon's exact geometry.
-  PR #14. Still needs an on-device look once a build is available — icons
-  render correctly in the Expo config but haven't been eyeballed on a phone.
+- ~~**Install the app icons from the logo handoff**~~ — shipped 2026-07-13,
+  PR #14 (`e862632`).
+  **Still open:** never eyeballed on a phone — icons resolve correctly in the
+  Expo config but need an on-device look once a build is available.
 
 - **Clean on-device verification pass of the v0.2.0 redesign** — rubric **7/12**.
   Full walkthrough of Quilt cloth, Insights depth, Circle, judgment
@@ -92,8 +75,9 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
 ## P3 — later
 
 - **Further de-overwhelm interactions for word pickers** — folded-by-default
-  family groups shipped 2026-07-13 (user feedback: nine open families read as
-  a wall). Candidates if the feel step still feels heavy: a "words you've
+  family groups shipped 2026-07-13, PR #12 (`f7cb894`) (user feedback: nine
+  open families read as a wall). Candidates if the feel step still feels
+  heavy: a "words you've
   used lately" row at the top (zero scrolling for regulars — convenience, not
   a streak); a family-first two-step flow (pick 1 of 9 families → see only
   its 6 words); a type-to-find filter (fits the typewriter voice; typing may
@@ -112,7 +96,6 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
 
 ## Done / retired
 
-- **Install rubric-sdk for pulse scoring** — done 2026-07-12. `npm i -D
-  github:ramsaptami/rubric-sdk` installs cleanly (59 packages, exit 0); the
-  earlier "agent sandbox can't install from a personal-repo git URL" note in the
-  tracker was wrong and has been corrected. Pulse scoring is now numeric.
+- ~~**Install rubric-sdk for pulse scoring**~~ — done 2026-07-12; superseded
+  2026-07-17 by `@tessellate-studio/forge` (PR #21, `07e84af`) after rubric-sdk
+  was merged into forge. Pulse scoring is numeric.
