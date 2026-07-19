@@ -1,38 +1,15 @@
 name: Build Android APK
 
-# Cloud builds ONLY (2026-07-14, explicit user rule): native compilation
-# (Gradle/CMake) must never run on the user's laptop — local builds were
-# consuming the machine to breaking point, and Windows' 260-char path
-# limit breaks local CMake object paths anyway. This workflow is the only
-# sanctioned way to produce a Mood Layer APK:
-#
-#   gh workflow run build-android-apk.yml --ref master
-#   gh run download <run-id> --name mood-layer-apk
-#   adb install -r app-release.apk
-#
-# workflow_dispatch only — same Actions-minutes reasoning as badige's
-# 2026-07-13 CI-cost fix: a full Android build on every merge is spend
-# nobody is necessarily waiting on. A manual dispatch is a deliberate
-# "build it now".
-#
-# Signing: debug keystore (deliberate for now). The app is sideload-only —
-# not on Play Store — and a stable, committed-nowhere debug key means any
-# machine's dispatch produces install-compatible builds. Replace with a
-# real keystore secret (per alate's build-android-apk.yml + anti-pattern
-# #19: restore from secret store, never echo, fail closed) before any
-# store release.
-
 on:
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    # First real run (29563745748, 2026-07-17) proved a cold RN 0.83 release
-    # build does NOT fit in 45 min on a hosted runner — Gradle alone ran 44
-    # min before the timeout cancelled it. 90 gives cold builds room; the
-    # Gradle cache + single-ABI build below pull warm builds far under it.
-    timeout-minutes: 90
+    env:
+      # Secrets can't be referenced in a step's `if:` directly; this flag
+      # lets the litmus-dispatch step skip cleanly while the PAT is unset.
+      HAS_LITMUS_TOKEN: ${{ secrets.LITMUS_DISPATCH_TOKEN != '' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -80,6 +57,23 @@ jobs:
           path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30
 
+      - name: Notify litmus (testing lab)
+        # Fires litmus's E2E + rule-compliance workflows against this run's
+        # APK artifact. GITHUB_TOKEN can't dispatch cross-repo, so this
+        # needs the LITMUS_DISPATCH_TOKEN secret (fine-grained PAT, litmus
+        # repo only, Contents: read/write — setup in docs/user-actions-tracker.md).
+        # Skipped, not failed, while the secret is absent so builds don't break.
+        if: success() && env.HAS_LITMUS_TOKEN == 'true'
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.LITMUS_DISPATCH_TOKEN }}
+          repository: Tessellate-Studio/litmus
+          event-type: mood-layer-apk-ready
+          client-payload: >-
+            {"run_id": "${{ github.run_id }}",
+             "sha": "${{ github.sha }}",
+             "artifact_name": "mood-layer-apk"}
+
   # A red run in the Actions tab is silent (see alate's 18-day dead-deploy
   # precedent) — open an issue so a failure actually reaches a human.
   alert-on-failure:
@@ -99,4 +93,4 @@ jobs:
               title: `APK build failed: run ${context.runId}`,
               body: `The Android APK build failed or was cancelled.\n\nRun: https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
               labels: ['ci-failure'],
-            });
+            })
