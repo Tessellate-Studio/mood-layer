@@ -9,6 +9,7 @@ import React from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import QRCode from 'react-native-qrcode-svg';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Line } from 'react-native-svg';
 
 import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
@@ -35,6 +36,7 @@ interface Props {
 type Mode = 'show' | 'scan';
 
 export default function PairSheet({ visible, personName, onPaired, onClose }: Props) {
+  const insets = useSafeAreaInsets();
   const [mode, setMode] = React.useState<Mode>('show');
   const [qrValue, setQrValue] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
@@ -109,7 +111,7 @@ export default function PairSheet({ visible, personName, onPaired, onClose }: Pr
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="Close pairing" onPress={onClose} />
-        <View style={styles.sheet} onStartShouldSetResponder={() => true} testID="pair-sheet">
+        <View style={[styles.sheet, { paddingBottom: spacing.lg + insets.bottom }]} onStartShouldSetResponder={() => true} testID="pair-sheet">
           <View style={styles.sheetHeader}>
             <Text style={[typography.heading, styles.sheetTitle]}>Pair with {personName}&apos;s app</Text>
             <Pressable testID="pair-close-x" accessibilityRole="button" accessibilityLabel="Close" style={styles.closeBtnTop} onPress={onClose}>

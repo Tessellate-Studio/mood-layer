@@ -58,7 +58,6 @@ interface CircleState {
   received: ReceivedStatus[];
   /** personId → ISO time of the last AUTOMATIC send (dueSends dedupe). */
   lastAutoSent: Record<string, string>;
-  /** New people start Paused — sharing is off until the user turns it on. */
   addPerson(input: Omit<CirclePerson, 'id'>): CirclePerson;
   updatePerson(id: string, patch: Partial<Omit<CirclePerson, 'id'>>): void;
   removePerson(id: string): void;

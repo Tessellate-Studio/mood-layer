@@ -147,13 +147,13 @@ export default function SettingsScreen() {
         <Pressable
           testID="settings-name-it"
           accessibilityRole="button"
-          accessibilityLabel={`Name-it reminders, currently ${
+          accessibilityLabel={`Check-in reminders, currently ${
             nameIt.enabled ? `${nameIt.timesPerDay} times a day` : 'off'
           }`}
           style={styles.row}
           onPress={() => navigation.navigate('NameItSetup')}
         >
-          <Text style={styles.rowLabel}>Name-it reminders</Text>
+          <Text style={styles.rowLabel}>Check-in reminders</Text>
           <Text style={styles.rowValue}>
             {nameIt.enabled ? `${nameIt.timesPerDay}× a day` : 'Off'}
           </Text>
@@ -289,8 +289,8 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   sectionHeader: {
-    marginTop: spacing.lg,
-    marginBottom: spacing.xs,
+    marginTop: spacing.xl,
+    marginBottom: spacing.sm,
   },
   row: {
     minHeight: hitTarget,
@@ -298,8 +298,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: spacing.sm,
-    borderBottomWidth: 0.5,
-    borderBottomColor: colors.inkFaint,
+    paddingVertical: spacing.xs,
   },
   rowGroup: {
     gap: spacing.xs,

@@ -62,7 +62,7 @@ describe('CircleScreen', () => {
     expect(screen.getByTestId('circle-invite')).toBeTruthy();
   });
 
-  it('invites a person, who starts paused (sharing off until turned on)', () => {
+  it('invites a person, who starts active at weekly', () => {
     renderScreen();
     fireEvent.press(screen.getByTestId('circle-invite'));
     fireEvent.changeText(screen.getByTestId('circle-add-name'), 'Priya');
@@ -72,7 +72,7 @@ describe('CircleScreen', () => {
     const people = useCircleStore.getState().people;
     expect(people).toHaveLength(1);
     expect(people[0].name).toBe('Priya');
-    expect(people[0].frequency).toBe('paused');
+    expect(people[0].frequency).toBe('weekly');
   });
 
   it('cycles what a person sees and how often on tap', () => {

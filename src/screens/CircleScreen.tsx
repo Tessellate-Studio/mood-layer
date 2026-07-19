@@ -292,12 +292,11 @@ function InviteForm({ onDone }: { onDone: () => void }) {
 
   const submit = () => {
     if (name.trim().length === 0) return;
-    // New people start Paused — sharing is off until you turn it on.
     addPerson({
       name: name.trim(),
       relationship: relationship.trim() || 'Someone you trust',
       sees: 'colours',
-      frequency: 'paused',
+      frequency: 'weekly',
     });
     onDone();
   };
@@ -436,8 +435,8 @@ export default function CircleScreen() {
       >
         <Text style={typography.title}>Your circle</Text>
         <Text style={styles.intro}>
-          Nothing leaves your phone until you choose it. Sharing is off until you turn it on, per
-          person.
+          Nothing leaves your phone until you choose it. You control what each person sees and how
+          often.
         </Text>
 
         <ReceivedStrip people={people} received={received} />
