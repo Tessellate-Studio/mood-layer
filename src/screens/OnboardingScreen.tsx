@@ -1,35 +1,26 @@
-// Onboarding: three paged slides (quilt / fluidity / privacy) with stitch-mark
-// page dots and a Begin button on the last slide. Each slide carries a small
-// monochrome line-art vignette; vignette → title → body fade/drift in with a
-// short stagger whenever the page settles (static under reduce-motion).
+// Onboarding: four paged slides (quilt / fluidity / privacy / guide) with
+// stitch-mark page dots and a Begin button on the last slide. Each slide
+// carries a small monochrome line-art vignette. Content shows immediately
+// (the old fade/drift animation was removed — user: "jumpy").
 
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withDelay,
-  withTiming,
-} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
 
-import { borderRadius, colors, familyPalette, hitTarget, motion, mutedPalette, spacing, textures, typography } from '@/constants/theme';
+import { borderRadius, colors, familyPalette, hitTarget, mutedPalette, spacing, textures, typography } from '@/constants/theme';
 import LayeredClusterVignette from '@/components/LayeredClusterVignette';
 import PaperTexture from '@/components/PaperTexture';
 import { EMOTION_FAMILIES } from '@/content/emotions';
 import { ONBOARDING_SLIDES } from '@/content/onboarding';
-import { useMotion } from '@/hooks/useMotion';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { EmotionFamilyId } from '@/types/models';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-/** Stagger step between a slide's vignette / title / body entrances. */
-const STAGGER_MS = 90;
 
 // --- Vignettes: one per slide, decorative only ---
 
@@ -129,47 +120,6 @@ const SLIDE_FAMILY: Record<string, EmotionFamilyId> = {
   guide: 'anticipation',
 };
 
-/**
- * Fade/drift-in wrapper: re-runs whenever its slide becomes the settled page,
- * with `order` steps of stagger (vignette 0 → title 1 → body 2). Under
- * reduce-motion the content is simply pinned at rest (hard rule: animations
- * disable cleanly).
- */
-function FadeDrift({
-  active,
-  reduceMotion,
-  order,
-  children,
-}: {
-  active: boolean;
-  reduceMotion: boolean;
-  order: number;
-  children: React.ReactNode;
-}) {
-  const opacity = useSharedValue(1);
-  const translateY = useSharedValue(0);
-
-  React.useEffect(() => {
-    if (reduceMotion) {
-      opacity.value = 1;
-      translateY.value = 0;
-      return;
-    }
-    if (!active) return;
-    opacity.value = 0;
-    translateY.value = 10;
-    opacity.value = withDelay(order * STAGGER_MS, withTiming(1, { duration: motion.gentleMs }));
-    translateY.value = withDelay(order * STAGGER_MS, withTiming(0, { duration: motion.gentleMs }));
-  }, [active, order, reduceMotion, opacity, translateY]);
-
-  const style = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-    transform: [{ translateY: translateY.value }],
-  }));
-
-  return <Animated.View style={style}>{children}</Animated.View>;
-}
-
 export default function OnboardingScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<Nav>();
@@ -178,8 +128,6 @@ export default function OnboardingScreen() {
   const { width } = useWindowDimensions();
   const [page, setPage] = React.useState(0);
   const lastIndex = ONBOARDING_SLIDES.length - 1;
-
-  const { reduced: reduceMotion } = useMotion();
 
   const begin = () => {
     useSettingsStore.getState().completeOnboarding();
@@ -205,45 +153,33 @@ export default function OnboardingScreen() {
       >
         {ONBOARDING_SLIDES.map((slide, index) => {
           const Vignette = VIGNETTES[slide.id];
-          const active = index === page;
           return (
             <View key={slide.id} style={[styles.slide, { width }]}>
               {Vignette ? (
-                <FadeDrift active={active} reduceMotion={reduceMotion} order={0}>
-                  {/* Decorative line art — hidden from screen readers. */}
-                  {/* Raised paper, not a family tint: the pastel cluster and
-                      the ink line art both washed out against the saturated
-                      fills (user, 2026-07-18) — the vignette carries its own
-                      colour, the panel stays paper. */}
-                  <View
-                    style={[
-                      styles.vignette,
-                      { borderColor: mutedPalette[SLIDE_FAMILY[slide.id]].border },
-                    ]}
-                    accessibilityElementsHidden
-                    importantForAccessibility="no-hide-descendants"
-                  >
-                    <Vignette />
-                  </View>
-                </FadeDrift>
+                <View
+                  style={[
+                    styles.vignette,
+                    { borderColor: mutedPalette[SLIDE_FAMILY[slide.id]].border },
+                  ]}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no-hide-descendants"
+                >
+                  <Vignette />
+                </View>
               ) : null}
-              <FadeDrift active={active} reduceMotion={reduceMotion} order={1}>
-                <Text style={styles.slideTitle}>{slide.title}</Text>
-              </FadeDrift>
-              <FadeDrift active={active} reduceMotion={reduceMotion} order={2}>
-                <Text style={styles.slideBody}>{slide.body}</Text>
-                {index === lastIndex && (
-                  <Pressable
-                    testID="onboarding-begin"
-                    accessibilityRole="button"
-                    accessibilityLabel="Begin"
-                    style={styles.begin}
-                    onPress={begin}
-                  >
-                    <Text style={styles.beginLabel}>Begin</Text>
-                  </Pressable>
-                )}
-              </FadeDrift>
+              <Text style={styles.slideTitle}>{slide.title}</Text>
+              <Text style={styles.slideBody}>{slide.body}</Text>
+              {index === lastIndex && (
+                <Pressable
+                  testID="onboarding-begin"
+                  accessibilityRole="button"
+                  accessibilityLabel="Begin"
+                  style={styles.begin}
+                  onPress={begin}
+                >
+                  <Text style={styles.beginLabel}>Begin</Text>
+                </Pressable>
+              )}
             </View>
           );
         })}

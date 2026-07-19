@@ -130,10 +130,10 @@ describe('monthlyPracticeDigest', () => {
       NOW
     );
     expect(reflection).not.toBeNull();
-    // Newest sitting first; conclusion = the chosen/closing line, not the setup.
+    // Newest sitting first; conclusion = opening → outcome format.
     expect(reflection!.kept[0]).toEqual({
       practice: 'Five year flashback',
-      conclusion: 'go north',
+      conclusion: 'move? → go north',
     });
     expect(reflection!.kept[1].practice).toBe('Problem, then solution');
   });

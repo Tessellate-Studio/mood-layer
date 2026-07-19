@@ -144,10 +144,9 @@ describe('ReflectionsScreen', () => {
         <ReflectionsScreen />
       </NavigationContainer>
     );
-    // Collapsed: the practice NAME and its conclusion subtitle (the last thing
-    // written — the small step) show; the step LABELS stay hidden.
+    // Collapsed: problem → outcome subtitle. Step LABELS stay hidden.
     expect(screen.getByText('Problem, then solution')).toBeTruthy();
-    expect(screen.getByText('email Sam')).toBeTruthy();
+    expect(screen.getByText(/no time .+ email Sam/)).toBeTruthy();
     expect(screen.queryByText('The problem')).toBeNull();
     fireEvent.press(screen.getByTestId('reflection-practice-ps-1'));
     expect(screen.getByText('The problem')).toBeTruthy();

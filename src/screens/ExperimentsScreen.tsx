@@ -22,6 +22,7 @@ import Svg, { Line } from 'react-native-svg';
 import { colors, mutedPalette, spacing, typography } from '@/constants/theme';
 import LogoDivider from '@/components/LogoDivider';
 import PaperTexture from '@/components/PaperTexture';
+import ScreenTip from '@/components/ScreenTip';
 import SectionHeader from '@/components/SectionHeader';
 import ThreadCard from '@/components/ThreadCard';
 import { PRACTICE_FAMILY, PRACTICES } from '@/content/practices';
@@ -37,7 +38,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 // content/practices.ts); Past reflections = contempt mauve; Learn =
 // anticipation teal; Reminders = trust rose.
 const PRACTICES_FAMILY: EmotionFamilyId = 'sadness';
-const JUDGMENT_FAMILY: EmotionFamilyId = 'anger';
+const JUDGMENT_FAMILY: EmotionFamilyId = 'contempt';
 const BREATHING_FAMILY: EmotionFamilyId = 'anticipation';
 const REFLECTIONS_FAMILY: EmotionFamilyId = 'contempt';
 const LEARN_FAMILY: EmotionFamilyId = 'anticipation';
@@ -78,6 +79,10 @@ export default function ExperimentsScreen() {
         testID="screen-experiments"
       >
         <Text style={typography.title}>Experiments</Text>
+        <ScreenTip
+          tipId="experiments"
+          text="Guided practices for working with what you feel. Each one saves a reflection you can revisit later."
+        />
         <Text style={styles.intro}>
           Small practices for meeting what&apos;s here. Take one when it calls — none are homework.
         </Text>

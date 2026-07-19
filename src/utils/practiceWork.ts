@@ -134,24 +134,26 @@ function keyText(work: PracticeWork, key: string): string | undefined {
 }
 
 /**
- * The one line a sitting ARRIVED at — what it concluded, not what it started
- * from. Prefers the practice's closing steps (the idea kept, the option that
- * still matters, the small step) and falls back to the last thing written.
- * Used as the subtitle in the reflections catalog, so a list of sittings
- * reads as a list of conclusions (user, 2026-07-18).
+ * A glance at what the sitting STARTED from and what it ARRIVED at — the
+ * problem and the outcome, joined by " → ". When both are present the
+ * collapsed subtitle reads as a journey; when only one exists it still
+ * works as a standalone.
  */
 export function sessionConclusion(practice: Practice, work: PracticeWork): string | null {
   const lines = sessionLines(practice, work);
   if (lines.length === 0) return null;
-  // Closing steps first: a pick or the final write is the conclusion; a list
-  // of raw options is not.
+
+  const opening = lines[0].body.split('\n')[0].trim() || null;
+
   const closingIds = practice.steps
     .filter((s) => s.kind === 'pick' || (s.kind === 'write' && s !== practice.steps[0]))
     .map((s) => s.title);
   const closing = [...lines].reverse().find((l) => closingIds.includes(l.title));
-  const chosen = closing ?? lines[lines.length - 1];
-  // One line only — the catalog row is a glance, not the sitting.
-  return chosen.body.split('\n')[0].trim() || null;
+  const chosen = closing ?? (lines.length > 1 ? lines[lines.length - 1] : null);
+  const outcome = chosen?.body.split('\n')[0].trim() || null;
+
+  if (opening && outcome && opening !== outcome) return `${opening} → ${outcome}`;
+  return opening ?? outcome;
 }
 
 /**

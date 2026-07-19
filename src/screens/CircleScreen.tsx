@@ -24,6 +24,7 @@ import Svg, { Circle, Line, Path } from 'react-native-svg';
 import { borderRadius, colors, hitTarget, mutedPalette, spacing, typography } from '@/constants/theme';
 import LogoDivider from '@/components/LogoDivider';
 import PaperTexture from '@/components/PaperTexture';
+import ScreenTip from '@/components/ScreenTip';
 import ThreadCard from '@/components/ThreadCard';
 import {
   ACTIVE_FREQUENCY_ORDER,
@@ -434,6 +435,10 @@ export default function CircleScreen() {
         testID="screen-circle"
       >
         <Text style={typography.title}>Your circle</Text>
+        <ScreenTip
+          tipId="circle"
+          text="Share a weekly summary with people you trust. You choose what they see and how often. Pair phones to send directly to their app."
+        />
         <Text style={styles.intro}>
           Nothing leaves your phone until you choose it. You control what each person sees and how
           often.

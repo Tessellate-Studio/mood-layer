@@ -21,6 +21,7 @@ import { borderRadius, colors, hitTarget, motion, spacing, typography } from '@/
 import LogoDivider from '@/components/LogoDivider';
 import LogoMark from '@/components/LogoMark';
 import PaperTexture from '@/components/PaperTexture';
+import ScreenTip from '@/components/ScreenTip';
 import ThreadCard from '@/components/ThreadCard';
 import { monthlyMoodDigest, monthlyPracticeReflection } from '@/content/monthlyDigest';
 import { RESISTANCE_TELLS } from '@/content/resistance';
@@ -251,6 +252,10 @@ export default function InsightsScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-insights">
       <PaperTexture />
+      <ScreenTip
+        tipId="insights"
+        text="Patterns from your check-ins appear here each week. At most two a week, always gentle."
+      />
       <View style={styles.headerRow}>
         {markFamilies ? <LogoMark families={markFamilies} size={44} /> : null}
         <View style={styles.headerText}>

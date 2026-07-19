@@ -32,6 +32,7 @@ import {
 import LayeredClusterVignette from '@/components/LayeredClusterVignette';
 import LogoMark from '@/components/LogoMark';
 import PaperTexture from '@/components/PaperTexture';
+import ScreenTip from '@/components/ScreenTip';
 import WeeklySummaryCard from '@/components/WeeklySummaryCard';
 import { homeWeeklySummary } from '@/content/circle';
 import { EMOTION_FAMILIES } from '@/content/emotions';
@@ -200,6 +201,11 @@ export default function QuiltScreen() {
           </Svg>
         </Pressable>
       </View>
+
+      <ScreenTip
+        tipId="home"
+        text="Each layer is a check-in. Tap one to see what you felt, or add a new one with the button below."
+      />
 
       <WeeklySummaryCard summary={weeklySummary} />
 

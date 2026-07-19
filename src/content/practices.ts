@@ -53,9 +53,9 @@ export interface Practice {
 /** Layer hue per practice (muted-layer treatment) — shared by the Experiments
  *  cards and the flow screen so the card and its flow read as one layer. */
 export const PRACTICE_FAMILY: Record<string, EmotionFamilyId> = {
-  'five-year-flashback': 'enjoyment',
-  'empathic-respect': 'disgust',
-  'problem-solution': 'fear',
+  'five-year-flashback': 'anticipation',
+  'empathic-respect': 'trust',
+  'problem-solution': 'surprise',
 };
 
 export const PRACTICES: Practice[] = [

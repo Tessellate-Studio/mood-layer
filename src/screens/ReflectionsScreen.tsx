@@ -26,7 +26,7 @@ import { groupSittings } from '@/utils/sittings';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-const JUDGMENT_FAMILY: EmotionFamilyId = 'anger';
+const JUDGMENT_FAMILY: EmotionFamilyId = 'contempt';
 const WEEKDAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 /** One catalog row — a judgment sitting (its grouped entries) or a practice
