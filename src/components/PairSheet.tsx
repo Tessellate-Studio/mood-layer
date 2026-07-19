@@ -9,6 +9,7 @@ import React from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import QRCode from 'react-native-qrcode-svg';
+import Svg, { Line } from 'react-native-svg';
 
 import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
 import {
@@ -109,7 +110,15 @@ export default function PairSheet({ visible, personName, onPaired, onClose }: Pr
       <View style={styles.backdrop}>
         <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="Close pairing" onPress={onClose} />
         <View style={styles.sheet} onStartShouldSetResponder={() => true} testID="pair-sheet">
-          <Text style={typography.heading}>Pair with {personName}&apos;s app</Text>
+          <View style={styles.sheetHeader}>
+            <Text style={[typography.heading, styles.sheetTitle]}>Pair with {personName}&apos;s app</Text>
+            <Pressable testID="pair-close-x" accessibilityRole="button" accessibilityLabel="Close" style={styles.closeBtnTop} onPress={onClose}>
+              <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+                <Line x1={6} y1={6} x2={18} y2={18} stroke={colors.ink} strokeWidth={1.5} strokeLinecap="round" />
+                <Line x1={18} y1={6} x2={6} y2={18} stroke={colors.ink} strokeWidth={1.5} strokeLinecap="round" />
+              </Svg>
+            </Pressable>
+          </View>
 
           <View style={styles.modeRow}>
             <Pressable
@@ -172,9 +181,6 @@ export default function PairSheet({ visible, personName, onPaired, onClose }: Pr
             </View>
           )}
 
-          <Pressable testID="pair-close" accessibilityRole="button" style={styles.closeBtn} onPress={onClose}>
-            <Text style={styles.closeText}>Close</Text>
-          </Pressable>
         </View>
       </View>
     </Modal>
@@ -251,13 +257,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: spacing.md,
   },
-  closeBtn: {
-    minHeight: hitTarget,
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sheetTitle: {
+    flex: 1,
+  },
+  closeBtnTop: {
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  closeText: {
-    ...typography.label,
-    color: colors.inkSoft,
   },
 });

@@ -386,8 +386,7 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
   title: {
     ...typography.title,
@@ -395,7 +394,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   iconButton: {
-    minWidth: hitTarget,
+    minWidth: 36,
     minHeight: hitTarget,
     alignItems: 'center',
     justifyContent: 'center',

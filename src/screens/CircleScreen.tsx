@@ -136,6 +136,83 @@ function PersonCard({ person, stats }: { person: CirclePerson; stats: WeekStats 
             <Text style={typography.heading}>{person.name}</Text>
             <Text style={styles.relationship}>{person.relationship}</Text>
           </View>
+          {sentAt ? <Text style={styles.sentDot} testID={`circle-sent-${person.id}`}>✓</Text> : null}
+          {pairing ? (
+            <Pressable
+              testID={`circle-send-${person.id}`}
+              accessibilityRole="button"
+              disabled={paused}
+              accessibilityLabel={`Send to ${person.name}'s app`}
+              style={styles.headerIconBtn}
+              onPress={() => void sendToApp()}
+            >
+              <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+                <Path d="M3 11 L21 4 L14.5 21 L11 13.5 Z" stroke={colors.ink} strokeWidth={1.5} strokeLinejoin="round" />
+                <Line x1={11} y1={13.5} x2={21} y2={4} stroke={colors.ink} strokeWidth={1.5} />
+              </Svg>
+            </Pressable>
+          ) : null}
+          <Pressable
+            testID={`circle-share-${person.id}`}
+            accessibilityRole="button"
+            disabled={paused}
+            accessibilityLabel={`Share with ${person.name} as text`}
+            style={styles.headerIconBtn}
+            onPress={shareNow}
+          >
+            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+              <Circle cx={6} cy={12} r={2.4} stroke={colors.ink} strokeWidth={1.5} />
+              <Circle cx={17.5} cy={5.5} r={2.4} stroke={colors.ink} strokeWidth={1.5} />
+              <Circle cx={17.5} cy={18.5} r={2.4} stroke={colors.ink} strokeWidth={1.5} />
+              <Line x1={8.2} y1={10.9} x2={15.3} y2={6.6} stroke={colors.ink} strokeWidth={1.5} />
+              <Line x1={8.2} y1={13.1} x2={15.3} y2={17.4} stroke={colors.ink} strokeWidth={1.5} />
+            </Svg>
+          </Pressable>
+          <Pressable
+            testID={pairing ? `circle-unpair-${person.id}` : `circle-pair-${person.id}`}
+            accessibilityRole="button"
+            disabled={paused}
+            accessibilityLabel={
+              pairing ? `Unpair ${person.name}'s app` : `Pair ${person.name}'s app`
+            }
+            style={styles.headerIconBtn}
+            onPress={() => {
+              if (!pairing) {
+                setPairingOpen(true);
+                return;
+              }
+              Alert.alert(
+                `Unpair ${person.name}?`,
+                'Their app will stop receiving your weeks until you pair again.',
+                [
+                  { text: 'Keep', style: 'cancel' },
+                  {
+                    text: 'Unpair',
+                    style: 'destructive',
+                    onPress: () => {
+                      const creds = pairing;
+                      removePairing(person.id);
+                      void import('@/services/circleRelay').then((m) =>
+                        m.unpair(creds).catch(() => {})
+                      );
+                    },
+                  },
+                ]
+              );
+            }}
+          >
+            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+              <Path d="M4 9 V4 H9" stroke={colors.ink} strokeWidth={1.5} />
+              <Path d="M15 4 H20 V9" stroke={colors.ink} strokeWidth={1.5} />
+              <Path d="M20 15 V20 H15" stroke={colors.ink} strokeWidth={1.5} />
+              <Path d="M9 20 H4 V15" stroke={colors.ink} strokeWidth={1.5} />
+              {pairing ? (
+                <Circle cx={12} cy={12} r={2.6} fill={colors.ink} />
+              ) : (
+                <Circle cx={12} cy={12} r={2.6} stroke={colors.ink} strokeWidth={1.5} />
+              )}
+            </Svg>
+          </Pressable>
           <Switch
             testID={`circle-active-${person.id}`}
             accessibilityLabel={`Sharing with ${person.name}: ${paused ? 'paused' : 'on'}`}
@@ -146,8 +223,7 @@ function PersonCard({ person, stats }: { person: CirclePerson; stats: WeekStats 
           />
         </View>
 
-        {/* Everything below the header rests with the person. */}
-        <View style={paused ? styles.dormant : undefined}>
+        <View style={[styles.cardInner, paused && styles.dormant]}>
           <View style={styles.controlRow}>
             <View style={styles.control}>
               <Text style={styles.overline}>Sees</Text>
@@ -189,108 +265,10 @@ function PersonCard({ person, stats }: { person: CirclePerson; stats: WeekStats 
             </View>
           </View>
 
-          <Text style={styles.overline}>What {person.name} sees</Text>
+          <Text style={[styles.overline, styles.previewLabel]}>What {person.name} sees</Text>
           <Text style={styles.preview} testID={`circle-preview-${person.id}`}>
             {preview}
           </Text>
-
-          {/* One quiet icon row, not a stack of buttons (user, 2026-07-18):
-              send-to-app (when paired) · share-as-text · pair/unpair. */}
-          <View style={styles.actionIconRow}>
-            {sentAt ? (
-              <Text style={styles.sentNote} testID={`circle-sent-${person.id}`}>
-                sent ✓
-              </Text>
-            ) : null}
-            {pairing ? (
-              <Pressable
-                testID={`circle-send-${person.id}`}
-                accessibilityRole="button"
-                accessibilityState={{ disabled: paused }}
-                disabled={paused}
-                accessibilityLabel={`Send this week to ${person.name}'s app`}
-                style={styles.iconBtn}
-                onPress={() => void sendToApp()}
-              >
-                {/* Paper plane, thin-line language. */}
-                <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-                  <Path
-                    d="M3 11 L21 4 L14.5 21 L11 13.5 Z"
-                    stroke={colors.ink}
-                    strokeWidth={1.5}
-                    strokeLinejoin="round"
-                  />
-                  <Line x1={11} y1={13.5} x2={21} y2={4} stroke={colors.ink} strokeWidth={1.5} />
-                </Svg>
-              </Pressable>
-            ) : null}
-            <Pressable
-              testID={`circle-share-${person.id}`}
-              accessibilityRole="button"
-              accessibilityState={{ disabled: paused }}
-              disabled={paused}
-              accessibilityLabel={`Share this week with ${person.name} as text`}
-              style={styles.iconBtn}
-              onPress={shareNow}
-            >
-              {/* Share glyph: three nodes, two links. */}
-              <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-                <Circle cx={6} cy={12} r={2.4} stroke={colors.ink} strokeWidth={1.5} />
-                <Circle cx={17.5} cy={5.5} r={2.4} stroke={colors.ink} strokeWidth={1.5} />
-                <Circle cx={17.5} cy={18.5} r={2.4} stroke={colors.ink} strokeWidth={1.5} />
-                <Line x1={8.2} y1={10.9} x2={15.3} y2={6.6} stroke={colors.ink} strokeWidth={1.5} />
-                <Line x1={8.2} y1={13.1} x2={15.3} y2={17.4} stroke={colors.ink} strokeWidth={1.5} />
-              </Svg>
-            </Pressable>
-            <Pressable
-              testID={pairing ? `circle-unpair-${person.id}` : `circle-pair-${person.id}`}
-              accessibilityRole="button"
-              accessibilityState={{ disabled: paused }}
-              disabled={paused}
-              accessibilityLabel={
-                pairing ? `Unpair ${person.name}'s app` : `Pair ${person.name}'s app — no accounts, just a code`
-              }
-              style={styles.iconBtn}
-              onPress={() => {
-                if (!pairing) {
-                  setPairingOpen(true);
-                  return;
-                }
-                Alert.alert(
-                  `Unpair ${person.name}?`,
-                  'Their app will stop receiving your weeks until you pair again.',
-                  [
-                    { text: 'Keep', style: 'cancel' },
-                    {
-                      text: 'Unpair',
-                      style: 'destructive',
-                      onPress: () => {
-                        const creds = pairing;
-                        removePairing(person.id);
-                        // Best-effort server-side cleanup.
-                        void import('@/services/circleRelay').then((m) =>
-                          m.unpair(creds).catch(() => {})
-                        );
-                      },
-                    },
-                  ]
-                );
-              }}
-            >
-              {/* QR corners; a filled centre dot marks "paired". */}
-              <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-                <Path d="M4 9 V4 H9" stroke={colors.ink} strokeWidth={1.5} />
-                <Path d="M15 4 H20 V9" stroke={colors.ink} strokeWidth={1.5} />
-                <Path d="M20 15 V20 H15" stroke={colors.ink} strokeWidth={1.5} />
-                <Path d="M9 20 H4 V15" stroke={colors.ink} strokeWidth={1.5} />
-                {pairing ? (
-                  <Circle cx={12} cy={12} r={2.6} fill={colors.ink} />
-                ) : (
-                  <Circle cx={12} cy={12} r={2.6} stroke={colors.ink} strokeWidth={1.5} />
-                )}
-              </Svg>
-            </Pressable>
-          </View>
         </View>
 
         <PairSheet
@@ -528,10 +506,7 @@ const styles = StyleSheet.create({
     ...typography.caption,
   },
   dormant: {
-    // A paused person rests, visibly: the card's working area recedes while
-    // the header (name + toggle) stays fully present for the one-tap resume.
     opacity: 0.45,
-    gap: spacing.sm,
   },
   actionsRow: {
     flexDirection: 'row',
@@ -593,21 +568,20 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     gap: spacing.sm,
   },
-  actionIconRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: spacing.sm,
-  },
-  iconBtn: {
-    width: hitTarget,
-    height: hitTarget,
+  headerIconBtn: {
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sentNote: {
+  sentDot: {
     ...typography.caption,
-    marginRight: spacing.xs,
+  },
+  cardInner: {
+    gap: spacing.sm,
+  },
+  previewLabel: {
+    marginTop: spacing.xs,
   },
   receivedBlock: {
     gap: spacing.sm,

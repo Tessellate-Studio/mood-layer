@@ -76,13 +76,14 @@ describe('mutedPalette tokens', () => {
 
   it('fills carry visible hue — not grey (the "too dull" regression)', () => {
     // Chroma proxy: the spread between the max and min RGB channel. The old
-    // desaturated fills sat at 2–6 (grey dust); the tuned ones run 15–61.
-    // Contempt's mauve is the low end at 15 — inherently near-neutral — so the
-    // guard sits at 12, cleanly above the old range and below every new fill.
+    // desaturated fills sat at 2–6 (grey dust); the soothing-register fills
+    // (0.30 mix, user-directed 2026-07-19 "get more lighter") run 7–33. Cool
+    // families (fear/sadness at 7) are inherently near-neutral — guard sits at
+    // 6, cleanly above the old grey range while allowing the lighter tints.
     for (const id of familyIds) {
       const c = mutedPalette[id].fill.replace('#', '');
       const [r, g, b] = [0, 2, 4].map((i) => parseInt(c.slice(i, i + 2), 16));
-      expect(Math.max(r, g, b) - Math.min(r, g, b)).toBeGreaterThanOrEqual(12);
+      expect(Math.max(r, g, b) - Math.min(r, g, b)).toBeGreaterThanOrEqual(6);
     }
   });
 
