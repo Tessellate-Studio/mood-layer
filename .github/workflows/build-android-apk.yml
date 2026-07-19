@@ -6,6 +6,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # First real run (29563745748, 2026-07-17) proved a cold RN 0.83 release
+    # build does NOT fit in 45 min on a hosted runner — Gradle alone ran 44
+    # min before the timeout cancelled it. 90 gives cold builds room; the
+    # Gradle cache + single-ABI build below pull warm builds far under it.
+    timeout-minutes: 90
     env:
       # Secrets can't be referenced in a step's `if:` directly; this flag
       # lets the litmus-dispatch step skip cleanly while the PAT is unset.
