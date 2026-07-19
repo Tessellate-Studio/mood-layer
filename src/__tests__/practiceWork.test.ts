@@ -10,9 +10,10 @@ import {
   itemKey,
   notedItems,
   removeListItem,
+  sessionLines,
   setEntry,
-  setPick,
   toggleMark,
+  togglePick,
 } from '@/utils/practiceWork';
 
 const flashback = findPractice('five-year-flashback')!;
@@ -79,13 +80,13 @@ describe('removeListItem cascade', () => {
     let work = emptyWork();
     work = setEntry(work, 'options', 0, 'stay');
     work = setEntry(work, 'options', 1, 'go');
-    work = setEntry(work, 'from-above', 0, 'staying looks small');
-    work = setEntry(work, 'from-above', 1, 'going looks brave');
+    work = setEntry(work, 'changed', 0, 'staying looks small');
+    work = setEntry(work, 'changed', 1, 'going looks brave');
 
     work = removeListItem(flashback, work, 'options', 0);
     expect(entriesFor(work, 'options')).toEqual(['go']);
     // The reflection for 'go' is still the one written for 'go'.
-    expect(entriesFor(work, 'from-above')).toEqual(['going looks brave']);
+    expect(entriesFor(work, 'changed')).toEqual(['going looks brave']);
   });
 
   it('drops marks on the removed point and reindexes later ones', () => {
@@ -112,23 +113,58 @@ describe('removeListItem cascade', () => {
     expect(work.marks.fantastical).toEqual([itemKey('cannot', 0)]);
   });
 
-  it('clears a pick of the removed point, reindexes a later pick', () => {
+  it('drops a pick of the removed point, reindexes a later pick', () => {
     let work = emptyWork();
     work = setEntry(work, 'ideas', 0, 'a');
     work = setEntry(work, 'ideas', 1, 'b');
-    work = setPick(work, 'one-step', itemKey('ideas', 1));
+    work = togglePick(work, 'one-step', itemKey('ideas', 1));
 
     // Removing an earlier point shifts the pick down with its point.
-    let shifted = removeListItem(problem, work, 'ideas', 0);
-    expect(shifted.picks['one-step']).toBe(itemKey('ideas', 0));
+    const shifted = removeListItem(problem, work, 'ideas', 0);
+    expect(shifted.picks['one-step']).toEqual([itemKey('ideas', 0)]);
 
-    // Removing the picked point clears the pick.
-    let cleared = removeListItem(problem, work, 'ideas', 1);
-    expect(cleared.picks['one-step']).toBeUndefined();
+    // Removing the picked point drops it from the picks.
+    const cleared = removeListItem(problem, work, 'ideas', 1);
+    expect(cleared.picks['one-step']).toEqual([]);
   });
 });
 
-describe('toggleMark / setPick', () => {
+describe('sessionLines', () => {
+  it('summarises a sitting: one line per touched step, keys resolved to text', () => {
+    let work = emptyWork();
+    work = setEntry(work, 'problem', 0, 'no time');
+    work = setEntry(work, 'cannot', 0, 'days are full');
+    work = setEntry(work, 'ideas', 0, 'ask for help');
+    work = setEntry(work, 'ideas', 1, 'a wizard fixes it');
+    work = toggleMark(work, 'fantastical', itemKey('ideas', 1));
+    work = togglePick(work, 'one-step', itemKey('ideas', 0));
+
+    const lines = sessionLines(problem, work);
+    expect(lines.map((l) => l.title)).toEqual([
+      'The problem',
+      'Why it cannot be solved',
+      'Ways it could improve',
+      'Notice the fantastical',
+      'One idea to keep',
+    ]);
+    expect(lines.find((l) => l.title === 'Notice the fantastical')?.body).toBe(
+      'a wizard fixes it'
+    );
+    expect(lines.find((l) => l.title === 'One idea to keep')?.body).toBe('ask for help');
+  });
+
+  it('pairs reflections with their source point', () => {
+    let work = emptyWork();
+    work = setEntry(work, 'options', 0, 'stay');
+    work = setEntry(work, 'changed', 0, 'settled but far away');
+    const lines = sessionLines(flashback, work);
+    expect(lines.find((l) => l.title === 'How am I — and others — changed?')?.body).toBe(
+      'stay → settled but far away'
+    );
+  });
+});
+
+describe('toggleMark / togglePick', () => {
   it('toggleMark flips a key on and off', () => {
     const on = toggleMark(emptyWork(), 'fantastical', itemKey('ideas', 0));
     expect(on.marks.fantastical).toEqual([itemKey('ideas', 0)]);
@@ -136,12 +172,12 @@ describe('toggleMark / setPick', () => {
     expect(off.marks.fantastical).toEqual([]);
   });
 
-  it('setPick chooses one, re-choosing lets it go', () => {
-    const picked = setPick(emptyWork(), 'one-step', itemKey('ideas', 2));
-    expect(picked.picks['one-step']).toBe(itemKey('ideas', 2));
-    const other = setPick(picked, 'one-step', itemKey('ideas', 0));
-    expect(other.picks['one-step']).toBe(itemKey('ideas', 0));
-    const released = setPick(other, 'one-step', itemKey('ideas', 0));
-    expect(released.picks['one-step']).toBeUndefined();
+  it('togglePick allows SEVERAL choices; re-tapping releases one', () => {
+    // Multi-select (user, 2026-07-17): more than one option can still matter.
+    const one = togglePick(emptyWork(), 'still-matters', itemKey('options', 2));
+    const two = togglePick(one, 'still-matters', itemKey('options', 0));
+    expect(two.picks['still-matters']).toEqual([itemKey('options', 2), itemKey('options', 0)]);
+    const released = togglePick(two, 'still-matters', itemKey('options', 2));
+    expect(released.picks['still-matters']).toEqual([itemKey('options', 0)]);
   });
 });

@@ -11,7 +11,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import LogoDivider from '@/components/LogoDivider';
 import SectionHeader from '@/components/SectionHeader';
 import ThreadCard from '@/components/ThreadCard';
-import { colors, mutedPalette } from '@/constants/theme';
+import { colors, familyPalette, mutedPalette } from '@/constants/theme';
 import { EMOTION_FAMILIES } from '@/content/emotions';
 import type { EmotionFamilyId } from '@/types/models';
 
@@ -59,6 +59,43 @@ describe('mutedPalette tokens', () => {
       const { fill, thread } = mutedPalette[id];
       expect(contrast(thread, fill)).toBeGreaterThanOrEqual(3);
       expect(contrast(thread, colors.paper)).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('every ink text tier stays AA on the tinted card fills', () => {
+    // The fills carry real hue since 2026-07-18 ("too dull"), so the tiers
+    // that print ON them — headings/ink, body/inkSoft, captions/inkMuted —
+    // are re-checked here rather than assumed from the paper background.
+    for (const id of familyIds) {
+      const { fill } = mutedPalette[id];
+      expect(contrast(colors.ink, fill)).toBeGreaterThanOrEqual(7);
+      expect(contrast(colors.inkSoft, fill)).toBeGreaterThanOrEqual(4.5);
+      expect(contrast(colors.inkMuted, fill)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('fills carry visible hue — not grey (the "too dull" regression)', () => {
+    // Chroma proxy: the spread between the max and min RGB channel. The old
+    // desaturated fills sat at 2–6 (grey dust); the soothing-register fills
+    // (0.30 mix, user-directed 2026-07-19 "get more lighter") run 7–33. Cool
+    // families (fear/sadness at 7) are inherently near-neutral — guard sits at
+    // 6, cleanly above the old grey range while allowing the lighter tints.
+    for (const id of familyIds) {
+      const c = mutedPalette[id].fill.replace('#', '');
+      const [r, g, b] = [0, 2, 4].map((i) => parseInt(c.slice(i, i + 2), 16));
+      expect(Math.max(r, g, b) - Math.min(r, g, b)).toBeGreaterThanOrEqual(6);
+    }
+  });
+
+  it('familyPalette threads clear 3:1 on paper, raised paper, and shade1', () => {
+    // These threads draw meaningful strokes (helper-sheet underline + border,
+    // logo band edges) — several sat below 3:1 until the 2026-07-17 contrast
+    // audit darkened them ("some colours do not pass WCAG", user).
+    for (const id of familyIds) {
+      const { shades, thread } = familyPalette[id];
+      expect(contrast(thread, colors.paper)).toBeGreaterThanOrEqual(3);
+      expect(contrast(thread, colors.paperRaised)).toBeGreaterThanOrEqual(3);
+      expect(contrast(thread, shades[1])).toBeGreaterThanOrEqual(3);
     }
   });
 });

@@ -19,15 +19,18 @@ import Svg, { Line } from 'react-native-svg';
 
 import { borderRadius, colors, hitTarget, motion, spacing, typography } from '@/constants/theme';
 import LogoDivider from '@/components/LogoDivider';
+import LogoMark from '@/components/LogoMark';
 import PaperTexture from '@/components/PaperTexture';
+import ScreenTip from '@/components/ScreenTip';
 import ThreadCard from '@/components/ThreadCard';
+import { monthlyMoodDigest, monthlyPracticeReflection } from '@/content/monthlyDigest';
 import { RESISTANCE_TELLS } from '@/content/resistance';
 import { useMotion } from '@/hooks/useMotion';
 import { useCheckInStore } from '@/store/checkInStore';
 import { useExperimentStore } from '@/store/experimentStore';
 import { useInsightStore } from '@/store/insightStore';
 import type { EmotionFamilyId, InsightCardState, WeekStats } from '@/types/models';
-import { previousWeekKey, weekRangeLabel } from '@/utils/dates';
+import { previousWeekKey, weekKey, weekRangeLabel } from '@/utils/dates';
 import { computeStatsForWeek } from '@/utils/insightEngine';
 
 /** Stagger step between card entrances. */
@@ -145,6 +148,7 @@ export default function InsightsScreen() {
   const dismissCard = useInsightStore((s) => s.dismissCard);
   const checkIns = useCheckInStore((s) => s.checkIns);
   const judgmentEntries = useExperimentStore((s) => s.judgmentEntries);
+  const practiceSessions = useExperimentStore((s) => s.practiceSessions);
 
   const { reduced: reduceMotion } = useMotion();
 
@@ -181,26 +185,108 @@ export default function InsightsScreen() {
   const newestWeek = visible[0]?.weekKey;
   const summaryStats = newestWeek ? statsByWeek[newestWeek] : undefined;
 
+  // The week's mood, worn by the same mark the home screen breathes — the two
+  // screens read as one system (user, 2026-07-17).
+  const markFamilies = React.useMemo(() => {
+    if (!summaryStats) return undefined;
+    const top = (Object.entries(summaryStats.familyCounts) as [EmotionFamilyId, number][])
+      .filter(([, n]) => n > 0)
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([family]) => family);
+    return top.length > 0 ? top.slice(0, 3) : undefined;
+  }, [summaryStats]);
+
+  // Beyond the week: the month's texture + what the practices surfaced
+  // (user, 2026-07-17/18). Computed live, never stored; hidden while thin.
+  const moodDigest = React.useMemo(() => monthlyMoodDigest(checkIns), [checkIns]);
+  const practiceReflection = React.useMemo(
+    () => monthlyPracticeReflection(practiceSessions, judgmentEntries),
+    [practiceSessions, judgmentEntries]
+  );
+  const monthlyBlock =
+    moodDigest || practiceReflection ? (
+      <View style={styles.monthly} testID="insights-monthly">
+        {moodDigest ? (
+          <ThreadCard family="enjoyment" style={styles.cardBody}>
+            <Text style={styles.overline}>This month · Texture</Text>
+            <View style={styles.monthlyHeader}>
+              <LogoMark families={moodDigest.families} size={40} />
+              <Text style={[styles.cardTitle, styles.monthlyTitle]}>{moodDigest.title}</Text>
+            </View>
+            <Text style={styles.cardText}>{moodDigest.body}</Text>
+          </ThreadCard>
+        ) : null}
+        {practiceReflection ? (
+          <ThreadCard family="contempt" style={styles.cardBody}>
+            <Text style={styles.overline}>This month · Practices</Text>
+            <Text style={styles.cardTitle}>{practiceReflection.title}</Text>
+            <Text style={styles.cardText}>{practiceReflection.body}</Text>
+            {practiceReflection.kept.length > 0 ? (
+              <View style={styles.keptList}>
+                {practiceReflection.kept.map((k, i) => (
+                  <View key={i} style={styles.keptRow}>
+                    <Text style={styles.keptPractice}>{k.practice}</Text>
+                    <Text style={styles.cardText}>{k.conclusion}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+          </ThreadCard>
+        ) : null}
+      </View>
+    ) : null;
+
+  // This ISO week's own count, so the empty state tells the TRUE reason:
+  // "quiet week so far" vs "checked in, no pattern has surfaced yet" — the
+  // old copy claimed "not enough layers" even with a full month behind it
+  // (user, 2026-07-18).
+  const thisWeekCount = React.useMemo(
+    () => computeStatsForWeek(checkIns, judgmentEntries, weekKey(new Date().toISOString())).checkInCount,
+    [checkIns, judgmentEntries]
+  );
+  const emptyText =
+    thisWeekCount === 0
+      ? 'A quiet week so far — your first check-in starts this week’s layers.'
+      : 'Checked in, but no clear pattern has surfaced yet — insights stay quiet until one does.';
+
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-insights">
       <PaperTexture />
-      <Text style={typography.title}>This week</Text>
-      {summaryStats ? (
-        <Text style={styles.summary} testID="insights-summary">
-          {weekRangeLabel(newestWeek!)} · {plural(summaryStats.checkInCount, 'check-in', 'check-ins')}{' '}
-          across {plural(summaryStats.activeDayCount, 'day', 'days')}
-        </Text>
-      ) : null}
+      <ScreenTip
+        tipId="insights"
+        text="Patterns from your check-ins appear here each week. At most two a week, always gentle."
+      />
+      <View style={styles.headerRow}>
+        {markFamilies ? <LogoMark families={markFamilies} size={44} /> : null}
+        <View style={styles.headerText}>
+          <Text style={typography.title}>This week</Text>
+          {summaryStats ? (
+            <Text style={styles.summary} testID="insights-summary">
+              {weekRangeLabel(newestWeek!)} · {plural(summaryStats.checkInCount, 'check-in', 'check-ins')}{' '}
+              across {plural(summaryStats.activeDayCount, 'day', 'days')}
+            </Text>
+          ) : null}
+        </View>
+      </View>
 
       {visible.length === 0 ? (
-        <View style={styles.empty}>
-          <Text style={styles.emptyText}>
-            Not enough layers yet — check in a few more times this week.
-          </Text>
-          <Text style={styles.emptyCaption}>
-            Patterns appear here once a week, when there are enough layers to read.
-          </Text>
-        </View>
+        <FlatList
+          data={[] as InsightCardState[]}
+          renderItem={() => null}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={
+            <View style={styles.empty}>
+              <Text style={styles.emptyText} testID="insights-empty">
+                {emptyText}
+              </Text>
+              <Text style={styles.emptyCaption}>
+                Patterns appear here once a week, when there are enough layers to read.
+                {monthlyBlock ? ' Your month is below.' : ''}
+              </Text>
+            </View>
+          }
+          ListFooterComponent={monthlyBlock}
+        />
       ) : (
         <FlatList
           data={visible}
@@ -217,6 +303,7 @@ export default function InsightsScreen() {
           )}
           ListFooterComponent={
             <View testID="insights-footer">
+              {monthlyBlock}
               <LogoDivider tip="Insights stay gentle. Two a week, at most — the rest is just your layers, quietly building." />
             </View>
           }
@@ -254,6 +341,38 @@ const styles = StyleSheet.create({
   listContent: {
     paddingVertical: spacing.md,
     gap: spacing.md,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  headerText: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  monthly: {
+    gap: spacing.md,
+    marginTop: spacing.sm,
+  },
+  monthlyHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  monthlyTitle: {
+    flex: 1,
+    flexWrap: 'wrap',
+  },
+  keptList: {
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  keptRow: {
+    gap: 2,
+  },
+  keptPractice: {
+    ...typography.overline,
   },
   cardBody: {
     gap: spacing.sm,

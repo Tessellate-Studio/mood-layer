@@ -1,11 +1,13 @@
-// Check-in modal: one question per screen (feel → intensity → body →
-// resistance → note → stitch). All step logic lives in the pure reducer
-// (utils/checkInFlow); this screen just renders the current step and dispatches
-// transitions. 'name-it' check-ins (from a reminder) can finish early once
-// something is named.
+// Check-in modal: one question per screen (feel → body → resistance → note →
+// stitch). Temperature lives ON the word in the feel step (chip + four-swatch
+// dial) — no separate intensity screen. All step logic lives in the pure
+// reducer (utils/checkInFlow); this screen just renders the current step and
+// dispatches transitions. 'name-it' check-ins (from a reminder) can finish
+// early once something is named.
 
 import React from 'react';
 import {
+  KeyboardAvoidingView,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -20,21 +22,23 @@ import Svg, { Line } from 'react-native-svg';
 
 import EmotionChip from '@/components/EmotionChip';
 import FamilyGroup from '@/components/FamilyGroup';
-import IntensityDial from '@/components/IntensityDial';
 import LearnLink from '@/components/LearnLink';
 import ModalHeader from '@/components/ModalHeader';
 import { PatchPreview } from '@/components/QuiltPatch';
-import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
+import WordTemperatureRow from '@/components/WordTemperatureRow';
+import { borderRadius, colors, familyPalette, hitTarget, spacing, typography } from '@/constants/theme';
 import PaperTexture from '@/components/PaperTexture';
-import ThreadCard from '@/components/ThreadCard';
+import { BODY_MAP } from '@/content/bodyMap';
 import { EMOTION_FAMILIES, MASKING_STATES, type EmotionWord } from '@/content/emotions';
+import { noteReflection } from '@/content/noteReflection';
 import { allWordsForFamily, findVocabularyWord } from '@/content/vocabulary';
+import { useMotion } from '@/hooks/useMotion';
 import { RESISTANCE_TELLS } from '@/content/resistance';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { useCheckInStore } from '@/store/checkInStore';
 import { useHelperSheetStore } from '@/store/helperSheetStore';
 import { useSettingsStore } from '@/store/settingsStore';
-import type { EmotionFamilyId, Intensity } from '@/types/models';
+import type { EmotionFamilyId } from '@/types/models';
 import {
   canFinishEarly,
   canProceed,
@@ -56,20 +60,8 @@ import {
 
 type CheckInRoute = RouteProp<RootStackParamList, 'CheckInFlow'>;
 
-const BODY_PRESETS = [
-  'tight chest',
-  'warm face',
-  'heavy limbs',
-  'buzzing hands',
-  'lump in throat',
-  'hollow stomach',
-  'clenched jaw',
-  'light shoulders',
-];
-
 const STEP_TITLES: Record<CheckInStep, string> = {
-  feel: "What's here right now?",
-  intensity: 'How much of each?',
+  feel: 'What are you feeling right now?',
   body: 'Where do you feel it?',
   resistance: 'Any of these today?',
   note: 'A note to your future self',
@@ -84,11 +76,19 @@ export default function CheckInFlowScreen() {
 
   const hapticsEnabled = useSettingsStore((s) => s.hapticsEnabled);
   const addCheckIn = useCheckInStore((s) => s.addCheckIn);
+  const { reduced } = useMotion();
+  const scrollRef = React.useRef<ScrollView>(null);
 
   const [state, setState] = React.useState<FlowState>(() => initialFlowState(source));
 
   const title = source === 'name-it' && state.step === 'feel' ? 'Can you name it?' : STEP_TITLES[state.step];
   const stepIndex = STEP_ORDER.indexOf(state.step);
+
+  // Each step is its own page — never inherit the previous step's scroll
+  // position (app-wide bug, 2026-07-17).
+  React.useEffect(() => {
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [state.step]);
 
   const goNext = () => setState((s) => nextStep(s));
   const goBack = () => setState((s) => prevStep(s));
@@ -102,6 +102,9 @@ export default function CheckInFlowScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-checkin">
       <PaperTexture />
+      {/* Edge-to-edge Android never resizes for the keyboard — without this
+          the note input hides behind it (device feedback 2026-07-17). */}
+      <KeyboardAvoidingView style={styles.avoider} behavior="padding">
       <ModalHeader title={title} closeTestID="checkin-close" onClose={() => navigation.goBack()} />
 
       {/* Stitched progress: one dash per step. */}
@@ -126,9 +129,14 @@ export default function CheckInFlowScreen() {
         </Svg>
       </View>
 
-      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-        {state.step === 'feel' && <FeelStep state={state} setState={setState} />}
-        {state.step === 'intensity' && <IntensityStep state={state} setState={setState} />}
+      <ScrollView ref={scrollRef} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+        {state.step === 'feel' && (
+          <FeelStep
+            state={state}
+            setState={setState}
+            scrollTo={(y) => scrollRef.current?.scrollTo({ y, animated: !reduced })}
+          />
+        )}
         {state.step === 'body' && <BodyStep state={state} setState={setState} />}
         {state.step === 'resistance' && <ResistanceStep state={state} setState={setState} />}
         {state.step === 'note' && <NoteStep state={state} setState={setState} />}
@@ -138,6 +146,13 @@ export default function CheckInFlowScreen() {
       {state.step === 'feel' && state.masking.length > 0 && state.selections.length === 0 ? (
         <Text style={styles.continueHint} testID="masking-continue-hint">
           Name what&apos;s underneath to continue.
+        </Text>
+      ) : null}
+      {state.step === 'feel' &&
+      state.selections.length > 0 &&
+      state.selections.some((sel) => sel.intensity === null) ? (
+        <Text style={styles.continueHint} testID="temperature-continue-hint">
+          Tap a swatch beside each word to set how strongly it&apos;s here.
         </Text>
       ) : null}
 
@@ -189,6 +204,7 @@ export default function CheckInFlowScreen() {
           </Pressable>
         )}
       </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -198,33 +214,71 @@ interface StepProps {
   setState: React.Dispatch<React.SetStateAction<FlowState>>;
 }
 
-function FeelStep({ state, setState }: StepProps) {
+function FeelStep({
+  state,
+  setState,
+  scrollTo,
+}: StepProps & { scrollTo(y: number): void }) {
   const selectedMasking = MASKING_STATES.filter((m) => state.masking.includes(m.id));
   // Families start folded (one open at a time) so the step reads as a short,
   // calm list instead of ~50 chips at once. Chosen words stay pinned under
-  // their folded family, so nothing selected ever disappears.
+  // their folded family — each with its temperature dial right there, so
+  // naming and weighing happen in one place (temperature-chip design,
+  // user-approved 2026-07-17).
   const [openFamily, setOpenFamily] = React.useState<EmotionFamilyId | null>(null);
+  // Rebalance (user, 2026-07-17: the flow felt front-loaded): an unfolded
+  // family shows its short curated gradient first; "+ more words" unfolds the
+  // extended vocabulary for whoever wants the finer shades.
+  const [moreWordsFor, setMoreWordsFor] = React.useState<Partial<Record<EmotionFamilyId, boolean>>>({});
+  // Selecting a masking chip opens its "look underneath" panel BELOW the
+  // fold — without a nudge it's easy to miss (device feedback 2026-07-17).
+  // Remember which panel was just opened and scroll to it once it lays out.
+  const pendingScrollId = React.useRef<string | null>(null);
+  const toggleMaskingAndReveal = (id: string) => {
+    if (!state.masking.includes(id)) pendingScrollId.current = id;
+    setState((s) => toggleMasking(s, id));
+  };
   return (
     <View style={styles.stepGap}>
       <Text style={styles.feelHint}>
-        Open whichever sounds close — naming even one word is plenty.
+        Open whichever sounds close — naming even one word is plenty. The
+        swatches beside a chosen word set how strongly it&apos;s here.
       </Text>
       {Object.values(EMOTION_FAMILIES).map((family) => {
-        // The FULL mild→intense vocabulary, not just the short gradient — the
-        // whole point is learning to recognise more words (user, 2026-07-17).
-        const words = allWordsForFamily(family.id);
-        const selectedInFamily = words.filter((w) =>
-          state.selections.some((x) => x.emotionId === w.id)
+        // Full vocabulary reachable, gradient shown first: the curated words
+        // carry most check-ins; "+ more words" opens the extended list.
+        // A selected extended word always stays visible.
+        const allWords = allWordsForFamily(family.id);
+        const showAll = moreWordsFor[family.id] === true;
+        const words = showAll
+          ? allWords
+          : allWords.filter(
+              (w) =>
+                family.gradient.some((g) => g.id === w.id) ||
+                state.selections.some((sel) => sel.emotionId === w.id)
+            );
+        const selectedInFamily = state.selections.filter((sel) =>
+          allWords.some((w) => w.id === sel.emotionId)
         );
-        const renderChip = (word: EmotionWord) => (
-          <EmotionChip
-            key={word.id}
-            id={word.id}
-            label={word.label}
-            selected={state.selections.some((x) => x.emotionId === word.id)}
-            onPress={() => setState((s) => toggleEmotion(s, word.id, family.id))}
-          />
-        );
+        const temperatureRows =
+          selectedInFamily.length > 0 ? (
+            <View style={styles.temperatureRows}>
+              {selectedInFamily.map((sel) => (
+                <WordTemperatureRow
+                  key={sel.emotionId}
+                  wordId={sel.emotionId}
+                  label={findVocabularyWord(sel.emotionId)?.word.label ?? sel.emotionId}
+                  family={sel.family}
+                  intensity={sel.intensity}
+                  onToggle={() => setState((s) => toggleEmotion(s, sel.emotionId, sel.family))}
+                  onChangeIntensity={(intensity) =>
+                    setState((s) => setIntensity(s, sel.emotionId, intensity))
+                  }
+                  onLongPress={() => useHelperSheetStore.getState().open(sel.family)}
+                />
+              ))}
+            </View>
+          ) : undefined;
         return (
           <FamilyGroup
             key={family.id}
@@ -232,13 +286,41 @@ function FeelStep({ state, setState }: StepProps) {
             testID={`family-${family.id}`}
             expanded={openFamily === family.id}
             onToggle={() => setOpenFamily((cur) => (cur === family.id ? null : family.id))}
-            pinned={
-              selectedInFamily.length > 0 ? (
-                <View style={styles.chipWrap}>{selectedInFamily.map(renderChip)}</View>
-              ) : undefined
-            }
+            pinned={temperatureRows}
           >
-            <View style={styles.chipWrap}>{words.map(renderChip)}</View>
+            <View style={styles.chipWrap}>
+              {words.map((word) => {
+                const sel = state.selections.find((x) => x.emotionId === word.id);
+                return (
+                  <EmotionChip
+                    key={word.id}
+                    id={word.id}
+                    label={word.label}
+                    selected={sel !== undefined}
+                    fill={
+                      sel && sel.intensity !== null
+                        ? familyPalette[family.id].shades[sel.intensity]
+                        : undefined
+                    }
+                    onPress={() => setState((s) => toggleEmotion(s, word.id, family.id))}
+                  />
+                );
+              })}
+              {/* Only when there ARE more words — contempt's unfold used to
+                  open onto nothing (user, 2026-07-18). */}
+              {allWords.length > family.gradient.length ? (
+                <EmotionChip
+                  id={`more-${family.id}`}
+                  label={showAll ? '– fewer words' : '+ more words'}
+                  dashed
+                  selected={false}
+                  onPress={() =>
+                    setMoreWordsFor((cur) => ({ ...cur, [family.id]: !showAll }))
+                  }
+                />
+              ) : null}
+            </View>
+            {temperatureRows}
           </FamilyGroup>
         );
       })}
@@ -252,7 +334,7 @@ function FeelStep({ state, setState }: StepProps) {
             label={m.label}
             dashed
             selected={state.masking.includes(m.id)}
-            onPress={() => setState((s) => toggleMasking(s, m.id))}
+            onPress={() => toggleMaskingAndReveal(m.id)}
           />
         ))}
       </View>
@@ -262,27 +344,73 @@ function FeelStep({ state, setState }: StepProps) {
           emotions it usually hides — so someone still learning to name what
           they feel has a guided way in, instead of a dead-end Continue. */}
       {selectedMasking.map((m) => (
-        <View key={m.id} style={styles.underneathPanel} testID={`underneath-${m.id}`}>
+        <View
+          key={m.id}
+          style={styles.underneathPanel}
+          testID={`underneath-${m.id}`}
+          onLayout={(e) => {
+            if (pendingScrollId.current === m.id) {
+              pendingScrollId.current = null;
+              scrollTo(Math.max(0, e.nativeEvent.layout.y - spacing.md));
+            }
+          }}
+        >
           <Text style={styles.underneathPrompt}>{m.prompt}</Text>
           {m.unpacksTo.map((familyId) => {
             const family = EMOTION_FAMILIES[familyId];
+            const selectedHere = state.selections.filter((sel) =>
+              family.gradient.some((w) => w.id === sel.emotionId)
+            );
             return (
               <View key={familyId} style={styles.familyGroup}>
                 <View style={styles.underneathHeader}>
                   <Text style={styles.overline}>{family.label}</Text>
                   <LearnLink family={familyId} testID={`underneath-learn-${familyId}`} />
                 </View>
+                {/* The short gradient only — the panel is a doorway, not the
+                    library; the finer shades live in the family list above. */}
                 <View style={styles.chipWrap}>
-                  {allWordsForFamily(familyId).map((word) => (
-                    <EmotionChip
-                      key={word.id}
-                      id={`under-${word.id}`}
-                      label={word.label}
-                      selected={state.selections.some((x) => x.emotionId === word.id)}
-                      onPress={() => setState((s) => toggleEmotion(s, word.id, familyId))}
-                    />
-                  ))}
+                  {family.gradient.map((word) => {
+                    const sel = state.selections.find((x) => x.emotionId === word.id);
+                    return (
+                      <EmotionChip
+                        key={word.id}
+                        id={`under-${word.id}`}
+                        label={word.label}
+                        selected={sel !== undefined}
+                        fill={
+                          sel && sel.intensity !== null
+                            ? familyPalette[familyId].shades[sel.intensity]
+                            : undefined
+                        }
+                        onPress={() => setState((s) => toggleEmotion(s, word.id, familyId))}
+                      />
+                    );
+                  })}
                 </View>
+                {/* The dial appears RIGHT HERE for words chosen from the
+                    panel — its twin under the folded family above is out of
+                    sight at this point (device feedback 2026-07-17). */}
+                {selectedHere.length > 0 ? (
+                  <View style={styles.temperatureRows}>
+                    {selectedHere.map((sel) => (
+                      <WordTemperatureRow
+                        key={sel.emotionId}
+                        wordId={sel.emotionId}
+                        chipId={`under-picked-${sel.emotionId}`}
+                        label={findVocabularyWord(sel.emotionId)?.word.label ?? sel.emotionId}
+                        family={sel.family}
+                        intensity={sel.intensity}
+                        onToggle={() =>
+                          setState((s) => toggleEmotion(s, sel.emotionId, sel.family))
+                        }
+                        onChangeIntensity={(intensity) =>
+                          setState((s) => setIntensity(s, sel.emotionId, intensity))
+                        }
+                      />
+                    ))}
+                  </View>
+                ) : null}
               </View>
             );
           })}
@@ -295,58 +423,49 @@ function FeelStep({ state, setState }: StepProps) {
   );
 }
 
-function IntensityStep({ state, setState }: StepProps) {
-  return (
-    <View style={styles.stepGap}>
-      {state.selections.map((sel) => {
-        const label = findVocabularyWord(sel.emotionId)?.word.label ?? sel.emotionId;
-        return (
-          // The card wears its emotion's muted layer, so weighing an anger
-          // word already happens on anger's hue.
-          <ThreadCard key={sel.emotionId} family={sel.family} style={styles.intensityBody}>
-            {/* Long-press the word to open its family's helper — an
-                unobtrusive doorway to the "why" without cluttering the step. */}
-            <Pressable
-              testID={`intensity-label-${sel.emotionId}`}
-              accessibilityRole="button"
-              accessibilityLabel={`${label}. Long press to learn about ${sel.family}.`}
-              onLongPress={() => useHelperSheetStore.getState().open(sel.family)}
-            >
-              <Text style={typography.heading}>{label}</Text>
-            </Pressable>
-            <IntensityDial
-              wordId={sel.emotionId}
-              label={label}
-              family={sel.family}
-              value={sel.intensity}
-              onChange={(intensity: Intensity) => setState((s) => setIntensity(s, sel.emotionId, intensity))}
-            />
-          </ThreadCard>
-        );
-      })}
-      {state.selections.length === 0 ? (
-        <Text style={typography.body}>Nothing to weigh yet — go back and name a feeling first.</Text>
-      ) : null}
-    </View>
-  );
-}
-
 function BodyStep({ state, setState }: StepProps) {
   const [draft, setDraft] = React.useState('');
-  const options = [...BODY_PRESETS, ...state.bodySensations.filter((b) => !BODY_PRESETS.includes(b))];
+  // Sensations not on the map (typed in earlier, or from an older build) get
+  // their own quiet group at the end so nothing chosen ever disappears.
+  const mapped = new Set(BODY_MAP.flatMap((area) => area.sensations));
+  const custom = state.bodySensations.filter((b) => !mapped.has(b));
   return (
     <View style={styles.stepGap}>
-      <View style={styles.chipWrap}>
-        {options.map((label) => (
-          <EmotionChip
-            key={label}
-            id={label}
-            label={label}
-            selected={state.bodySensations.includes(label)}
-            onPress={() => setState((s) => toggleBody(s, label))}
-          />
-        ))}
-      </View>
+      <Text style={styles.feelHint}>
+        Sensations are clues — scan slowly from head to feet and tap what you find.
+      </Text>
+      {BODY_MAP.map((area) => (
+        <View key={area.id} style={styles.bodyArea} testID={`body-area-${area.id}`}>
+          <Text style={typography.overline}>{area.label}</Text>
+          <View style={styles.chipWrap}>
+            {area.sensations.map((label) => (
+              <EmotionChip
+                key={label}
+                id={label}
+                label={label}
+                selected={state.bodySensations.includes(label)}
+                onPress={() => setState((s) => toggleBody(s, label))}
+              />
+            ))}
+          </View>
+        </View>
+      ))}
+      {custom.length > 0 ? (
+        <View style={styles.bodyArea}>
+          <Text style={typography.overline}>In your words</Text>
+          <View style={styles.chipWrap}>
+            {custom.map((label) => (
+              <EmotionChip
+                key={label}
+                id={label}
+                label={label}
+                selected
+                onPress={() => setState((s) => toggleBody(s, label))}
+              />
+            ))}
+          </View>
+        </View>
+      ) : null}
       <TextInput
         style={styles.inlineInput}
         placeholder="somewhere else…"
@@ -400,6 +519,12 @@ function ResistanceStep({ state, setState }: StepProps) {
 function NoteStep({ state, setState }: StepProps) {
   return (
     <View style={styles.stepGap}>
+      {/* Everything named so far, woven into one line that ends in an open
+          question — the note probes what was actually selected instead of
+          starting cold (user, 2026-07-17; KCG questions, Practicing EQ). */}
+      <Text style={styles.noteReflection} testID="note-reflection">
+        {noteReflection(state)}
+      </Text>
       <TextInput
         style={styles.noteInput}
         multiline
@@ -414,12 +539,19 @@ function NoteStep({ state, setState }: StepProps) {
 }
 
 function StitchStep({ state }: { state: FlowState }) {
-  const words = state.selections
+  // The feel gate guarantees every temperature is set by now; the flatMap
+  // narrows DraftSelection → EmotionSelection for the preview.
+  const emotions = state.selections.flatMap((sel) =>
+    sel.intensity === null
+      ? []
+      : [{ emotionId: sel.emotionId, family: sel.family, intensity: sel.intensity }]
+  );
+  const words = emotions
     .map((sel) => `${findVocabularyWord(sel.emotionId)?.word.label ?? sel.emotionId} · ${sel.intensity}`)
     .join('    ');
   return (
     <View style={styles.stitchWrap}>
-      <PatchPreview emotions={state.selections} size={160} a11yLabel="Your layers, ready to add" />
+      <PatchPreview emotions={emotions} size={160} a11yLabel="Your layers, ready to add" />
       <Text style={styles.stitchWords}>{words}</Text>
     </View>
   );
@@ -430,6 +562,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.paper,
     paddingHorizontal: spacing.md,
+  },
+  avoider: {
+    flex: 1,
   },
   progress: {
     marginTop: spacing.sm,
@@ -499,8 +634,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.ink,
   },
-  intensityBody: {
-    gap: spacing.md,
+  temperatureRows: {
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  bodyArea: {
+    gap: spacing.sm,
+  },
+  noteReflection: {
+    ...typography.body,
+    color: colors.inkSoft,
   },
   tellRow: {
     flexDirection: 'row',

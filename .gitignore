@@ -46,3 +46,4 @@ yarn-error.*
 
 # roadmap-pulse state
 .roadmap-pulse-state.json
+research/*.pdf

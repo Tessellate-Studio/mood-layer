@@ -4,11 +4,20 @@
 // check-in animates in once (skipped under reduce-motion).
 
 import React from 'react';
-import { FlatList, Modal, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import {
+  FlatList,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  useWindowDimensions,
+  View,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Circle, Line, Rect } from 'react-native-svg';
+import Svg, { Circle, Line } from 'react-native-svg';
 
 import {
   borderRadius,
@@ -18,10 +27,12 @@ import {
   motion,
   mutedPalette,
   spacing,
-  textures,
   typography,
 } from '@/constants/theme';
+import LayeredClusterVignette from '@/components/LayeredClusterVignette';
+import LogoMark from '@/components/LogoMark';
 import PaperTexture from '@/components/PaperTexture';
+import ScreenTip from '@/components/ScreenTip';
 import WeeklySummaryCard from '@/components/WeeklySummaryCard';
 import { homeWeeklySummary } from '@/content/circle';
 import { EMOTION_FAMILIES } from '@/content/emotions';
@@ -31,23 +42,24 @@ import QuiltWeek from '@/components/QuiltWeek';
 import { selectWeekStats, useCheckInStore } from '@/store/checkInStore';
 import { useHelperSheetStore } from '@/store/helperSheetStore';
 import type { CheckIn, EmotionFamilyId } from '@/types/models';
-import { weekKey } from '@/utils/dates';
-import { computeQuiltLayout } from '@/utils/quiltLayout';
+import { useMotion } from '@/hooks/useMotion';
+import { dayKey, weekKey } from '@/utils/dates';
+import { computeQuiltLayout, offsetForCheckIn, type WeekBlock } from '@/utils/quiltLayout';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-const FAB_SIZE = hitTarget + 12;
+/** A hint of the palette on the field-guide row — the full key is inside. */
+const GUIDE_SWATCH_FAMILIES: EmotionFamilyId[] = ['anger', 'enjoyment', 'sadness', 'anticipation'];
 
-// Gear: a circle with 8 spokes, same line language as the tab icons.
-const GEAR_SPOKES = Array.from({ length: 8 }, (_, i) => {
-  const angle = (i * Math.PI) / 4;
-  return {
-    x1: 12 + Math.cos(angle) * 6,
-    y1: 12 + Math.sin(angle) * 6,
-    x2: 12 + Math.cos(angle) * 9.5,
-    y2: 12 + Math.sin(angle) * 9.5,
-  };
-});
+// Settings glyph: three sliders with knobs. The previous gear — a small
+// circle with eight radiating spokes — read as a brightness/theme control at
+// 22px (device feedback 2026-07-18); sliders are unambiguously settings and
+// keep the app's thin-line language.
+const SLIDER_ROWS = [
+  { y: 7, knob: 15 },
+  { y: 12, knob: 9 },
+  { y: 17, knob: 16 },
+];
 
 function wordLabel(emotionId: string): string {
   return findVocabularyWord(emotionId)?.word.label ?? emotionId;
@@ -73,6 +85,7 @@ export default function QuiltScreen() {
   const navigation = useNavigation<Nav>();
   const checkIns = useCheckInStore((s) => s.checkIns);
   const { width } = useWindowDimensions();
+  const { reduced: reduceMotion } = useMotion();
 
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [animateId, setAnimateId] = React.useState<string | null>(null);
@@ -89,6 +102,10 @@ export default function QuiltScreen() {
     const wk = weekKey(new Date().toISOString());
     return homeWeeklySummary(selectWeekStats(checkIns, 0, wk));
   }, [checkIns]);
+  const todayHasEntry = React.useMemo(
+    () => checkIns.some((c) => c.dayKey === dayKey(new Date().toISOString())),
+    [checkIns]
+  );
 
   // Stitch-in: when the newest check-in id changes (a fresh stitch, not a
   // rehydrate), flag it for the one-shot arrival animation, then clear.
@@ -104,6 +121,18 @@ export default function QuiltScreen() {
     prevFirstId.current = firstId;
   }, [checkIns]);
 
+  // A fresh check-in lands at the bottom of the current week (Saturday is the
+  // 6th row) — often below the fold, so saving looked like nothing happened
+  // (user, 2026-07-18). Scroll it into view; the arrival animation then plays
+  // where the eye already is.
+  const listRef = React.useRef<FlatList<WeekBlock>>(null);
+  React.useEffect(() => {
+    if (!animateId) return;
+    const offset = offsetForCheckIn(blocks, animateId, spacing.md, spacing.lg);
+    if (offset === null) return;
+    listRef.current?.scrollToOffset({ offset, animated: !reduceMotion });
+  }, [animateId, blocks, reduceMotion]);
+
   const selected = selectedId
     ? checkIns.find((c) => c.id === selectedId) ?? null
     : null;
@@ -113,6 +142,33 @@ export default function QuiltScreen() {
       <PaperTexture />
       <View style={styles.headerRow}>
         <Text style={styles.title}>Your mood layers</Text>
+        {/* Once check-ins exist, the field guide lives up here as the small
+            layered mark — colour among the ink chrome names it. */}
+        {checkIns.length > 0 ? (
+          <Pressable
+            testID="header-field-guide"
+            accessibilityRole="button"
+            accessibilityLabel="Field guide"
+            style={styles.iconButton}
+            onPress={() => navigation.navigate('FieldGuide')}
+          >
+            <LogoMark size={24} />
+          </Pressable>
+        ) : null}
+        {/* Add lives up here as quiet chrome, twin to settings — no floating
+            disc over the quilt (user, 2026-07-18). */}
+        <Pressable
+          testID="checkin-fab"
+          accessibilityRole="button"
+          accessibilityLabel="Add a check-in"
+          style={styles.iconButton}
+          onPress={() => navigation.navigate('CheckInFlow', { source: 'manual' })}
+        >
+          <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+            <Line x1={12} y1={5} x2={12} y2={19} stroke={colors.ink} strokeWidth={1.5} strokeLinecap="round" />
+            <Line x1={5} y1={12} x2={19} y2={12} stroke={colors.ink} strokeWidth={1.5} strokeLinecap="round" />
+          </Svg>
+        </Pressable>
         <Pressable
           testID="open-settings"
           accessibilityRole="button"
@@ -121,43 +177,86 @@ export default function QuiltScreen() {
           onPress={() => navigation.navigate('Settings')}
         >
           <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-            <Circle cx={12} cy={12} r={4} stroke={colors.ink} strokeWidth={1.5} />
-            {GEAR_SPOKES.map((spoke, index) => (
-              <Line
-                key={index}
-                x1={spoke.x1}
-                y1={spoke.y1}
-                x2={spoke.x2}
-                y2={spoke.y2}
-                stroke={colors.ink}
-                strokeWidth={1.5}
-                strokeLinecap="round"
-              />
+            {SLIDER_ROWS.map((row) => (
+              <React.Fragment key={row.y}>
+                <Line
+                  x1={4}
+                  y1={row.y}
+                  x2={20}
+                  y2={row.y}
+                  stroke={colors.ink}
+                  strokeWidth={1.5}
+                  strokeLinecap="round"
+                />
+                <Circle
+                  cx={row.knob}
+                  cy={row.y}
+                  r={2.6}
+                  fill={colors.paper}
+                  stroke={colors.ink}
+                  strokeWidth={1.5}
+                />
+              </React.Fragment>
             ))}
           </Svg>
         </Pressable>
       </View>
 
+      <ScreenTip
+        tipId="home"
+        text="Each layer is a check-in. Tap one to see what you felt, or add a new one with the button below."
+      />
+
       <WeeklySummaryCard summary={weeklySummary} />
+
+      {/* The field guide's home-screen doorway: a FULL row only while the
+          screen is brand new (it teaches where the guide lives); once the
+          first check-in exists it collapses into the header's layered icon —
+          the row was eating half the screen (user, 2026-07-18). */}
+      {checkIns.length === 0 ? (
+        <Pressable
+          testID="home-field-guide"
+          accessibilityRole="button"
+          accessibilityLabel="Field guide. Learn the emotion families and find the right word."
+          style={styles.guideRow}
+          onPress={() => navigation.navigate('FieldGuide')}
+        >
+          <View style={styles.guideSwatches}>
+            {GUIDE_SWATCH_FAMILIES.map((family) => (
+              <View
+                key={family}
+                style={[styles.guideSwatch, { backgroundColor: familyPalette[family].shades[3] }]}
+              />
+            ))}
+          </View>
+          <Text style={styles.guideText}>Field guide — learn the words →</Text>
+        </Pressable>
+      ) : null}
+
+      {/* First-ever entry doorway — gone for good once anything is layered
+          (user, 2026-07-18: the header + carries every entry after that). */}
+      {checkIns.length === 0 ? (
+        <Pressable
+          testID="checkin-today"
+          accessibilityRole="button"
+          accessibilityLabel="Layer in today's first entry"
+          style={styles.todayRow}
+          onPress={() => navigation.navigate('CheckInFlow', { source: 'manual' })}
+        >
+          <Text style={styles.todayText}>+ layer in today&apos;s first entry</Text>
+        </Pressable>
+      ) : null}
 
       {checkIns.length === 0 ? (
         <View style={styles.empty}>
-          <Svg width={64} height={64} viewBox="0 0 64 64" fill="none">
-            <Rect
-              x={1.5}
-              y={1.5}
-              width={61}
-              height={61}
-              rx={borderRadius.sm}
-              stroke={colors.inkFaint}
-              strokeWidth={1.5}
-              strokeDasharray={[...textures.stitchDash]}
-            />
-          </Svg>
+          {/* The layered cluster in miniature — what a first check-in will
+              look like (replaced the dashed placeholder square 2026-07-17). */}
+          <LayeredClusterVignette size={72} />
           <Text style={styles.emptyText}>Your layers begin with a single check-in.</Text>
         </View>
       ) : (
         <FlatList
+          ref={listRef}
           data={blocks}
           keyExtractor={(item) => item.weekKey}
           contentContainerStyle={styles.listContent}
@@ -175,43 +274,34 @@ export default function QuiltScreen() {
         />
       )}
 
-      <Pressable
-        testID="checkin-fab"
-        accessibilityRole="button"
-        accessibilityLabel="Add a check-in"
-        style={[styles.fab, { bottom: insets.bottom + spacing.lg }]}
-        onPress={() => navigation.navigate('CheckInFlow', { source: 'manual' })}
-      >
-        <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-          <Line x1={12} y1={5} x2={12} y2={19} stroke={colors.ink} strokeWidth={2} strokeLinecap="round" />
-          <Line x1={5} y1={12} x2={19} y2={12} stroke={colors.ink} strokeWidth={2} strokeLinecap="round" />
-        </Svg>
-      </Pressable>
-
       <Modal
         visible={selected !== null}
         transparent
         animationType="fade"
         onRequestClose={() => setSelectedId(null)}
       >
-        <Pressable
-          style={styles.backdrop}
-          accessibilityRole="button"
-          accessibilityLabel="Close check-in details"
-          onPress={() => setSelectedId(null)}
-        >
-          {/* Inner press is swallowed so tapping the card doesn't dismiss. */}
+        {/* The backdrop is a SIBLING behind the sheet, never its parent: a
+            Pressable ancestor claims the pan gesture on Android, so a
+            ScrollView nested inside one cannot scroll at all (this bug was
+            reported three times before the ancestry — not the flex sizing —
+            was identified as the cause, 2026-07-18). */}
+        <View style={styles.backdrop}>
           <Pressable
-            style={[
-              styles.sheet,
-              { paddingBottom: insets.bottom + spacing.lg },
-              // Muted-layer treatment: the sheet wears the check-in's leading
-              // family as a whisper tint + thread spine, tying the detail card
-              // to the patch that opened it.
-              selected
-                ? { backgroundColor: mutedPalette[uniqueFamilies(selected)[0]].fill }
-                : null,
-            ]}
+            style={StyleSheet.absoluteFill}
+            accessibilityRole="button"
+            accessibilityLabel="Close check-in details"
+            onPress={() => setSelectedId(null)}
+          />
+          {/* Plain View + a start-responder so taps on the card are swallowed
+              (they'd otherwise fall through to the backdrop and dismiss),
+              while the ScrollView below still wins the move gesture. */}
+          {/* Raised paper, deliberately NOT the family tint: with the
+              re-tuned (more saturated) fills the whole sheet read as a wall
+              of colour behind the words (user, 2026-07-18) — the thread
+              spine alone ties the sheet to its patch. */}
+          <View
+            onStartShouldSetResponder={() => true}
+            style={[styles.sheet, { paddingBottom: insets.bottom + spacing.lg }]}
             testID="patch-detail"
           >
             {selected ? (
@@ -222,6 +312,14 @@ export default function QuiltScreen() {
                     { backgroundColor: mutedPalette[uniqueFamilies(selected)[0]].thread },
                   ]}
                 />
+                {/* A check-in with many emotions overflows the screen — the
+                    sheet caps its height and scrolls FROM THE TOP, instead of
+                    growing past the status bar (bug, 2026-07-17). */}
+                <ScrollView
+                  style={styles.sheetScroll}
+                  contentContainerStyle={styles.sheetScrollContent}
+                  showsVerticalScrollIndicator={false}
+                >
                 <Text style={styles.sheetTitle}>{buildTitle(selected)}</Text>
                 {selected.emotions.map((sel, i) => (
                   <View key={`${sel.emotionId}-${i}`} style={styles.emotionRow}>
@@ -263,10 +361,11 @@ export default function QuiltScreen() {
                     <Text style={styles.aboutText}>about {EMOTION_FAMILIES[fam].label} →</Text>
                   </Pressable>
                 ))}
+                </ScrollView>
               </>
             ) : null}
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </Modal>
     </View>
   );
@@ -293,8 +392,7 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
   title: {
     ...typography.title,
@@ -302,10 +400,44 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   iconButton: {
-    minWidth: hitTarget,
+    minWidth: 36,
     minHeight: hitTarget,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  guideRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    minHeight: hitTarget,
+    paddingVertical: spacing.xs,
+  },
+  guideSwatches: {
+    flexDirection: 'row',
+    gap: 3,
+  },
+  guideSwatch: {
+    width: 10,
+    height: 10,
+    borderRadius: borderRadius.sm,
+  },
+  guideText: {
+    ...typography.caption,
+    color: colors.inkSoft,
+  },
+  todayRow: {
+    minHeight: hitTarget,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: colors.inkFaint,
+    marginTop: spacing.xs,
+  },
+  todayText: {
+    ...typography.label,
+    color: colors.inkSoft,
   },
   empty: {
     flex: 1,
@@ -319,23 +451,8 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingVertical: spacing.md,
-    paddingBottom: FAB_SIZE + spacing.xxl,
+    paddingBottom: spacing.xxl,
     gap: spacing.lg,
-  },
-  fab: {
-    position: 'absolute',
-    // Tucked to the bottom-right so it doesn't dominate the centre of the
-    // quilt; a quiet paper button with a stitched ink outline, not a solid
-    // black disc (device feedback 2026-07-08).
-    right: spacing.lg,
-    width: FAB_SIZE,
-    height: FAB_SIZE,
-    borderRadius: FAB_SIZE / 2,
-    backgroundColor: colors.paperRaised,
-    borderWidth: 1,
-    borderColor: colors.ink,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   backdrop: {
     flex: 1,
@@ -350,6 +467,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     // Clip the thread spine into the rounded top corner.
     overflow: 'hidden',
+    // Tall check-ins scroll inside instead of growing past the screen top.
+    maxHeight: '78%',
   },
   sheetSpine: {
     position: 'absolute',
@@ -357,6 +476,16 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
     width: 5,
+  },
+  sheetScroll: {
+    flexGrow: 0,
+    // MUST shrink inside the sheet's maxHeight — RN's default flexShrink of 0
+    // let long content overflow the hidden clip instead of scrolling, cutting
+    // off the bottom (device bug, 2026-07-17).
+    flexShrink: 1,
+  },
+  sheetScrollContent: {
+    gap: spacing.sm,
   },
   sheetTitle: {
     ...typography.heading,

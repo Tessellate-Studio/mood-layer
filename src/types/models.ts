@@ -55,7 +55,10 @@ export interface CheckIn {
   source: 'manual' | 'name-it';
 }
 
-/** One entry from the judgment experiment (judgments point at unfelt feelings). */
+/** One judgment from "Explore avoided emotions" (judgments point at unfelt
+ *  feelings). A sitting of the practice names SEVERAL judgments (the source
+ *  worksheet asks for ~5); each is stored as its own entry so insights can
+ *  count judgments, with `sittingId` grouping the sitting for display. */
 export interface JudgmentEntry {
   id: string;
   createdAt: string;
@@ -67,7 +70,11 @@ export interface JudgmentEntry {
    * `uncoveredFeeling` field; store migration v1 wraps the old value.)
    */
   uncoveredFeelings: EmotionSelection[];
+  /** The sitting's shared free writing — carried on its FIRST entry only. */
   freeWriting?: string;
+  /** Groups the entries written in one sitting. Absent on pre-multi entries
+   *  (each old entry reads as a one-judgment sitting). */
+  sittingId?: string;
 }
 
 /** How much of the quilt a circle person is shown. */
@@ -88,6 +95,9 @@ export interface CirclePerson {
   relationship: string;
   sees: CircleSeesLevel;
   frequency: CircleFrequency;
+  /** What `frequency` was before the pause toggle switched it to 'paused' —
+   *  so unpausing restores the person's own rhythm, not a default. */
+  lastActiveFrequency?: Exclude<CircleFrequency, 'paused'>;
 }
 
 /** Settings for the "name it" prompts during waking hours. */

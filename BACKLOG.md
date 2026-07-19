@@ -19,10 +19,13 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
   same build unblocks name-it reminder verification).
 
 - **Circle: true auto-deliver to recipient (backend automation)** — *separate,
-  larger, and a deliberate break of local-only* — **not started**, keep only if
-  the local-reminder version above proves insufficient. This is the version that
-  actually **sends** a summary off-device on a schedule, which a phone-local app
-  can't do → it needs a backend. **Decisions to settle first (before code):**
+  larger, and a deliberate break of local-only* — **user green-lit 2026-07-18**
+  ("setup backend so circle status goes through automatically"), but **blocked
+  on the five decisions below** — per this entry's own rule, the trust boundary
+  gets written down before any code. Agent proposal on file (2026-07-18):
+  Supabase edge function + cron, send-and-forget (nothing durable server-side),
+  email as the least-infrastructure channel; awaiting the user's channel +
+  identity choices. **Decisions to settle first (before code):**
   1. **Delivery channel** — email? SMS? push (recipient needs an app)? a private
      link the person opens?
   2. **Recipient identity** — a "person" is just a local name today; automated

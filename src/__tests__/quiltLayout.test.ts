@@ -9,7 +9,9 @@ import {
   computeQuiltLayout,
   DAY_ROW_HEIGHT,
   EMPTY_ROW_HEIGHT,
+  offsetForCheckIn,
   QUILT_GUTTER,
+  WEEK_LABEL_BLOCK,
 } from '@/utils/quiltLayout';
 
 const sel = (emotionId: string, family: EmotionSelection['family'], intensity: 1 | 2 | 3 | 4): EmotionSelection => ({
@@ -106,6 +108,42 @@ describe('clothPieces', () => {
   it('is deterministic — repeat calls deep-equal', () => {
     const emotions = [sel('angry', 'anger', 3), sel('sad', 'sadness', 1), sel('glad', 'enjoyment', 4)];
     expect(clothPieces(emotions, 100, 80)).toEqual(clothPieces(emotions, 100, 80));
+  });
+});
+
+describe('offsetForCheckIn', () => {
+  const WIDTH = 320;
+  const NOW = new Date('2026-07-11T12:00:00'); // Saturday of the Jul 6–12 week
+
+  it('points at the row holding the check-in, minus a breathing margin', () => {
+    // Saturday sits at the BOTTOM of the week — the case that was scrolling
+    // out of view after a save (2026-07-18).
+    const saturday = checkIn({ createdAt: '2026-07-11T09:00:00', id: 'sat' });
+    const blocks = computeQuiltLayout([saturday], WIDTH, NOW);
+    const row = blocks[0].rows.find((r) => r.patches.length > 0)!;
+    expect(offsetForCheckIn(blocks, 'sat', 16, 24)).toBe(16 + WEEK_LABEL_BLOCK + row.y - 24);
+    // That row really is far down the block — the fix is not a no-op.
+    expect(row.y).toBeGreaterThan(0);
+  });
+
+  it('never returns a negative offset for a row near the top', () => {
+    const monday = checkIn({ createdAt: '2026-07-06T09:00:00', id: 'mon' });
+    const blocks = computeQuiltLayout([monday], WIDTH, NOW);
+    expect(offsetForCheckIn(blocks, 'mon', 16, 240)).toBe(0);
+  });
+
+  it('accumulates earlier week blocks when the check-in is older', () => {
+    const older = checkIn({ createdAt: '2026-06-30T09:00:00', id: 'older' });
+    const blocks = computeQuiltLayout([older], WIDTH, NOW);
+    // Two blocks: current (empty) then the older week holding it.
+    expect(blocks).toHaveLength(2);
+    const offset = offsetForCheckIn(blocks, 'older', 16, 0)!;
+    expect(offset).toBeGreaterThan(blocks[0].totalHeight);
+  });
+
+  it('returns null for an id that is not laid out', () => {
+    const blocks = computeQuiltLayout([], WIDTH, NOW);
+    expect(offsetForCheckIn(blocks, 'nope')).toBeNull();
   });
 });
 

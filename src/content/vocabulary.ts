@@ -101,9 +101,14 @@ export const EXTENDED_VOCABULARY: Record<EmotionFamilyId, EmotionWord[]> = {
     { id: 'speechless', label: 'Speechless', intensityHint: 4 },
   ],
   // The wheel folds contempt into disgust; the app keeps it as its own family
-  // (Ekman's later work) and its gradient already covers the wheel's words
-  // (contempt, disdain → Disdainful/Scornful), so nothing new lands here.
-  contempt: [],
+  // (Ekman's later work). Its gradient covered the wheel's words, which left
+  // "+ more words" opening onto nothing (user, 2026-07-18) — these finer
+  // shades of holding-yourself-above fill the unfold.
+  contempt: [
+    { id: 'condescending', label: 'Condescending', intensityHint: 2 },
+    { id: 'smug', label: 'Smug', intensityHint: 2 },
+    { id: 'superior', label: 'Superior', intensityHint: 3 },
+  ],
   anticipation: [
     { id: 'vigilant', label: 'Vigilant', intensityHint: 2 },
     { id: 'hopeful', label: 'Hopeful', intensityHint: 2 },

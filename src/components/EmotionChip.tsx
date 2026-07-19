@@ -1,5 +1,8 @@
 // A selectable pill for an emotion word or masking state. Selected = ink fill,
-// paper label. Dashed variant marks masking states (covers, not feelings).
+// paper label — unless a `fill` colour is given, in which case the selected
+// chip wears that family pastel with ink text (the chip doubling as its own
+// temperature swatch — user-approved 2026-07-17). Dashed variant marks
+// masking states (covers, not feelings).
 
 import React from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
@@ -15,11 +18,16 @@ interface Props {
   onPress(): void;
   /** Masking states render with a dashed border to read as tentative. */
   dashed?: boolean;
+  /** Family-pastel background for the selected state (label stays ink —
+   *  every familyPalette shade holds AA under ink text). */
+  fill?: string;
+  /** Optional quiet doorway (e.g. open the family helper). */
+  onLongPress?(): void;
 }
 
 const HIT_SLOP = { top: 6, bottom: 6, left: 4, right: 4 };
 
-export function EmotionChip({ id, label, selected, onPress, dashed }: Props) {
+export function EmotionChip({ id, label, selected, onPress, dashed, fill, onLongPress }: Props) {
   const hapticsEnabled = useSettingsStore((s) => s.hapticsEnabled);
 
   return (
@@ -32,14 +40,15 @@ export function EmotionChip({ id, label, selected, onPress, dashed }: Props) {
       style={[
         styles.chip,
         dashed && styles.dashed,
-        selected && styles.selected,
+        selected && (fill ? { backgroundColor: fill, borderColor: fill } : styles.selected),
       ]}
       onPress={() => {
         if (hapticsEnabled) Haptics.selectionAsync();
         onPress();
       }}
+      onLongPress={onLongPress}
     >
-      <Text style={[styles.label, selected && styles.labelSelected]}>{label}</Text>
+      <Text style={[styles.label, selected && !fill && styles.labelSelected]}>{label}</Text>
     </Pressable>
   );
 }

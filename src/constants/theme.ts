@@ -53,6 +53,10 @@ export interface FamilyPalette {
   shades: Record<IntensityShade, string>;
   /** Deep same-hue tone for texture "thread" strokes over the fills. */
   thread: string;
+  /** Saturated mid-tone for SMALL coloured accents (focused tab-icon
+   *  strokes) where the muted thread reads as grey at 1.5–2 px. Decorative;
+   *  all hold ≥2.9:1 on raised paper. Added 2026-07-18. */
+  vivid: string;
 }
 
 /**
@@ -65,45 +69,55 @@ export interface FamilyPalette {
 // hue's identity, in a muted mid-tone rather than a deep one.
 export const familyPalette: Record<EmotionFamilyId, FamilyPalette> = {
   anger: {
-    shades: { 1: '#FAEDEA', 2: '#F6DFDA', 3: '#F1CCC4', 4: '#EAB6AB' },
-    thread: '#B07A6C',
+    shades: { 1: '#F7E4E0', 2: '#F6DFDA', 3: '#F1CCC4', 4: '#EAB6AB' },
+    thread: '#A87264',
+    vivid: '#C4573F',
   },
   fear: {
-    shades: { 1: '#F2EFF8', 2: '#E9E3F2', 3: '#DBD0EA', 4: '#C9BADF' },
+    shades: { 1: '#ECE7F4', 2: '#E9E3F2', 3: '#DBD0EA', 4: '#C9BADF' },
     thread: '#8D7DB0',
+    vivid: '#7B5EA7',
   },
   sadness: {
-    shades: { 1: '#ECF1F7', 2: '#DFE8F1', 3: '#CCDAE9', 4: '#B4C8DE' },
-    thread: '#7793B4',
+    shades: { 1: '#E4EBF3', 2: '#DFE8F1', 3: '#CCDAE9', 4: '#B4C8DE' },
+    thread: '#6984A3',
+    vivid: '#3F72A6',
   },
   disgust: {
-    shades: { 1: '#EDF4EC', 2: '#E0EDDF', 3: '#CDE1CC', 4: '#B5D2B4' },
-    thread: '#7BA37A',
+    shades: { 1: '#E5EFE4', 2: '#E0EDDF', 3: '#CDE1CC', 4: '#B5D2B4' },
+    thread: '#678B66',
+    vivid: '#4E8B4C',
   },
   enjoyment: {
-    shades: { 1: '#FBF4E3', 2: '#F8ECCD', 3: '#F3E0AF', 4: '#ECD28F' },
-    thread: '#B99B54',
+    shades: { 1: '#F9EFD5', 2: '#F8ECCD', 3: '#F3E0AF', 4: '#ECD28F' },
+    thread: '#9B8042',
+    vivid: '#C08A1E',
   },
   surprise: {
-    shades: { 1: '#FBF0E7', 2: '#F8E4D3', 3: '#F3D3B8', 4: '#ECBF99' },
-    thread: '#BE8B60',
+    shades: { 1: '#F9E8DA', 2: '#F8E4D3', 3: '#F3D3B8', 4: '#ECBF99' },
+    thread: '#A77850',
+    vivid: '#C4763B',
   },
   contempt: {
-    shades: { 1: '#F4EEF2', 2: '#ECE2E9', 3: '#DFCFDA', 4: '#CFB8C7' },
-    thread: '#A18397',
+    shades: { 1: '#EFE6EC', 2: '#ECE2E9', 3: '#DFCFDA', 4: '#CFB8C7' },
+    thread: '#937890',
+    vivid: '#9A5F86',
   },
   anticipation: {
-    shades: { 1: '#EBF4F4', 2: '#DCECEC', 3: '#C6E0DF', 4: '#AACFCE' },
-    thread: '#6C9E9D',
+    shades: { 1: '#E1EFEF', 2: '#DCECEC', 3: '#C6E0DF', 4: '#AACFCE' },
+    thread: '#5C8B8A',
+    vivid: '#2E8B88',
   },
   trust: {
-    shades: { 1: '#F9EFF1', 2: '#F5E2E7', 3: '#EED0D9', 4: '#E4BAC7' },
-    thread: '#B37E90',
+    shades: { 1: '#F6E7EB', 2: '#F5E2E7', 3: '#EED0D9', 4: '#E4BAC7' },
+    thread: '#A77385',
+    vivid: '#C05C7E',
   },
 };
 
 export interface MutedFamilyPalette {
-  /** Whisper-tint card fill — a layer you can tell apart, not a highlight. */
+  /** Soft-tint card fill — a layer you can tell apart, not a highlight.
+   *  Every ink tier holds AA on it (verified in designTreatment.test.tsx). */
   fill: string;
   /** 1px card border + the section header's dashed rule. */
   border: string;
@@ -117,67 +131,71 @@ export interface MutedFamilyPalette {
 
 /**
  * Muted layer palette — the design treatment settled 2026-07-13 ("layers you
- * can tell apart"). The Atlas hues, desaturated heavily toward grey so cards
- * and sections read as distinct layers while the tone stays somber and the
- * text stays ink. Chrome text/lines remain ink tiers; these tints are for
+ * can tell apart"). Chrome text/lines remain ink tiers; these tints are for
  * card fills, thread spines, section glyphs, and same-hue accents only.
- * Handoff accents were nudged darker to clear WCAG AA (design bundle
- * 2026-07-13; verified in designTreatment.test.tsx).
+ *
+ * Re-tuned twice at the user's direction: 2026-07-18 morning the grey fills
+ * ("a bit too dull") became the family pastel mixed 62% into cream; by
+ * evening that read "a little too saturated", so fills settled at a 45% mix
+ * — the soothing register of the liked Insights page, hue still legible.
+ * Borders stay at the full pastel. Tiers verified computationally
+ * (designTreatment.test.tsx): captions ≥5.1:1 on every fill, accents ≥4.5:1
+ * on fill AND raised paper, threads ≥3:1.
  */
 export const mutedPalette: Record<EmotionFamilyId, MutedFamilyPalette> = {
   anger: {
-    fill: '#F0ECEA',
-    border: '#D5CDC9',
-    thread: '#8F817C',
-    accent: '#6A5C56',
+    fill: '#F4E3DB',
+    border: '#EAB6AB',
+    thread: '#8F6F68',
+    accent: '#6E5650',
   },
   fear: {
-    fill: '#EDECF0',
-    border: '#CFCBD6',
-    thread: '#847E90',
-    accent: '#605A6C',
+    fill: '#EAE4EB',
+    border: '#C9BADF',
+    thread: '#7B7188',
+    accent: '#5E5769',
   },
   sadness: {
-    fill: '#EBEDEF',
-    border: '#CBCFD4',
-    thread: '#7C848E',
-    accent: '#59626C',
+    fill: '#E4E8EB',
+    border: '#B4C8DE',
+    thread: '#6E7A87',
+    accent: '#555E68',
   },
   disgust: {
-    fill: '#EAEEE9',
-    border: '#CDD2CB',
-    thread: '#7E877C',
-    accent: '#586055',
+    fill: '#E4EBDE',
+    border: '#B5D2B4',
+    thread: '#6D7E6C',
+    accent: '#556355',
   },
   enjoyment: {
-    fill: '#F0EDE6',
-    border: '#D4CDBE',
-    thread: '#8C8468',
-    accent: '#665F4B',
+    fill: '#F4EBD3',
+    border: '#ECD28F',
+    thread: '#8B7C54',
+    accent: '#6D6142',
   },
   surprise: {
-    fill: '#F1EDE7',
-    border: '#D6CEC2',
-    thread: '#94836E',
-    accent: '#6C5D48',
+    fill: '#F4E6D6',
+    border: '#ECBF99',
+    thread: '#8E735C',
+    accent: '#6F5A48',
   },
   contempt: {
-    fill: '#EEECEE',
-    border: '#D3CCD0',
-    thread: '#877E83',
-    accent: '#62595E',
+    fill: '#ECE3E4',
+    border: '#CFB8C7',
+    thread: '#80727B',
+    accent: '#635860',
   },
   anticipation: {
-    fill: '#EAEEEE',
-    border: '#CBD3D3',
-    thread: '#7B8A89',
-    accent: '#576362',
+    fill: '#E1EAE6',
+    border: '#AACFCE',
+    thread: '#687E7E',
+    accent: '#506161',
   },
   trust: {
-    fill: '#F0ECED',
-    border: '#D5CBCE',
-    thread: '#8E7E83',
-    accent: '#6A585E',
+    fill: '#F2E4E4',
+    border: '#E4BAC7',
+    thread: '#8B7179',
+    accent: '#6B575E',
   },
 };
 
@@ -296,7 +314,16 @@ export const motion = {
   spring: { damping: 18, stiffness: 180 },
   gentleMs: 350,
   stitchMs: 900,
-  /** Breathing pulse on "feel it" invitations. */
+  /** Breathing pulse on "feel it" invitations. The pulse dips DOWN to this
+   *  scale and back to 1 — the laid-out size is the MAXIMUM, so the swell
+   *  never overflows its container (device feedback 2026-07-17: the border
+   *  was getting eaten at max size). */
   breatheMs: 3200,
-  breatheScale: 1.02,
+  breatheScale: 0.98,
+  /** One box-breathing phase (in / hold / out / hold), 4 counts each. */
+  boxBreathePhaseMs: 4000,
+  /** How far the box-breathing square and the weekly mark contract on the
+   *  out-breath (scale at "empty lungs"; 1 = laid-out size at full breath). */
+  boxBreatheScale: 0.72,
+  boxBreatheMarkScale: 0.94,
 } as const;

@@ -51,42 +51,57 @@ describe('CheckInFlowScreen', () => {
     expect(screen.queryByTestId('chip-down')).toBeNull();
   });
 
-  it('offers the FULL vocabulary, not just the short gradient', () => {
+  it('offers the FULL vocabulary, with the temperature dial on the word', () => {
     renderScreen();
     fireEvent.press(screen.getByTestId('family-sadness'));
-    // 'heartbroken' lives only in EXTENDED_VOCABULARY — selectable since
-    // 2026-07-17 (the point is learning emotional vocabulary).
+    // 'heartbroken' lives only in EXTENDED_VOCABULARY — reachable behind the
+    // family's "+ more words" unfold (rebalance, 2026-07-17).
+    fireEvent.press(screen.getByTestId('chip-more-sadness'));
     fireEvent.press(screen.getByTestId('chip-heartbroken'));
-    fireEvent.press(screen.getByTestId('flow-next')); // → intensity
-    // The intensity step resolves the extended word's label too.
-    expect(screen.getByText('Heartbroken')).toBeTruthy();
+    // Selecting unfolds the word's own four-swatch dial right there — no
+    // separate intensity step (temperature-chip design).
+    fireEvent.press(screen.getByTestId('dial-heartbroken-4'));
+    fireEvent.press(screen.getByTestId('flow-next')); // → body
+    fireEvent.press(screen.getByTestId('flow-skip')); // → resistance
+    fireEvent.press(screen.getByTestId('flow-skip')); // → note
+    fireEvent.press(screen.getByTestId('flow-skip')); // → stitch
+    fireEvent.press(screen.getByTestId('flow-stitch'));
+    expect(useCheckInStore.getState().checkIns[0].emotions).toEqual([
+      { emotionId: 'heartbroken', family: 'sadness', intensity: 4 },
+    ]);
   });
 
-  it('keeps a chosen word pinned when its family folds', () => {
+  it('keeps a chosen word pinned (with its dial) when its family folds', () => {
     renderScreen();
     fireEvent.press(screen.getByTestId('family-sadness'));
     fireEvent.press(screen.getByTestId('chip-sad'));
     fireEvent.press(screen.getByTestId('family-anger'));
-    // 'sad' is selected, so it stays visible under its folded family; its
-    // unselected siblings do not.
-    expect(screen.getByTestId('chip-sad')).toBeTruthy();
+    // 'sad' is selected, so its temperature row stays visible under its
+    // folded family; its unselected siblings do not.
+    expect(screen.getByTestId('chip-picked-sad')).toBeTruthy();
+    expect(screen.getByTestId('dial-sad-2')).toBeTruthy();
     expect(screen.queryByTestId('chip-down')).toBeNull();
   });
 
-  it('keeps Continue disabled until an emotion is chosen', () => {
+  it('keeps Continue disabled until an emotion is chosen AND weighed', () => {
     renderScreen();
     expect(screen.getByTestId('flow-next').props.accessibilityState.disabled).toBe(true);
     fireEvent.press(screen.getByTestId('family-sadness'));
     fireEvent.press(screen.getByTestId('chip-sad'));
+    // Named but unweighed: still blocked, with a gentle hint (no default
+    // temperatures — user, 2026-07-17).
+    expect(screen.getByTestId('flow-next').props.accessibilityState.disabled).toBe(true);
+    expect(screen.getByTestId('temperature-continue-hint')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('dial-sad-1'));
     expect(screen.getByTestId('flow-next').props.accessibilityState.disabled).toBe(false);
+    expect(screen.queryByTestId('temperature-continue-hint')).toBeNull();
   });
 
   it('walks feel → stitch and writes one check-in with the right emotion', () => {
     renderScreen();
     fireEvent.press(screen.getByTestId('family-sadness'));
     fireEvent.press(screen.getByTestId('chip-sad'));
-    fireEvent.press(screen.getByTestId('flow-next')); // → intensity
-    fireEvent.press(screen.getByTestId('dial-sad-3')); // set intensity 3
+    fireEvent.press(screen.getByTestId('dial-sad-3')); // temperature, inline on feel
     fireEvent.press(screen.getByTestId('flow-next')); // → body
     fireEvent.press(screen.getByTestId('flow-skip')); // skip body → resistance
     fireEvent.press(screen.getByTestId('flow-skip')); // skip resistance → note
@@ -106,7 +121,7 @@ describe('CheckInFlowScreen', () => {
     expect(screen.getByText('Can you name it?')).toBeTruthy();
     fireEvent.press(screen.getByTestId('family-fear'));
     fireEvent.press(screen.getByTestId('chip-afraid'));
-    fireEvent.press(screen.getByTestId('flow-next')); // → intensity
+    fireEvent.press(screen.getByTestId('dial-afraid-2')); // weigh it (required)
     fireEvent.press(screen.getByTestId('flow-next')); // → body
     // From body, a name-it flow can finish early straight to stitch.
     expect(screen.getByTestId('flow-finish-early')).toBeTruthy();

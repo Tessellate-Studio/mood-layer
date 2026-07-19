@@ -6,24 +6,34 @@
 
 import type { EmotionFamilyId, EmotionSelection, Intensity, ResistanceTellId } from '@/types/models';
 
-export type CheckInStep = 'feel' | 'intensity' | 'body' | 'resistance' | 'note' | 'stitch';
+// No 'intensity' step: temperature is set on the word itself in the feel step
+// (chip + four-swatch dial), so weighing never needs its own screen
+// (user-approved temperature-chip design, 2026-07-17).
+export type CheckInStep = 'feel' | 'body' | 'resistance' | 'note' | 'stitch';
 
 /** Ordered steps; index drives next/prev and the progress dashes. */
-export const STEP_ORDER: CheckInStep[] = ['feel', 'intensity', 'body', 'resistance', 'note', 'stitch'];
+export const STEP_ORDER: CheckInStep[] = ['feel', 'body', 'resistance', 'note', 'stitch'];
 
 /** Steps a 'name-it' flow is allowed to finish early from. */
 const FINISH_EARLY_STEPS: CheckInStep[] = ['body', 'resistance', 'note'];
 
-/** Default intensity when an emotion is first selected — a middle "present". */
-const DEFAULT_INTENSITY: Intensity = 2;
+// NOTE: deliberately NO cap on how many emotions a check-in holds. The old
+// max of 5 had no basis in the literature — "on some level, we are always
+// feeling multiple feelings at a time" (Six Seconds, Practicing EQ p.15) —
+// and the quilt cluster scales to any count (user, 2026-07-17).
 
-/** Max emotions per check-in — the quilt subdivision tops out at 5. */
-export const MAX_EMOTIONS = 5;
+/** A named word mid-flow: temperature starts UNSET — the user weighs it
+ *  deliberately, never by default (user, 2026-07-17). */
+export interface DraftSelection {
+  emotionId: string;
+  family: EmotionFamilyId;
+  intensity: Intensity | null;
+}
 
 export interface FlowState {
   step: CheckInStep;
   source: 'manual' | 'name-it';
-  selections: EmotionSelection[];
+  selections: DraftSelection[];
   masking: string[];
   bodySensations: string[];
   resistanceFlags: ResistanceTellId[];
@@ -45,12 +55,15 @@ export function initialFlowState(source: 'manual' | 'name-it'): FlowState {
 /**
  * The feel step needs at least one NAMED emotion — a masking state alone is a
  * doorway, not a destination (picking one opens the "look underneath" panel so
- * the surface word can be unpacked into a real feeling). This is what makes a
- * masking-only check-in stop being a dead end. The rest of the steps are
- * optional, so proceeding is always allowed past feel.
+ * the surface word can be unpacked into a real feeling) — AND every named
+ * word must have its temperature set: weighing is a deliberate act, never a
+ * default (user, 2026-07-17). The rest of the steps are optional, so
+ * proceeding is always allowed past feel.
  */
 export function canProceed(s: FlowState): boolean {
-  if (s.step === 'feel') return s.selections.length >= 1;
+  if (s.step === 'feel') {
+    return s.selections.length >= 1 && s.selections.every((x) => x.intensity !== null);
+  }
   return true;
 }
 
@@ -80,10 +93,9 @@ export function toggleEmotion(s: FlowState, emotionId: string, family: EmotionFa
   if (existing) {
     return { ...s, selections: s.selections.filter((x) => x.emotionId !== emotionId) };
   }
-  if (s.selections.length >= MAX_EMOTIONS) return s;
   return {
     ...s,
-    selections: [...s.selections, { emotionId, family, intensity: DEFAULT_INTENSITY }],
+    selections: [...s.selections, { emotionId, family, intensity: null }],
   };
 }
 
@@ -134,8 +146,14 @@ export function toCheckInInput(s: FlowState): {
   source: 'manual' | 'name-it';
 } {
   const trimmedNote = s.note.trim();
+  // canProceed gates the feel step on every temperature being set, so nulls
+  // cannot reach here; the flatMap narrows the type (and would drop, not
+  // invent, a value if that invariant ever broke).
+  const emotions: EmotionSelection[] = s.selections.flatMap((sel) =>
+    sel.intensity === null ? [] : [{ emotionId: sel.emotionId, family: sel.family, intensity: sel.intensity }]
+  );
   return {
-    emotions: s.selections,
+    emotions,
     resistanceFlags: s.resistanceFlags,
     source: s.source,
     ...(s.bodySensations.length > 0 ? { bodySensations: s.bodySensations } : {}),

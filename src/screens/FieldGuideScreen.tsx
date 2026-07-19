@@ -15,10 +15,11 @@ import EmotionChip from '@/components/EmotionChip';
 import FamilyGroup from '@/components/FamilyGroup';
 import LearnLink from '@/components/LearnLink';
 import PaperTexture from '@/components/PaperTexture';
-import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
+import { borderRadius, colors, familyPalette, hitTarget, spacing, typography } from '@/constants/theme';
 import { EMOTION_FAMILIES } from '@/content/emotions';
 import { UNDERNEATH_MAP } from '@/content/underneath';
 import { allWordsForFamily, findVocabularyWord, INTENSITY_PHRASES } from '@/content/vocabulary';
+import { useHelperSheetStore } from '@/store/helperSheetStore';
 import type { EmotionFamilyId } from '@/types/models';
 
 export default function FieldGuideScreen() {
@@ -60,6 +61,37 @@ export default function FieldGuideScreen() {
           A little map of feelings — for finding the right word, and for noticing what an old
           mood might be carrying.
         </Text>
+
+        {/* ——— The nine families ——— */}
+        {/* The quilt's key lives here, next to the words it names, rather
+            than on the home screen where it was decoration (user,
+            2026-07-18). Tap a family to open its helper sheet. */}
+        <View style={styles.section}>
+          <Text style={typography.overline}>The nine families</Text>
+          <Text style={typography.body}>
+            Every layer you add wears its family&apos;s colour. These are the nine.
+          </Text>
+          <View style={styles.familyKey} testID="family-key">
+            {Object.values(EMOTION_FAMILIES).map((family) => (
+              <Pressable
+                key={family.id}
+                testID={`family-key-${family.id}`}
+                accessibilityRole="button"
+                accessibilityLabel={`About ${family.label}. ${family.essence}`}
+                style={styles.keyItem}
+                onPress={() => useHelperSheetStore.getState().open(family.id)}
+              >
+                <View
+                  style={[
+                    styles.keySwatch,
+                    { backgroundColor: familyPalette[family.id].shades[3] },
+                  ]}
+                />
+                <Text style={styles.keyLabel}>{family.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
 
         {/* ——— What's underneath? ——— */}
         <View style={styles.section}>
@@ -108,6 +140,9 @@ export default function FieldGuideScreen() {
                 onToggle={() => setOpenFamily((cur) => (cur === family.id ? null : family.id))}
                 preview={family.essence}
               >
+                {/* The folded preview truncates to one line; unfolded, the
+                    essence reads in full above the words (user, 2026-07-17). */}
+                <Text style={typography.body}>{family.essence}</Text>
                 <View style={styles.chipWrap}>
                   {allWordsForFamily(family.id).map((word) => (
                     <EmotionChip
@@ -185,6 +220,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
+  },
+  familyKey: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  keyItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    minHeight: 32,
+    paddingRight: spacing.sm,
+  },
+  keySwatch: {
+    width: 14,
+    height: 14,
+    borderRadius: borderRadius.sm,
+  },
+  keyLabel: {
+    ...typography.caption,
+    color: colors.inkSoft,
   },
   panel: {
     backgroundColor: colors.paperRaised,

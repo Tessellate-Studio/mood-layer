@@ -332,19 +332,22 @@ describe('judgment examples', () => {
 });
 
 describe('onboarding slides', () => {
-  it('has exactly 3 slides with unique ids and non-empty copy', () => {
-    expect(ONBOARDING_SLIDES).toHaveLength(3);
-    expect(new Set(ONBOARDING_SLIDES.map((s) => s.id)).size).toBe(3);
+  it('has four slides with unique ids and non-empty copy', () => {
+    // Four since 2026-07-18: the field-guide suggestion joined quilt /
+    // fluidity / privacy so new users meet the vocabulary early.
+    expect(ONBOARDING_SLIDES).toHaveLength(4);
+    expect(new Set(ONBOARDING_SLIDES.map((s) => s.id)).size).toBe(4);
     for (const slide of ONBOARDING_SLIDES) {
       expect(slide.title.length).toBeGreaterThan(0);
       expect(slide.body.length).toBeGreaterThan(0);
     }
   });
 
-  it('covers quilt, fluidity, and privacy in order', () => {
+  it('covers quilt, fluidity, privacy, then the field guide in order', () => {
     const allCopy = ONBOARDING_SLIDES.map((s) => `${s.title} ${s.body}`.toLowerCase());
     expect(allCopy[0]).toContain('one thing');
     expect(allCopy[1]).toContain('resist');
     expect(allCopy[2]).toContain('phone');
+    expect(allCopy[3]).toContain('field guide');
   });
 });

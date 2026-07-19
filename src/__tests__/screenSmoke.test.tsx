@@ -9,6 +9,7 @@ import { Text } from 'react-native';
 
 import AppNavigator, { pickInitialRoute } from '@/navigation/AppNavigator';
 import ScreenErrorBoundary from '@/components/ScreenErrorBoundary';
+import BreathingScreen from '@/screens/BreathingScreen';
 import CircleScreen from '@/screens/CircleScreen';
 import ExperimentsScreen from '@/screens/ExperimentsScreen';
 import FieldGuideScreen from '@/screens/FieldGuideScreen';
@@ -98,6 +99,7 @@ describe('screen skeletons render their landmarks', () => {
     ['screen-field-guide', FieldGuideScreen],
     ['screen-settings', SettingsScreen],
     ['screen-onboarding', OnboardingScreen],
+    ['screen-breathing', BreathingScreen],
   ];
 
   it.each(cases)('%s mounts', async (testID, Screen) => {

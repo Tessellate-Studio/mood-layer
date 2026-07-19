@@ -50,7 +50,8 @@ export function EmotionHelperContent({ family }: Props) {
       return;
     }
     // A slow in-and-out swell — an invitation to breathe with it, not a
-    // grabby animation. Half the cycle expands, half returns; repeats forever.
+    // grabby animation. The card dips to breatheScale (<1) and returns, so
+    // the laid-out size is its maximum and the border never clips.
     breathe.value = withRepeat(
       withSequence(
         withTiming(motion.breatheScale, { duration: motion.breatheMs / 2 }),

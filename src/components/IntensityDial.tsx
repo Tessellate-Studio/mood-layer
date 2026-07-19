@@ -13,7 +13,8 @@ interface Props {
   wordId: string;
   label: string;
   family: EmotionFamilyId;
-  value: Intensity;
+  /** null = not weighed yet (no ring) — weighing is deliberate, not default. */
+  value: Intensity | null;
   onChange(intensity: Intensity): void;
 }
 

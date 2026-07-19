@@ -6,7 +6,7 @@ export const ONBOARDING_SLIDES: { id: string; title: string; body: string }[] = 
     id: 'quilt',
     title: 'You never feel just one thing',
     body:
-      'Feelings arrive together — a little anger folded into some fear, a trace of relief running through sadness. Each check-in here captures that whole moment, up to five emotions at once, and week by week they build into layers of feeling that are unmistakably yours.',
+      'Feelings arrive together — a little anger folded into some fear, a trace of relief running through sadness. Each check-in here captures that whole moment, as many emotions as are truly present, and week by week they build into layers of feeling that are unmistakably yours.',
   },
   {
     id: 'fluidity',
@@ -19,5 +19,13 @@ export const ONBOARDING_SLIDES: { id: string; title: string; body: string }[] = 
     title: 'Nothing leaves this phone',
     body:
       'Everything you record lives on this phone and nowhere else. No account, no cloud, no analytics, and nothing is ever sent anywhere. This is a private place, yours alone.',
+  },
+  {
+    // A pointer, not a lesson — new users often don't have the words yet, and
+    // the field guide is where they're waiting (user, 2026-07-18).
+    id: 'guide',
+    title: 'New words, when you want them',
+    body:
+      'You do not need the perfect word to begin — the closest one is close enough. When you want to look closer, the field guide holds the nine families and a fuller vocabulary for each. It is always a tap away from home.',
   },
 ];

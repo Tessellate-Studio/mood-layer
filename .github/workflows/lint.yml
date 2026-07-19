@@ -23,7 +23,7 @@ jobs:
           node-version: 22
           cache: npm
 
-      - run: npm ci
+      - run: npm install --no-audit --no-fund # not npm ci: win-generated lock omits nested optional deps
 
       - name: Run ESLint (advisory)
         continue-on-error: true

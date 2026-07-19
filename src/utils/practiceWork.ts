@@ -12,8 +12,9 @@ export interface PracticeWork {
   entries: Record<string, string[]>;
   /** mark step id → point keys ("sourceStepId:index") currently marked. */
   marks: Record<string, string[]>;
-  /** pick step id → the one chosen point key, if any. */
-  picks: Record<string, string>;
+  /** pick step id → chosen point keys. Multi-select (user, 2026-07-17):
+   *  more than one option can still matter in five years. */
+  picks: Record<string, string[]>;
 }
 
 export function emptyWork(): PracticeWork {
@@ -99,9 +100,8 @@ export function removeListItem(
   }
 
   const picks: PracticeWork['picks'] = {};
-  for (const [stepId, key] of Object.entries(work.picks)) {
-    const next = reindexKey(key);
-    if (next !== null) picks[stepId] = next;
+  for (const [stepId, keys] of Object.entries(work.picks)) {
+    picks[stepId] = keys.map(reindexKey).filter((k): k is string => k !== null);
   }
 
   return { entries, marks, picks };
@@ -116,13 +116,92 @@ export function toggleMark(work: PracticeWork, markStepId: string, key: string):
   return { ...work, marks: { ...work.marks, [markStepId]: next } };
 }
 
-/** Choose a point on a pick step; choosing it again lets it go. */
-export function setPick(work: PracticeWork, pickStepId: string, key: string): PracticeWork {
-  const picks = { ...work.picks };
-  if (picks[pickStepId] === key) {
-    delete picks[pickStepId];
-  } else {
-    picks[pickStepId] = key;
+/** Toggle a point on a pick step — several can be chosen; tapping again
+ *  lets one go. */
+export function togglePick(work: PracticeWork, pickStepId: string, key: string): PracticeWork {
+  const current = work.picks[pickStepId] ?? [];
+  const next = current.includes(key)
+    ? current.filter((k) => k !== key)
+    : [...current, key];
+  return { ...work, picks: { ...work.picks, [pickStepId]: next } };
+}
+
+/** Resolve an item key ("stepId:index") back to its text, if any. */
+function keyText(work: PracticeWork, key: string): string | undefined {
+  const sep = key.lastIndexOf(':');
+  const text = entriesFor(work, key.slice(0, sep))[Number(key.slice(sep + 1))]?.trim();
+  return text && text.length > 0 ? text : undefined;
+}
+
+/**
+ * A glance at what the sitting STARTED from and what it ARRIVED at — the
+ * problem and the outcome, joined by " → ". When both are present the
+ * collapsed subtitle reads as a journey; when only one exists it still
+ * works as a standalone.
+ */
+export function sessionConclusion(practice: Practice, work: PracticeWork): string | null {
+  const lines = sessionLines(practice, work);
+  if (lines.length === 0) return null;
+
+  const opening = lines[0].body.split('\n')[0].trim() || null;
+
+  const closingIds = practice.steps
+    .filter((s) => s.kind === 'pick' || (s.kind === 'write' && s !== practice.steps[0]))
+    .map((s) => s.title);
+  const closing = [...lines].reverse().find((l) => closingIds.includes(l.title));
+  const chosen = closing ?? (lines.length > 1 ? lines[lines.length - 1] : null);
+  const outcome = chosen?.body.split('\n')[0].trim() || null;
+
+  if (opening && outcome && opening !== outcome) return `${opening} → ${outcome}`;
+  return opening ?? outcome;
+}
+
+/**
+ * A finished sitting, readable: one {title, body} line per step that holds
+ * anything — used by the "Past reflections" list to show an archived
+ * practice session without replaying the whole flow.
+ */
+export function sessionLines(
+  practice: Practice,
+  work: PracticeWork
+): { title: string; body: string }[] {
+  const lines: { title: string; body: string }[] = [];
+  for (const step of practice.steps) {
+    switch (step.kind) {
+      case 'write': {
+        const text = entriesFor(work, step.id)[0]?.trim();
+        if (text) lines.push({ title: step.title, body: text });
+        break;
+      }
+      case 'list': {
+        const items = notedItems(work, step.id).map((i) => i.text);
+        if (items.length > 0) lines.push({ title: step.title, body: items.join(' · ') });
+        break;
+      }
+      case 'reflect': {
+        const source = entriesFor(work, step.sourceStepId);
+        const pairs = notedItems(work, step.id).map((r) => {
+          const point = source[r.index]?.trim();
+          return point ? `${point} → ${r.text}` : r.text;
+        });
+        if (pairs.length > 0) lines.push({ title: step.title, body: pairs.join('\n') });
+        break;
+      }
+      case 'mark': {
+        const marked = (work.marks[step.id] ?? [])
+          .map((key) => keyText(work, key))
+          .filter((t): t is string => t !== undefined);
+        if (marked.length > 0) lines.push({ title: step.title, body: marked.join(' · ') });
+        break;
+      }
+      case 'pick': {
+        const texts = (work.picks[step.id] ?? [])
+          .map((key) => keyText(work, key))
+          .filter((t): t is string => t !== undefined);
+        if (texts.length > 0) lines.push({ title: step.title, body: texts.join(' · ') });
+        break;
+      }
+    }
   }
-  return { ...work, picks };
+  return lines;
 }
