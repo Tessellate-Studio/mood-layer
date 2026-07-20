@@ -11,13 +11,47 @@ Legend: ✅ done · 🟡 in progress (action left) · 🔲 not started.
 
 | Item | Status | What's left (you) |
 |---|---|---|
-| GitHub Actions billing (Tessellate-Studio) | ✅ | Resolved 2026-07-18 by **making the repo public** (user decision) — public repos get free Actions minutes, so the org's failed-payment/spending-limit block no longer applies to this repo. Pre-flip sweep: no secrets tracked; the third-party Six Seconds PDF was untracked AND purged from branch history (user ran the force-push); it stays on disk under `research/` (gitignored) with a README index. Org billing itself is still unfixed — only relevant again if a repo goes private or needs private-repo minutes |
+| [Repo back to private + org billing](#repo-visibility--back-to-private-ip-decision-2026-07-20) | 🔲 | **Decision reversed 2026-07-20 (user): the repo returns to private** — upcoming features are IP the user wants closed, and only a private repo prevents viewing/forking (public GitHub repos are always both, regardless of license). This re-opens the org billing problem the 2026-07-18 public-flip had dodged: fix billing FIRST, then flip visibility — numbered steps in the section below. (History of the 07-18 stopgap: pre-flip sweep found no secrets tracked; the third-party Six Seconds PDF was untracked and purged from branch history; it stays on disk under `research/`, gitignored.) |
 | rubric-sdk dev dependency | ✅ | Done 2026-07-12. `npm i -D github:ramsaptami/rubric-sdk` installs cleanly (59 packages, exit 0) — the earlier "agent sandbox can't install from a personal-repo git URL" note was wrong. Roadmap-pulse scoring is now numeric |
 | EAS dev build (to test "Name it" reminders) | 🟡 | Reminders can't fire in Expo Go (expo-notifications removed from Expo Go SDK 53+ — regression-log #4). `eas.json` is now scaffolded (dev/preview/production profiles) and EAS login is done. Left: `eas build --profile development --platform android`, install the dev client on your Android, confirm a reminder fires. Everything *except* reminders is fully testable in Expo Go |
 | Publish to Google Play (indie route) | 🟡 | **Re-decided 2026-07-18: NOT going the DUNS/org route** (DUNS is for registered orgs; user is publishing as an individual). New path: personal Google Play developer account ($25 one-time) → note Google's 2023+ individual-account requirement of a 12-tester/14-day closed test before production. Until then, sideloading the CI APK (current loop) is the distribution — including for circle members who want the peer-app sharing. Steps land here when the personal account exists |
 
 Everything else is local-only by design — no backend, auth, analytics, or
 crash-reporting to configure.
+
+## Repo visibility — back to private (IP decision, 2026-07-20)
+
+**Status: 🔲 two dashboard actions, in this order.** Reverses the 2026-07-18
+"go public for free Actions minutes" stopgap. Why: upcoming features are IP
+the user wants closed, and a public GitHub repo can ALWAYS be viewed and
+forked on-platform under GitHub's Terms of Service — no license or setting
+can prevent that; only private visibility can. A proprietary `LICENSE`
+(all rights reserved, no use in any form) was added at the repo root in the
+same PR as this entry, covering any remaining public window.
+
+1. **Fix org billing first** — otherwise this repo's CI dies the moment it
+   goes private (the org's included 2,000 min were exhausted 2026-07-18;
+   they reset Aug 1). github.com → Tessellate-Studio → Settings → Billing
+   and plans → Spending limits → set a monthly Actions limit (e.g. $10–25).
+   Linux minutes are $0.008/min, so one ~11-min APK build ≈ $0.09.
+   Alternative: upgrade the org to Team ($4/user/month, 3,000 included min).
+2. **Flip visibility:** repo Settings → General → Danger Zone → Change
+   visibility → Private. Effects: Actions minutes start billing to the org
+   pool; stars/watchers are wiped (currently 0); any public forks would
+   detach and keep their copy (currently 0 forks — verified via GitHub API
+   2026-07-20).
+3. **Verify the org fork lock:** Org Settings → Member privileges →
+   "Allow forking of private repositories" must be **unchecked** (this is
+   GitHub's default).
+4. **Exposure note (honest record):** the repo was public 2026-07-18 →
+   the flip date. Zero forks and zero stars in that window (API-verified
+   2026-07-20), and the 07-18 pre-flip sweep means no secrets were exposed —
+   but any clone or scrape made during the window cannot be recalled.
+5. **Trademark (separate, real-world action):** registering "The Mood Layer"
+   as a word mark (software classes, typically 9 and 42) with the national IP
+   office protects the *name* in commerce. It does not stop code copying —
+   that protection comes from private visibility + copyright (the LICENSE).
+   Worth a trademark attorney consult for jurisdiction and classes.
 
 ## Circle relay (Supabase, alate project) — decided + deployed 2026-07-18
 
