@@ -4,8 +4,9 @@ Durable record of out-of-scope and not-yet-started work. Check here before
 proposing "should we build X?". Sections are P0 (do next) → P4 (someday). The
 *what + why* lives here; the *exactly-how* for any decided external setup lives
 in [`docs/user-actions-tracker.md`](docs/user-actions-tracker.md) — cross-link,
-don't copy. Rubric scores (0–12) come from `@tessellate-studio/rubric-sdk`
-`evaluateFromContext` (heuristic, auditable).
+don't copy. Rubric scores (0–12) come from `@tessellate-studio/forge`
+`evaluateFromContext` (heuristic, auditable — rubric-sdk was merged into forge
+2026-07-17, PR #21 `07e84af`).
 
 Seeded 2026-07-12 from the first roadmap-pulse run.
 
@@ -18,26 +19,23 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
   no-ops under it. Needs the EAS dev build tracked under "Post-launch" (the
   same build unblocks name-it reminder verification).
 
-- **Circle: true auto-deliver to recipient (backend automation)** — *separate,
-  larger, and a deliberate break of local-only* — **user green-lit 2026-07-18**
-  ("setup backend so circle status goes through automatically"), but **blocked
-  on the five decisions below** — per this entry's own rule, the trust boundary
-  gets written down before any code. Agent proposal on file (2026-07-18):
-  Supabase edge function + cron, send-and-forget (nothing durable server-side),
-  email as the least-infrastructure channel; awaiting the user's channel +
-  identity choices. **Decisions to settle first (before code):**
-  1. **Delivery channel** — email? SMS? push (recipient needs an app)? a private
-     link the person opens?
-  2. **Recipient identity** — a "person" is just a local name today; automated
-     delivery needs an address or account.
-  3. **Where the backend lives** — mood-layer has NO server today; this is a
-     **new** service (its own repo or a small serverless API), separate from
-     alate and Loom (different products).
-  4. **What's stored server-side** — ideally *nothing durable* (generate → send →
-     forget) so the "circumvent storing data" promise survives automation.
-  5. **Scheduling** — a server cron per person's cadence + timezone.
-  This is a **deliberate, scoped exception to local-only** — decide and write
-  down the trust boundary before any code. *Owner: user + agent.*
+- ~~**Circle: true auto-deliver to recipient (backend automation)**~~ —
+  **decided, built and deployed 2026-07-18.** All five blocking decisions were
+  settled; the trust boundary is written up in `docs/SECURITY.md` → "Circle
+  relay" and the exact setup in `docs/user-actions-tracker.md` → "Circle relay".
+  Resolutions: **channel** = peer-app delivery (not email/SMS), QR pairing with
+  on-device nacl.box encryption; **identity** = per-pairing bearer tokens, no
+  accounts; **where** = the *alate* Supabase project, deliberately (free-tier
+  projects pause after ~1 week idle; alate's traffic keeps it awake), schema
+  `moodlayer`, edge function `moodlayer-relay` v2; **stored server-side** =
+  nothing durable — send-and-forget with delete-on-read; **scheduling** = an
+  on-device background task (evening after 6 pm / Sunday evening), not a server
+  cron. Verified 2026-07-18 by curl round-trip (invite → claim → send → fetch →
+  wrong-token 403 → unpair).
+  **Still open:** never exercised on real hardware — needs two phones, and the
+  Phase-2 background wake + "a week arrived" notification can't fire under Expo
+  Go (regression-log #4), so it rides on the same EAS dev build. **Deferred:**
+  instant FCM push pokes — only if the daily/weekly cadence feels slow.
 
 ## P1 — do next
 
@@ -54,13 +52,17 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
 
 ## P2 — soon
 
-- **Publish The Mood Layer to Google Play (direct, under Tessellate org)** —
-  rubric **6/12** (impact 3/3; costed down by external Play Console setup +
-  dependencies). **Decision made 2026-07-12:** publish directly to the Play
-  Store under the organization developer account; DUNS applied (org
-  verification pending Google's review). Depends on DUNS approval + a clean
-  v0.2.0 device pass. Steps/credentials go in the user-actions-tracker once the
-  DUNS is approved and the Play Console app is created. *Owner: user.*
+- **Publish The Mood Layer to Google Play (indie route)** — rubric **6/12**
+  (impact 3/3; costed down by external Play Console setup + dependencies).
+  **Re-decided 2026-07-18 — the org/DUNS route is OFF.** DUNS is for registered
+  organizations; publishing happens as an **individual** instead: a personal
+  Google Play developer account ($25 one-time), then Google's 2023+ individual
+  requirement of a **12-tester / 14-day closed test** before production. Until
+  that account exists, sideloading the CI APK stays the distribution — including
+  for circle members who want the peer-app pairing. Still depends on a clean
+  v0.2.0 device pass. Steps land in the user-actions-tracker once the personal
+  account exists. *Owner: user.* (Supersedes the 2026-07-12 "direct under
+  Tessellate org, DUNS applied" decision.)
 
 ## Post-launch — verify after v0.2.0 is live
 
