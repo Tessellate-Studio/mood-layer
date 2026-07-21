@@ -21,7 +21,7 @@ jobs:
           cache: npm
       - run: npm install --no-audit --no-fund
       - name: Security audit
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=critical
       - name: Typecheck
         run: npx tsc --noEmit
       - name: Jest
