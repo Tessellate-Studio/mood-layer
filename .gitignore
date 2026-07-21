@@ -40,6 +40,11 @@ yarn-error.*
 /ios
 /android
 
+# build artifacts (sideload APKs, Play bundles) — never commit binaries
+*.apk
+*.aab
+mood-layer-apk/
+
 # Claude Code worktrees (concurrent-session isolation)
 .worktrees/
 .claude/worktrees/
