@@ -1,0 +1,28 @@
+# PR test gate — typecheck + tests + security audit on every PR to master.
+name: CI
+
+on:
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm install --no-audit --no-fund
+      - name: Security audit
+        run: npm audit --audit-level=critical
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Jest
+        run: npx jest --no-coverage --ci
