@@ -56,9 +56,29 @@ merging, bug-fixing), not just at session start:
 
 - `/forge:build-feature` — implement + verify a change end-to-end (acceptance
   criteria → TDD → on-device verification → quality pass → status update → retro).
+- `/forge:plan` — research-backed planning before building. Auto-sizes into
+  **ADR** (tactical), **Shape Up Pitch** (feature scope), or **RFD**
+  (architecture/cross-repo); Pitch and RFD run a cited web-research pass first.
+  Docs persist in `memory/decisions/` (`adr-001-…`, `pitch-002-…`, `rfd-003-…`)
+  as context for later sessions. Fires from build-feature Step 0, or standalone.
 - `/forge:roadmap-pulse` — weekly honesty pass + scored priorities (own cron).
 - Before building: read `forge/standards/anti-patterns.md` +
   `memory/project_anti_patterns.md` when touching their areas.
+
+**Multi-agent builds — Pitch/RFD tier only.** When the planning gate sizes a
+change as Pitch or RFD, `build-feature` delegates to the `researched-build`
+workflow: **researcher** (cited prior art) → **tester** (writes FAILING tests
+from the acceptance criteria, never sees implementation) → **implementer**
+(makes them pass in an isolated worktree) → **reviewer** (fresh eyes on a diff
+it didn't write) → **verifier** (on-device measurement). Findings loop back to
+the implementer. Large diffs from single-agent builds get `adversarial-review`
+at the quality pass instead. Scripts ship with the forge plugin
+(`${CLAUDE_PLUGIN_ROOT}/references/workflows/`) — nothing to install; pass
+`args` as a JSON **object**, never a stringified one. Degrades to single-agent
+when unreachable, and ADR/tactical changes stay single-agent by design.
+Separation is enforced by prompt instruction, not tool grants. Design +
+caveats: `forge` → `memory/decisions/rfd-001-multi-agent-workflow.md`. Not yet
+exercised end-to-end — treat its worktree hand-off as unproven.
 
 ## Planning docs
 
