@@ -80,6 +80,36 @@ Separation is enforced by prompt instruction, not tool grants. Design +
 caveats: `forge` → `memory/decisions/rfd-001-multi-agent-workflow.md`. Not yet
 exercised end-to-end — treat its worktree hand-off as unproven.
 
+**`rendersUI: true` needs `context.verify` — this app has NO OTA path.**
+`expo-updates` is not installed here, so alate's `eas update` → double-relaunch
+loop does not exist in this repo; don't copy it. The verifier runs whatever
+commands you pass, and `publish` + `capture` are **required** (forge rejects the
+run before spawning any agent without them). Two surfaces — prefer the first:
+
+| | Expo Go over Metro — default | installed APK — release fidelity |
+|---|---|---|
+| `publish` **(req.)** | `npx expo start`, open in Expo Go | `gh workflow run build-android-apk.yml --ref master` → `gh run download <run-id> --name mood-layer-apk` |
+| `capture` **(req.)** | `adb exec-out screencap -p` | `adb exec-out screencap -p` |
+| `apply` | reload in Expo Go (fast-refresh, or shake → Reload) | `adb install -r <apk>`, then launch |
+| `confirm` | Metro logged the bundle it just served | the installed build is the one you just downloaded |
+
+Reach for the APK path only when release fidelity is the point. Each round is a
+full cloud build, the verify loop runs up to 3 of them, and that workflow is
+`runs-on: ubuntu-latest` — so it is blocked while the org's Actions minutes are
+exhausted. Expo Go answers layout/spacing/typography questions instantly and is
+already blessed as local-OK by the cloud-only build rule below.
+
+Expo Go is not proof the binary works: the v1 launch red-screened on an
+**import-time** `expo-notifications` crash that only appeared there. Measure
+layout in Expo Go; confirm the shipped artifact on the APK.
+
+`apply` and `confirm` are optional but are the two people skip, and skipping
+them is how a run measures the *previous* build and reports it as a verdict on
+this one. Full contract:
+`${CLAUDE_PLUGIN_ROOT}/references/agents/verifier-prompt.md`. If a change
+shouldn't be measured on a surface, pass `rendersUI: false` rather than
+inventing a `publish` command to get past the check.
+
 ## Planning docs
 
 - `BACKLOG.md` — durable out-of-scope record (P0–P4)
