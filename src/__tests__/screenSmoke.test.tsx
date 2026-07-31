@@ -7,6 +7,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { Text } from 'react-native';
 
+// eslint-disable-next-line @typescript-eslint/no-restricted-imports -- rendering the REAL navigator is this file's purpose (see header); the hub guard exists for every OTHER file
 import AppNavigator, { pickInitialRoute } from '@/navigation/AppNavigator';
 import ScreenErrorBoundary from '@/components/ScreenErrorBoundary';
 import BreathingScreen from '@/screens/BreathingScreen';
