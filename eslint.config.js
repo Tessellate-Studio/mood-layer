@@ -54,6 +54,41 @@ module.exports = defineConfig([
     },
   },
   {
+    // Hub-module import guard (forge rfd-002; forge anti-patterns "A re-export
+    // from a hub module turns 'one value' into 'the whole graph'").
+    //
+    // AppNavigator imports every screen plus native-stack and bottom-tabs, so a
+    // single VALUE imported from it loads the whole app graph — into the
+    // bundle's startup path and into every jest file that mounts the importer.
+    // Measured on alate before its fix: 741→120 modules in HomeScreen.test,
+    // 803→25 in navigator.avatarGate.test (alate#460). Types are free — babel
+    // elides `import type` — and every screen here already imports that way.
+    //
+    // Scoped to src/ so App.tsx, the one legitimate default importer, is exempt
+    // by placement. screenSmoke.test.tsx carries the one line-level exemption:
+    // rendering the REAL navigator is that file's stated purpose.
+    //
+    // `warn` per this config's advisory-first convention; promote to 'error'
+    // after a clean PR cycle, as alate did (alate#467 → #468).
+    files: ['src/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-restricted-imports': [
+        'warn',
+        {
+          patterns: [
+            {
+              group: ['**/navigation/AppNavigator'],
+              allowTypeImports: true,
+              message:
+                'AppNavigator imports every screen — a value import from it loads the whole graph. ' +
+                'Keep type imports as `import type`; move any shared value to a leaf module instead.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // Off (not just warn) in test files: jest.mock() calls are deliberately
     // placed above the imports they mock. Left enabled, `--fix` hoists the
     // imports above the mocks and changes what the tests actually exercise.
