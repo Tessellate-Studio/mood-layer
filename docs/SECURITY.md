@@ -47,6 +47,64 @@ The trust boundary, reviewed before code (BACKLOG P0 entry):
 | 2026-07-28 | `brace-expansion` high (GHSA-mh99-v99m-4gvg) | accepted | Patched in 5.0.8, but `glob`/`minimatch` pin `^1`/`^2` — unreachable without a major bump. Build-time only (jest, eslint, Metro); no app-input path |
 | 2026-07-28 | `postcss` high (`<=8.5.17`) | **deferred** — safe pass breaks the test suite | See sweep note below |
 | 2026-07-28 | `uuid` moderate (GHSA-w5hq-g745-h8pq, `<11.1.1`) | accepted | Build-time only, via `xcode` ← `@expo/config-plugins`; only fix is an Expo major |
+| 2026-08-03 | `brace-expansion` high ×2 (GHSA-mh99-v99m-4gvg, GHSA-3jxr-9vmj-r5cp) | **fixed** | → 5.0.9. Supersedes the 2026-07-28 "accepted" row above — the safe pass now resolves it without breaking the suite |
+| 2026-08-03 | `postcss` high (`<=8.5.17`, GHSA-r28c-9q8g-f849) | **fixed** | → 8.5.25. Supersedes the 2026-07-28 "deferred" row above; closes issue #48 |
+| 2026-08-03 | `uuid` moderate (GHSA-w5hq-g745-h8pq) | accepted | Unchanged from 2026-07-28 — build-time only, via `xcode` ← `@expo/config-plugins` and `@expo/ngrok` (dev) |
+
+## Security sweep — 2026-08-03
+
+**The 2026-07-28 deferral is resolved.** That sweep discarded the safe pass
+because it broke the React Native jest environment; issue #48 tracked it for a
+human to land deliberately. Re-tested this sweep: **the breakage is gone.**
+`npm audit fix` now moves the lockfile and the suite stays green at 331/331
+across two consecutive runs, with `tsc --noEmit` clean and `npm ci` clean.
+
+Nothing about this repo changed to fix it — upstream did. `brace-expansion`
+backported its fix to the 1.x/2.x lines, so the resolution no longer has to
+drag `@react-native/babel-preset` and `@react-native/babel-plugin-codegen`
+along with it. The 2026-07-28 decision was correct on the evidence available
+then; it simply expired.
+
+### Fixed — safe pass (`npm audit fix`, no `--force`, lockfile-only)
+
+`package.json` untouched.
+
+| Package | Sev | Was → now | Advisory |
+|---|---|---|---|
+| `brace-expansion` | high | → 5.0.9 | GHSA-mh99-v99m-4gvg **and** GHSA-3jxr-9vmj-r5cp — **both fully resolved** |
+| `postcss` | high | → 8.5.25 | GHSA-r28c-9q8g-f849 — **fully resolved** |
+
+Distinct advisories: **4 → 1.** Distinct vulnerable packages: **3 → 1.**
+Raw `npm audit` headline: **14 → 12**, and — unusually for this ecosystem — the
+number moved the honest way for once: **both high-severity findings are gone**,
+leaving 12 moderate entries that are all chain-flagged parents of the single
+remaining `uuid` advisory.
+
+### Accepted residual — 1
+
+| Package | Sev | Advisory | Reason |
+|---|---|---|---|
+| `uuid` 7.0.3 / 3.4.0 | moderate | GHSA-w5hq-g745-h8pq | Unchanged from 2026-07-28. Build-time only: `xcode@3.0.1` (`^7.0.3`) ← `@expo/config-plugins`, and `@expo/ngrok@4.1.3` (`^3.3.2`, a devDependency). The advisory covers v3/v5/v6 **called with a `buf` argument**; `xcode` calls only `uuid.v4()` with no args. Only fix is an Expo major. |
+
+### Privacy posture — unchanged
+
+No dependency moved in this sweep touches the network, storage, or crypto path.
+`tweetnacl`, `expo-secure-store`, and the circle-relay code are untouched; the
+local-only posture and the single sanctioned relay exception above still hold.
+
+### Verification
+
+`npm ci` clean on a fresh tree, `npx jest --no-coverage` **331/331 twice**,
+`npx tsc --noEmit` clean. Baseline before the fix was identical (331/331).
+
+> **Windows note for the next sweep.** `npm audit fix` left the lockfile
+> internally inconsistent (`@emnapi/wasi-threads@1.2.2` vs `1.2.3`) and `npm ci`
+> refused with `EUSAGE`. `npm install` reconciled it, `package.json` still
+> untouched. Separately, `npm ci`/`npm install` hit `ENOTEMPTY` and
+> `Permission denied` deleting `node_modules` — a Windows file-locking
+> artifact, **not** a lockfile defect. `cmd /c rmdir /s /q node_modules`
+> followed by `npm ci` cleared it. Don't read those two failures as the same
+> problem; only the first one is about the lockfile.
 
 ## Security sweep — 2026-07-28
 
