@@ -17,25 +17,25 @@ jobs:
       HAS_LITMUS_TOKEN: ${{ secrets.LITMUS_DISPATCH_TOKEN != '' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: npm
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5.6.0
         with:
           distribution: temurin
           java-version: 17
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
 
       # Caches Gradle wrapper + dependency/build caches between runs so only
       # the first build after a dependency change pays the cold price.
       - name: Setup Gradle (with caching)
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Install dependencies
         # npm install, not `npm ci`: the lock is generated on Windows (npm 11)
@@ -56,7 +56,7 @@ jobs:
         run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mood-layer-apk
           path: android/app/build/outputs/apk/release/app-release.apk
@@ -69,7 +69,7 @@ jobs:
         # repo only, Contents: read/write — setup in docs/user-actions-tracker.md).
         # Skipped, not failed, while the secret is absent so builds don't break.
         if: success() && env.HAS_LITMUS_TOKEN == 'true'
-        uses: peter-evans/repository-dispatch@v3
+        uses: peter-evans/repository-dispatch@v4
         with:
           token: ${{ secrets.LITMUS_DISPATCH_TOKEN }}
           repository: Tessellate-Studio/litmus
@@ -89,7 +89,7 @@ jobs:
       issues: write
     steps:
       - name: Open a ci-failure issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             await github.rest.issues.create({
