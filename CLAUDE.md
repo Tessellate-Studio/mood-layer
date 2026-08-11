@@ -44,18 +44,19 @@ merging, bug-fixing), not just at session start:
   boundary in the navigator.
 - **Quality pass** — before committing any non-trivial diff (UI or not):
   `/code-review`, then `/simplify`, re-run tests, commit cleanups separately.
-- **Status update** — change came from a BACKLOG / regression-log / tracker
+- **Status update** — change came from a BACKLOG / regression-log / runbook
   entry? Update that entry (status, PR, SHA) in the same PR.
 - **External-tool decisions** — decided setups go in
-  [`docs/user-actions-tracker.md`](./docs/user-actions-tracker.md) with a fixed
+  [`docs/manual-runbook.md`](./docs/manual-runbook.md) with a fixed
   format: **What's left:** [one line] · **Steps:** [numbered, copy-pasteable] ·
   **Verify:** [how to confirm it worked]. A finished setup MOVES to a `## Done`
   one-liner — leaving it as a full section is how the file rots. History,
-  context and rejected options go in BACKLOG; the tracker holds exactly-how,
+  context and rejected options go in BACKLOG; the runbook holds exactly-how,
   nothing else.
 - **Doc placement** — [`PROJECT_DOCS.md`](./PROJECT_DOCS.md) maps every doc
   type to its location. Platform rule: `forge/standards/doc-placement.md`.
-- **User-facing runbooks** — follow `docs/_USER_DOC_TEMPLATE.md`.
+- **Standalone runbooks** — a procedure too big to sit as a section in the
+  manual runbook gets its own file, shaped by `docs/_USER_DOC_TEMPLATE.md`.
 
 ## Build workflows — let the skills carry the process
 
@@ -172,7 +173,7 @@ between them.
 - **Local-only data.** All user data lives on-device (zustand persist →
   AsyncStorage). No accounts, no server, no analytics, no crash-reporting SDKs.
   Sending emotional data anywhere is an anti-pattern until the user explicitly
-  decides otherwise (then it goes through the tracker + a privacy review).
+  decides otherwise (then it goes through the runbook + a privacy review).
   **ONE sanctioned exception (user-decided 2026-07-18): the circle relay** —
   the gated weekly summary (only), sealed on-device with nacl.box to a paired
   peer's key, through the send-and-forget `moodlayer-relay` edge function.

@@ -3,7 +3,7 @@
 Durable record of out-of-scope and not-yet-started work. Check here before
 proposing "should we build X?". Sections are P0 (do next) → P4 (someday). The
 *what + why* lives here; the *exactly-how* for any decided external setup lives
-in [`docs/user-actions-tracker.md`](docs/user-actions-tracker.md) — cross-link,
+in [`docs/manual-runbook.md`](docs/manual-runbook.md) — cross-link,
 don't copy. Rubric scores (0–12) come from `@tessellate-studio/forge`
 `evaluateFromContext` (heuristic, auditable — rubric-sdk was merged into forge
 2026-07-17, PR #21 `07e84af`).
@@ -22,7 +22,7 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
 - ~~**Circle: true auto-deliver to recipient (backend automation)**~~ —
   **decided, built and deployed 2026-07-18.** All five blocking decisions were
   settled; the trust boundary is written up in `docs/SECURITY.md` → "Circle
-  relay" and the exact setup in `docs/user-actions-tracker.md` → "Circle relay".
+  relay" and the exact setup in `docs/manual-runbook.md` → "Circle relay".
   Resolutions: **channel** = peer-app delivery (not email/SMS), QR pairing with
   on-device nacl.box encryption; **identity** = per-pairing bearer tokens, no
   accounts; **where** = the *alate* Supabase project, deliberately (free-tier
@@ -60,7 +60,7 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
   requirement of a **12-tester / 14-day closed test** before production. Until
   that account exists, sideloading the CI APK stays the distribution — including
   for circle members who want the peer-app pairing. Still depends on a clean
-  v0.2.0 device pass. Steps land in the user-actions-tracker once the personal
+  v0.2.0 device pass. Steps land in the manual runbook once the personal
   account exists. *Owner: user.* (Supersedes the 2026-07-12 "direct under
   Tessellate org, DUNS applied" decision.)
 
@@ -75,7 +75,7 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
   on device, confirm a reminder fires + deep-links into the check-in flow.
   Tradeoff to note: launching first means the reminder path ships unverified —
   low blast radius (it fails silently/no-ops rather than crashing), which is why
-  post-launch is reasonable. *Owner: user. How-to: `docs/user-actions-tracker.md`.*
+  post-launch is reasonable. *Owner: user. How-to: `docs/manual-runbook.md`.*
 
 ## P3 — later
 

@@ -1,8 +1,9 @@
-# User-actions tracker
+# Manual runbook — external setups only you can do
 
-Durable record of every external-tool setup that has a **decided** path —
-actionable steps only, no history. Why a thing was decided lives in
-[`BACKLOG.md`](../BACKLOG.md); this file holds *exactly how*.
+Durable record of every external-tool setup that has a **decided** path — the
+steps no script can take, because they happen in someone else's console behind
+someone else's login. Actionable steps only, no history — why a thing was
+decided lives in [`BACKLOG.md`](../BACKLOG.md); this file holds *exactly how*.
 
 Legend: ✅ done · 🟡 in progress (action left) · 📖 reference · 🔲 not started.
 

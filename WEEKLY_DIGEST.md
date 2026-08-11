@@ -10,7 +10,7 @@ Append-only history of weekly priority decisions, produced by the
 
 > **Caveat on sourcing:** git was unavailable during the pulse itself (the Bash
 > tool was gated by a model-availability classifier), so the analysis below was
-> sourced from `BACKLOG.md` and `docs/user-actions-tracker.md` rather than
+> sourced from `BACKLOG.md` and `docs/manual-runbook.md` rather than
 > verified against `origin/master`. Git recovered at commit time and
 > `origin/master` had moved 5 commits ahead — the "Reopened" note below is the
 > one correction that surfaced. The rest is still doc-sourced; **next run should

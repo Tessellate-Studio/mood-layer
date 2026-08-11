@@ -22,9 +22,9 @@ Quick reference for where every doc lives and what it contains.
 | Doc | Path | Holds |
 |-----|------|-------|
 | **Security policy** | [`SECURITY.md`](./docs/SECURITY.md) | Dependency-alert triage (fix / accept / N/A) + why. Local-only context: any network-capable or data-leaving dep is a finding |
-| **External-tool setup** | [`user-actions-tracker.md`](./docs/user-actions-tracker.md) | **Decided** setups only (Play, EAS, Auth, DNS, Stripe). Actual values, copy-pasteable steps, verification commands. Status: ✅ / 🟡 / 🔲 |
+| **External-tool setup** | [`manual-runbook.md`](./docs/manual-runbook.md) | **Decided** setups only (Play, EAS, Auth, DNS, Stripe). Actual values, copy-pasteable steps, verification commands. Status: ✅ / 🟡 / 🚧 / 📖 / 🔲. **Renamed** from `user-actions-tracker.md` (2026-08-11) |
 | **User doc template** | [`_USER_DOC_TEMPLATE.md`](./_USER_DOC_TEMPLATE.md) | Runbook template: plain-language "what" → numbered "how" (real links) → "verify" |
-| **Device testing quick ref** | [`user-actions-tracker.md` (Expo section)](./docs/user-actions-tracker.md) | LAN IP changes per session; verify with `npx expo start`. Regression-log #6 for failures |
+| **Device testing quick ref** | [`manual-runbook.md` (Expo section)](./docs/manual-runbook.md) | LAN IP changes per session; verify with `npx expo start`. Regression-log #6 for failures |
 
 ---
 
@@ -33,7 +33,7 @@ Quick reference for where every doc lives and what it contains.
 - **Before coding:** skim `CLAUDE.md` (rules + isolation checklist) + `memory/project_anti_patterns.md` (why each rule matters).
 - **Before fixing a bug:** scan `memory/project_regression_log.md` for a matching symptom.
 - **Before shipping:** walk `BACKLOG.md` for each feature, confirm all paths work end-to-end.
-- **Before deployment:** check `docs/SECURITY.md` (open alerts) + `docs/user-actions-tracker.md` (verified steps).
+- **Before deployment:** check `docs/SECURITY.md` (open alerts) + `docs/manual-runbook.md` (verified steps).
 
 ---
 
@@ -60,6 +60,6 @@ Quick reference for where every doc lives and what it contains.
 
 **WEEKLY_DIGEST:** appended automatically by roadmap-pulse. Trigger it manually if a decision is urgent and can't wait for Sunday.
 
-**BACKLOG → user-actions-tracker:** when a decision is made (not evaluated, decided), copy its *exactly-how* steps to the tracker. BACKLOG evolves; the tracker is stable and indexed. Once a setup is done, delete its section, collapse it to a `## Done` one-liner and repoint its table row at `#done` — that closes the BACKLOG entry too. A finished setup left as a full section is how the tracker rots.
+**BACKLOG → manual runbook:** when a decision is made (not evaluated, decided), copy its *exactly-how* steps to the runbook. BACKLOG evolves; the runbook is stable and indexed. Once a setup is done, delete its section, collapse it to a `## Done` one-liner and repoint its table row at `#done` — that closes the BACKLOG entry too. A finished setup left as a full section is how the runbook rots.
 
 **Shared rules (forge):** CLAUDE.md summarizes them. When forge changes the rule, update the summary here on the next session. The source of truth is `forge/standards/anti-patterns.md` + `forge/references/CLAUDE.base.md`, not this copy.
