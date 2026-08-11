@@ -46,8 +46,13 @@ merging, bug-fixing), not just at session start:
   `/code-review`, then `/simplify`, re-run tests, commit cleanups separately.
 - **Status update** — change came from a BACKLOG / regression-log / tracker
   entry? Update that entry (status, PR, SHA) in the same PR.
-- **External-tool decisions** — decided setups get numbered, copy-pasteable
-  steps in `docs/user-actions-tracker.md` before the session ends.
+- **External-tool decisions** — decided setups go in
+  [`docs/user-actions-tracker.md`](./docs/user-actions-tracker.md) with a fixed
+  format: **What's left:** [one line] · **Steps:** [numbered, copy-pasteable] ·
+  **Verify:** [how to confirm it worked]. A finished setup MOVES to a `## Done`
+  one-liner — leaving it as a full section is how the file rots. History,
+  context and rejected options go in BACKLOG; the tracker holds exactly-how,
+  nothing else.
 - **Doc placement** — [`PROJECT_DOCS.md`](./PROJECT_DOCS.md) maps every doc
   type to its location. Platform rule: `forge/standards/doc-placement.md`.
 - **User-facing runbooks** — follow `docs/_USER_DOC_TEMPLATE.md`.
