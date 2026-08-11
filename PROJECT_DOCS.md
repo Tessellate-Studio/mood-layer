@@ -60,6 +60,6 @@ Quick reference for where every doc lives and what it contains.
 
 **WEEKLY_DIGEST:** appended automatically by roadmap-pulse. Trigger it manually if a decision is urgent and can't wait for Sunday.
 
-**BACKLOG → user-actions-tracker:** when a decision is made (not evaluated, decided), copy its *exactly-how* steps to the tracker. BACKLOG evolves; the tracker is stable and indexed. Once a setup is done, mark the tracker row ✅ — that closes the BACKLOG entry too.
+**BACKLOG → user-actions-tracker:** when a decision is made (not evaluated, decided), copy its *exactly-how* steps to the tracker. BACKLOG evolves; the tracker is stable and indexed. Once a setup is done, delete its section, collapse it to a `## Done` one-liner and repoint its table row at `#done` — that closes the BACKLOG entry too. A finished setup left as a full section is how the tracker rots.
 
 **Shared rules (forge):** CLAUDE.md summarizes them. When forge changes the rule, update the summary here on the next session. The source of truth is `forge/standards/anti-patterns.md` + `forge/references/CLAUDE.base.md`, not this copy.
