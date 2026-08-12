@@ -5,7 +5,8 @@ steps no script can take, because they happen in someone else's console behind
 someone else's login. Actionable steps only, no history — why a thing was
 decided lives in [`BACKLOG.md`](../BACKLOG.md); this file holds *exactly how*.
 
-Legend: ✅ done · 🟡 in progress (action left) · 📖 reference · 🔲 not started.
+Legend: ✅ done · 🟡 in progress (action left) · ⏸️ parked (decided, not now) ·
+📖 reference · 🔲 not started.
 
 **When a setup is finished, MOVE IT.** Delete its section, add a one-liner to
 [Done](#done), and repoint its row in the table below at `#done`. A finished
@@ -23,7 +24,7 @@ is the Circle relay ([Done](#done)).
 
 | Item | Status | What's left |
 |---|---|---|
-| [Repo back to private](#repo-back-to-private) | 🔲 | Sort org Actions billing, then flip visibility — repo is still **public** (checked 2026-08-11) |
+| [Repo back to private](#repo-back-to-private--parked) | ⏸️ | **Parked 2026-08-12 — stays public for now.** Nothing to do; steps kept for when you reopen it |
 | [EAS dev build](#eas-dev-build--gates-four-on-device-checks) | 🟡 | One build, then walk four on-device checks Expo Go cannot run |
 | [Publish to Google Play](#publish-to-google-play-indie-route) | 🔲 | Create the personal developer account ($25); steps land here once it exists |
 | [Device testing on Expo Go](#device-testing-on-expo-go) | 📖 | Reference only — no action outstanding |
@@ -32,19 +33,25 @@ is the Circle relay ([Done](#done)).
 
 ---
 
-## Repo back to private
+## Repo back to private — parked
 
-**Status:** 🔲 Still public — `gh repo view Tessellate-Studio/mood-layer` reads
-`PUBLIC` (checked 2026-08-11). Public since 2026-07-18, with zero forks and zero
-stars as of 2026-07-20.
+**Status:** ⏸️ **Deliberately parked 2026-08-12 — the repo stays public for
+now (user's call).** Not an oversight and not a to-do: re-open it when the IP
+in here starts to matter, or when the org's Actions budget stops being the
+thing that makes public attractive. Public since 2026-07-18, with zero forks
+and zero stars as of 2026-07-20.
 
-**What's left:** Two dashboard actions, in this order — billing first, because
-this repo's CI dies the moment it goes private if the org has no Actions budget.
-A public GitHub repo can always be viewed and forked on-platform under GitHub's
-Terms of Service; no license or setting prevents that, only private visibility.
-A proprietary `LICENSE` (all rights reserved) sits at the repo root meanwhile.
+**What's left:** Nothing, until you decide otherwise. The steps below are kept
+because the decision is reversible and the ordering is the part that's easy to
+get wrong — billing first, because this repo's CI dies the moment it goes
+private if the org has no Actions budget.
 
-**Steps:**
+Standing context for whenever it's reopened: a public GitHub repo can always be
+viewed and forked on-platform under GitHub's Terms of Service; no license or
+setting prevents that, only private visibility. A proprietary `LICENSE` (all
+rights reserved) sits at the repo root meanwhile.
+
+**Steps (when you reopen this):**
 
 1. **Sort org Actions billing.** github.com → **Tessellate-Studio → Settings →
    Billing and plans → Spending limits** → set a monthly Actions limit (e.g.
