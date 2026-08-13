@@ -171,13 +171,25 @@ between them.
 ### Hard rules (this app)
 
 - **Local-only data.** All user data lives on-device (zustand persist →
-  AsyncStorage). No accounts, no server, no analytics, no crash-reporting SDKs.
-  Sending emotional data anywhere is an anti-pattern until the user explicitly
-  decides otherwise (then it goes through the runbook + a privacy review).
-  **ONE sanctioned exception (user-decided 2026-07-18): the circle relay** —
-  the gated weekly summary (only), sealed on-device with nacl.box to a paired
-  peer's key, through the send-and-forget `moodlayer-relay` edge function.
-  Trust boundary + residual risks: `docs/SECURITY.md` → "Circle relay".
+  AsyncStorage). No accounts, no server, no analytics. Sending emotional data
+  anywhere is an anti-pattern until the user explicitly decides otherwise
+  (then it goes through the runbook + a privacy review). **TWO sanctioned
+  exceptions, both user-decided and both reviewed** — anything else still
+  needs that process, and "there is already an exception" is not a precedent.
+  **(1) The circle relay (2026-07-18)** — the gated weekly summary (only),
+  sealed on-device with nacl.box to a paired peer's key, through the
+  send-and-forget `moodlayer-relay` edge function. Trust boundary + residual
+  risks: `docs/SECURITY.md` → "Circle relay".
+  **(2) Opt-in crash reports (2026-08-13)** — Sentry, **off by default**,
+  started only by the Settings toggle. A report carries the shape of a failure
+  (type, message, stack, route names) and never its content: `user`, IP,
+  `request`, `extra`, `contexts.state` and every non-navigation breadcrumb are
+  stripped in `services/crashReporting.ts`, and
+  `src/__tests__/crashReporting.test.ts` is what holds that contract — treat a
+  failure there as a privacy regression, not a test to fix. Never attach app
+  state, entries or notes to an event; never enable reporting from anywhere
+  but the toggle. Decision: `memory/decisions/adr-001-crash-reporting.md`;
+  review: `docs/SECURITY.md` → "Crash reports".
 - **Typewriter ink, Atlas hues in two registers (user-locked 2026-07-08,
   extended 2026-07-13 — "layers you can tell apart").** Every colour comes from
   `src/constants/theme.ts`. Text, lines, buttons, and backgrounds stay

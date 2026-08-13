@@ -1,0 +1,123 @@
+# ---------------------------------------------------------------------------
+# Ops watchdog — the only runtime signal this repo has that does not depend on
+# a human noticing something.
+#
+# WHAT IT CHECKS, hourly:
+#   1. The circle relay is alive. POST an unknown action to the Supabase edge
+#      function and expect its dispatcher to answer `{"error":"unknown
+#      action"}`. Deliberately writes NOTHING: no invite, no message, no
+#      pairing — the probe never reaches a data path, needs no token, and
+#      cannot leave rows behind.
+#
+#      This matters more here than the endpoint count suggests. The relay is
+#      this app's ONLY server, it lives in ALATE's Supabase project (chosen
+#      2026-07-18 because a free-tier project pauses after ~1 week idle and
+#      alate's traffic keeps it awake — BACKLOG), and nothing in this repo has
+#      ever watched it. If alate goes quiet and the project pauses, circle
+#      delivery stops silently: sends fail into a catch, and the only person
+#      who finds out is a user whose weekly share never arrived.
+#
+# WHY A `schedule:` IS ALLOWED HERE NOW. relock.yml's header records the
+# 2026-07-18 removal of its weekly cron under forge's "CI spend" standard,
+# after the org burned its 2,000 included Actions minutes. That standard binds
+# PRIVATE repos: GitHub bills Actions minutes only for private repositories,
+# and this repo is PUBLIC again (the private flip was parked — PR #53,
+# docs/user-actions-tracker.md). Public-repo Actions are free and uncapped, so
+# this costs nothing from the shared pool. If the repo is ever flipped back to
+# private, delete this workflow or flip OPS_WATCHDOG_ENABLED off in the same
+# change — do not let it quietly eat the budget again.
+#
+# Hourly, not every 10 minutes: the failure this watches for (a paused
+# Supabase project) takes days to develop and hours to matter. ~24 runs/day of
+# a few seconds each.
+#
+# ALERTING: opens ONE `ops-alert` issue and does not duplicate while it is
+# open — the same shape as build-android-apk.yml's alert-on-failure job, which
+# exists because a deploy pipeline once failed silently for 18 days. The daily
+# crash-monitor task triages open issues in this repo, so an ops-alert lands
+# in a loop that already runs.
+#
+# INERT UNTIL ENABLED: the scheduled job is skipped (and occupies no runner)
+# until repo variable OPS_WATCHDOG_ENABLED == 'true'. A manual dispatch always
+# runs — that is how it gets verified before being switched on.
+# ---------------------------------------------------------------------------
+name: Ops watchdog
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+concurrency:
+  group: ops-watchdog
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    if: vars.OPS_WATCHDOG_ENABLED == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe the circle relay and alert on failure
+        uses: actions/github-script@v7
+        with:
+          script: |
+            // Same URL the app ships (src/services/circleRelay.ts). Not a
+            // secret — auth is the per-pairing bearer token, not the address.
+            const RELAY = 'https://ancuwmmivgdvommzigwv.supabase.co/functions/v1/moodlayer-relay';
+            const failures = [];
+
+            try {
+              const res = await fetch(RELAY, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                // An action the dispatcher does not know. Verified 2026-08-13:
+                // answers 400 {"error":"unknown action"} and touches no table.
+                body: JSON.stringify({ action: '__watchdog_probe__' }),
+              });
+              const text = await res.text();
+              if (!text.includes('unknown action')) {
+                failures.push(
+                  `relay: expected the dispatcher's "unknown action" reply, got HTTP ${res.status} — ${text.slice(0, 200)}`
+                );
+              }
+            } catch (e) {
+              failures.push(`relay: unreachable — ${e.message}`);
+            }
+
+            if (failures.length === 0) {
+              core.info('OK — circle relay alive (dispatcher answered, no data written)');
+              return;
+            }
+
+            const { data: open } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'ops-alert',
+              per_page: 1,
+            });
+            const detail = failures.map((f) => `- ${f}`).join('\n');
+            if (open.length === 0) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: 'Ops watchdog: circle relay probe failing',
+                labels: ['ops-alert'],
+                body:
+                  `The scheduled relay probe failed.\n\n${detail}\n\n` +
+                  `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\n` +
+                  `First thing to check: is the **alate** Supabase project paused? This ` +
+                  `function lives there (BACKLOG — free-tier projects pause after ~1 week ` +
+                  `idle). Circle delivery is down for every user while this is red. ` +
+                  `Close the issue once the probe is green; the watchdog opens a fresh one ` +
+                  `on the next failure.`,
+              });
+              core.info('Opened a new ops-alert issue.');
+            } else {
+              core.info(`ops-alert issue #${open[0].number} already open — not duplicating.`);
+            }
+            core.setFailed(`Probe failures:\n${detail}`);

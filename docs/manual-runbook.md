@@ -26,10 +26,84 @@ is the Circle relay ([Done](#done)).
 |---|---|---|
 | [Repo back to private](#repo-back-to-private--parked) | ⏸️ | **Parked 2026-08-12 — stays public for now.** Nothing to do; steps kept for when you reopen it |
 | [EAS dev build](#eas-dev-build--gates-four-on-device-checks) | 🟡 | One build, then walk four on-device checks Expo Go cannot run |
+| [Crash reporting go-live](#crash-reporting-go-live) | 🟡 | Create the Sentry project + set the DSN; the shipped code is inert until then |
+| [Ops watchdog](#ops-watchdog) | 🟡 | One dispatch to verify, then set `OPS_WATCHDOG_ENABLED=true` |
 | [Publish to Google Play](#publish-to-google-play-indie-route) | 🔲 | Create the personal developer account ($25); steps land here once it exists |
 | [Device testing on Expo Go](#device-testing-on-expo-go) | 📖 | Reference only — no action outstanding |
 | [Circle relay](#done) | ✅ | — |
 | [Pulse scoring dependency](#done) | ✅ | — |
+
+---
+
+## Crash reporting go-live
+
+**Status:** 🟡 Code shipped 2026-08-13 and deliberately **inert** — with no DSN
+configured, `crashReporting.ts` never initializes, so the app behaves exactly
+as it did before. Decision + privacy contract:
+`memory/decisions/adr-001-crash-reporting.md` and `docs/SECURITY.md` → "Crash
+reports".
+
+**What's left:** two steps, both yours — the Sentry org blocks members from
+creating projects (a 403 the loom rollout hit too).
+
+**Steps:**
+
+1. sentry.io → org `bot-h0` → **Create Project** → platform **React Native**,
+   name/slug **mood-layer**. Copy the DSN.
+2. Set it as `EXPO_PUBLIC_SENTRY_DSN`. It is a write-only ingest key, not a
+   secret — it ships inside the binary by design:
+   - local dev build: add `EXPO_PUBLIC_SENTRY_DSN=<dsn>` to `.env`
+   - EAS builds:
+     ```bash
+     eas env:create --name EXPO_PUBLIC_SENTRY_DSN --value <dsn> --environment production
+     ```
+     (repeat for `preview` if you test there)
+
+**Verify:**
+- [ ] In a dev/production build — **not** Expo Go, where the SDK is skipped by
+      design — turn "Send crash reports" **on** in Settings, force a crash, and
+      confirm the event lands in Sentry.
+- [ ] Inspect that event: no `user`, no IP, no `extra`, no state dump, only
+      navigation breadcrumbs. Anything more is a privacy regression — stop and
+      re-read `services/crashReporting.ts`.
+- [ ] With the toggle **off** (the default), nothing arrives at all.
+
+**Play listing:** this adds a "Crash logs — optional" entry to the data-safety
+form when you fill it in.
+
+---
+
+## Ops watchdog
+
+**Status:** 🟡 Workflow shipped 2026-08-13, inert until you switch it on.
+
+**What it is:** an hourly probe that the **circle relay** is alive — the app's
+only server, and one that lives in *alate's* Supabase project (it was put
+there so alate's traffic keeps the free tier awake). If that project ever
+pauses, circle delivery stops silently for everyone; nothing in this repo
+watched for that until now. The probe POSTs an unknown action and expects the
+dispatcher's `{"error":"unknown action"}` — it writes nothing and needs no
+token. On failure it opens one `ops-alert` issue, which the daily
+crash-monitor task already triages.
+
+**Steps:**
+
+1. Verify it before trusting it:
+   ```bash
+   gh workflow run ops-watchdog.yml --repo Tessellate-Studio/mood-layer
+   gh run list --repo Tessellate-Studio/mood-layer --workflow=ops-watchdog.yml --limit 1
+   ```
+2. Switch the schedule on:
+   ```bash
+   gh variable set OPS_WATCHDOG_ENABLED --repo Tessellate-Studio/mood-layer --body true
+   ```
+
+**Verify:**
+- [ ] The dispatched run is green and logs `OK — circle relay alive`.
+
+**If the repo ever goes back to private:** delete this workflow or set the
+variable to `false` in the same change — scheduled Actions are free on public
+repos only, and this repo has burned the org's minutes once before.
 
 ---
 
