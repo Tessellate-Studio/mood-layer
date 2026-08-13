@@ -6,16 +6,25 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import EmotionHelperSheet from '@/components/EmotionHelperSheet';
+import ScreenErrorBoundary from '@/components/ScreenErrorBoundary';
 import { FONT_ASSETS } from '@/constants/fontAssets';
 import { colors } from '@/constants/theme';
 import AppNavigator from '@/navigation/AppNavigator';
 import { navigate } from '@/navigation/navigationRef';
 import { registerCircleDelivery, runCircleDelivery } from '@/services/circleBackground';
+import { initCrashReporting } from '@/services/crashReporting';
 import { configureHandler, subscribeToNotificationTaps } from '@/services/notifications';
 import { syncCircleReminders, useCircleStore } from '@/store/circleStore';
 import { useHelperSheetStore } from '@/store/helperSheetStore';
+import { useSettingsStore } from '@/store/settingsStore';
 
 export default function App() {
+  // Resume crash reporting for someone who already opted in. Off by default
+  // and a no-op under Expo Go or without a DSN (services/crashReporting.ts).
+  React.useEffect(() => {
+    if (useSettingsStore.getState().crashReportingEnabled) initCrashReporting();
+  }, []);
+
   // The map's keys ARE the fontFamily strings used in theme.ts — kept in
   // src/constants/fontAssets.ts so a guardrail test can pin them to the theme
   // tokens (a drift means Android silently drops the typewriter face).
@@ -78,13 +87,19 @@ export default function App() {
   }
 
   return (
-    <GestureHandlerRootView style={styles.root}>
-      <SafeAreaProvider>
-        <AppNavigator />
-        <EmotionHelperSheet family={helperFamily} onClose={closeHelper} />
-        <StatusBar style="dark" backgroundColor={colors.paper} />
-      </SafeAreaProvider>
-    </GestureHandlerRootView>
+    // Root boundary. The per-screen Safe* wrappers in AppNavigator catch
+    // inside a screen; this catches everything they cannot — the navigator
+    // itself, the helper sheet host, the providers — which previously meant a
+    // white screen with no recovery and no report.
+    <ScreenErrorBoundary name="App">
+      <GestureHandlerRootView style={styles.root}>
+        <SafeAreaProvider>
+          <AppNavigator />
+          <EmotionHelperSheet family={helperFamily} onClose={closeHelper} />
+          <StatusBar style="dark" backgroundColor={colors.paper} />
+        </SafeAreaProvider>
+      </GestureHandlerRootView>
+    </ScreenErrorBoundary>
   );
 }
 

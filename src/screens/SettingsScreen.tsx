@@ -58,6 +58,8 @@ export default function SettingsScreen() {
   const setHapticsEnabled = useSettingsStore((s) => s.setHapticsEnabled);
   const reduceMotionOverride = useSettingsStore((s) => s.reduceMotionOverride);
   const setReduceMotionOverride = useSettingsStore((s) => s.setReduceMotionOverride);
+  const crashReportingEnabled = useSettingsStore((s) => s.crashReportingEnabled);
+  const setCrashReportingEnabled = useSettingsStore((s) => s.setCrashReportingEnabled);
   const [aboutOpen, setAboutOpen] = React.useState(false);
 
   const exportEverything = async () => {
@@ -187,6 +189,28 @@ export default function SettingsScreen() {
           </View>
           <Text style={styles.rowCaption}>
             Follows your system setting unless you turn this on.
+          </Text>
+        </View>
+
+        <View style={styles.sectionHeader}>
+          <SectionHeader family="sadness" label="Help fix problems" />
+        </View>
+        <View style={styles.rowGroup}>
+          <View style={styles.row}>
+            <Text style={styles.rowLabel}>Send crash reports</Text>
+            <Switch
+              testID="settings-crash-reporting"
+              accessibilityLabel="Send crash reports"
+              value={crashReportingEnabled}
+              onValueChange={setCrashReportingEnabled}
+              trackColor={{ false: colors.inkFaint, true: colors.inkSoft }}
+              thumbColor={colors.paperRaised}
+            />
+          </View>
+          <Text style={styles.rowCaption}>
+            Off unless you turn it on. Only the technical details of a crash are
+            sent — what broke and which screens you were on. What you record
+            here never leaves your phone.
           </Text>
         </View>
 

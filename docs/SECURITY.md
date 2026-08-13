@@ -4,11 +4,46 @@ Dependency alerts and security findings are triaged per the shared policy in
 `forge/standards/security-triage.md` (forge plugin). Each triaged item gets a row
 here: date → alert → disposition (fix / accept / not-applicable) → why.
 
-Privacy posture of this app (context for triage): **local-only, with ONE
-sanctioned exception**. All user data (emotion check-ins, journal text) stays
-on-device in AsyncStorage. No accounts, no analytics, no crash-reporting SDKs.
-Any dependency or change that would move emotional data off the device is a
-security/privacy finding by definition — see the hard rules in `CLAUDE.md`.
+Privacy posture of this app (context for triage): **local-only, with TWO
+sanctioned exceptions** (the circle relay, and opt-in crash reports — both
+reviewed below). All user data (emotion check-ins, journal text) stays
+on-device in AsyncStorage. No accounts, no analytics. Any dependency or change
+that would move emotional data off the device is a security/privacy finding by
+definition — see the hard rules in `CLAUDE.md`.
+
+## Crash reports — sanctioned exception #2 (privacy review, 2026-08-13)
+
+User-decided 2026-08-13, invoking the hard rule's own escape hatch ("until the
+user explicitly decides otherwise, then tracker + a privacy review"). Full
+reasoning and the rejected alternative (a local-only crash journal):
+`memory/decisions/adr-001-crash-reporting.md`.
+
+- **Off by default, opt-in only.** `settingsStore.crashReportingEnabled`
+  starts `false`; only the Settings toggle flips it. Off = the SDK never
+  initializes; turning it off closes the client immediately, not next launch.
+- **What leaves the phone (when on):** error type, message, stack trace, the
+  navigation trail as bare route names, and diagnostic device/OS/app contexts.
+  The shape of a failure.
+- **What never leaves, enforced in code:** `user` (no ids), IP
+  (`sendDefaultPii: false`), `request` (urls/headers — the relay bearer token
+  lives there), `extra`, `contexts.state` (a zustand dump would be the entire
+  journal), `server_name`, and every non-navigation breadcrumb — console and
+  network crumbs dropped outright, navigation crumbs keep the route name and
+  lose their params. Tracing, screenshots, view-hierarchy capture: all off.
+- **Enforcement is tests, not config claims:**
+  `src/__tests__/crashReporting.test.ts` asserts each line above. A regression
+  there breaks this review, loudly.
+- **Trust boundary:** Sentry (org `bot-h0`, EU region) receives the scrubbed
+  events. No DSN configured → the code is inert, so any build without
+  `EXPO_PUBLIC_SENTRY_DSN` behaves exactly as before this change.
+- **Expo Go:** skipped entirely (native module; importing it there is the
+  import-time crash class that red-screened the v1 launch).
+- **Residual risk (accepted):** an error message interpolating user text would
+  ship that text inside `exception.value`. No code does this today; scrub at
+  the throw site if one is added — a scrubber cannot tell which substring is
+  a feeling.
+- **Play Store:** needs a "Crash logs — optional" data-safety entry when the
+  listing is filled in (BACKLOG P2).
 
 ## Circle relay — the sanctioned exception (privacy review, 2026-07-18)
 
