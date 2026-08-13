@@ -11,6 +11,10 @@ standards:
   code:
     enforceComments: true
     maxFunctionLines: 60
+    # ASPIRATIONAL — nothing enforces this. Both `npm test` and ci.yml pass
+    # --no-coverage, so the number is never measured. It is the target to aim
+    # at when adding tests, not a gate that exists; making it real means
+    # dropping --no-coverage in CI and accepting the runtime cost.
     testCoverage: 70          # RN apps: unit-test logic, not pixels
 
   security:                   # the crown jewels — keep all on
@@ -39,8 +43,16 @@ automation:
     autoPR: false             # handled by the agent + branch rules / native auto-merge
     autoMerge: false
   hooks:
-    preCommit: true
-    commitMsg: true
+    # What is actually implemented as of 2026-08-13: a pre-PUSH hook
+    # (.husky/pre-push, tsc + jest), installed by `sh .husky/install.sh`.
+    # These two flags claimed pre-commit and commit-msg hooks that no file
+    # ever implemented — declared at scaffold time, never built. Set to what
+    # is true rather than quietly "fixed": commit-time checks on a suite this
+    # slow would make every commit painful, and the push gate catches the same
+    # breakage before anything leaves the machine.
+    preCommit: false
+    commitMsg: false
+    prePush: true
 
 customRules:
   naming:

@@ -45,7 +45,8 @@
           "cameraPermission": "The camera is only used to scan a circle invite QR from someone else's phone."
         }
       ],
-      "expo-background-task"
+      "expo-background-task",
+      "@sentry/react-native"
     ]
   }
 }

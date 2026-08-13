@@ -25,4 +25,17 @@ module.exports = {
   ],
   modulePathIgnorePatterns: ['<rootDir>/\\.claude/worktrees/', '<rootDir>/\\.worktrees/'],
   collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.d.ts', '!src/**/index.ts'],
+  // Jest's 5 s default is too tight for this suite's RTL screen renders. Under
+  // full-suite parallelism the workers contend and QuiltScreen — the heaviest
+  // render — intermittently blows the deadline: measured 2026-08-13 on an
+  // UNMODIFIED master, 3 failures, all "Exceeded timeout of 5000 ms", while
+  // the same file passes 10/10 in isolation (53 s for the file). A gate that
+  // fails for reasons unrelated to the diff is a gate people learn to re-run
+  // instead of read.
+  //
+  // This raises the deadline; it does not hide hangs — a genuinely stuck test
+  // still fails, just after 30 s instead of 5. If a test ever NEEDS this much
+  // time deterministically, that is a performance bug in the component, not a
+  // reason to raise it again.
+  testTimeout: 30000,
 };

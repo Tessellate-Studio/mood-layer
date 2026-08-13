@@ -1,10 +1,15 @@
-// Screen-level error boundary. Local-only app (hard rule, CLAUDE.md): errors
-// go to the console only — no Sentry, no Crashlytics, no network.
+// Screen-level error boundary. Errors always go to the console; they are ALSO
+// sent to Sentry, but only if the user turned crash reports on in Settings
+// (off by default) — reportError() no-ops otherwise, so this file needs no
+// consent check of its own. What gets sent is scrubbed to the shape of the
+// failure, never its content: services/crashReporting.ts + the privacy review
+// in docs/SECURITY.md.
 
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
+import { reportError } from '@/services/crashReporting';
 
 interface Props {
   /** Screen name, prefixed onto the console log so the source is obvious. */
@@ -25,6 +30,7 @@ export class ScreenErrorBoundary extends React.Component<Props, State> {
 
   componentDidCatch(error: Error, info: React.ErrorInfo): void {
     console.error('[screen-error]', this.props.name, error, info.componentStack);
+    reportError(error);
   }
 
   private handleRetry = (): void => {

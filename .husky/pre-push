@@ -1,0 +1,91 @@
+#!/bin/sh
+
+# The Mood Layer — pre-push gate.
+#
+# Runs what ci.yml's `test` job runs (tsc --noEmit, then jest), before the
+# push rather than after it. `.bp-config.yml` has declared `preCommit: true`
+# since the repo was scaffolded and nothing ever implemented it; this closes
+# that gap. alate's equivalent is described in its own docs as "the real CI
+# gate" — same idea, one package instead of three lanes.
+#
+# Escape hatches, both deliberate:
+#   git push --no-verify        skip this hook entirely
+#   SKIP_PREPUSH_TESTS=1 git push   tsc only (fast path for a docs-only push)
+#
+# NOT included: `npm audit --audit-level=critical`, which ci.yml also runs.
+# It needs the network, and a pre-push hook that fails on a flaky registry
+# teaches people to reach for --no-verify — which costs more than it saves.
+# CI keeps that one.
+
+set -e
+
+# ── §0 Worktree self-heal ────────────────────────────────────────────
+# hooksPath MUST stay relative (".husky"): git worktrees share repo config,
+# and a relative path resolves against each worktree's own root, so every
+# worktree runs its own checked-out hook. An absolute override makes every
+# worktree run the MAIN checkout's possibly-stale copy — the trap alate
+# documents in its own regression log.
+# `|| true` is load-bearing: git config exits 1 when the key is unset, and
+# under `set -e` a bare assignment from a failing command substitution kills
+# the script — silently, before the first echo. Caught on this hook's own
+# first run: every push was rejected with no output at all.
+WT_HOOKSPATH=$(git config --worktree core.hooksPath 2>/dev/null || true)
+if [ -n "$WT_HOOKSPATH" ] && [ "$WT_HOOKSPATH" != ".husky" ] && [ -f .husky/pre-push ]; then
+  git config --worktree core.hooksPath .husky
+  echo "🔁 hooksPath was '$WT_HOOKSPATH' — reset to relative '.husky'; re-running this worktree's own hook"
+  exec sh .husky/pre-push "$@"
+fi
+
+echo "🚀 pre-push: tsc + jest"
+
+# ── §1 Bootstrap check ───────────────────────────────────────────────
+if [ ! -d node_modules ]; then
+  echo "❌ node_modules missing — this worktree isn't bootstrapped."
+  echo "   Fix: npm ci"
+  exit 1
+fi
+
+# ── §2 Lockfile freshness ────────────────────────────────────────────
+# Only reinstall when package-lock.json actually changed since the last
+# successful check. npm writes node_modules/.package-lock.json at install
+# time, so a fresh worktree that was just bootstrapped is recognised as
+# current and skips a pointless 4-minute reinstall.
+#
+# `npm install`, not `npm ci`: ci DELETES node_modules and re-extracts it, and
+# on Windows that whole-tree wipe is the one npm operation that reliably trips
+# over a concurrent file handle (Defender, another session) — ENOTEMPTY, a
+# different package each time. install reconciles in place from the same
+# lockfile: same result, no wipe window.
+LOCK_CACHE="$(git rev-parse --git-dir)/.pre-push-lock-sha"
+LOCK_SHA=$(sha256sum package-lock.json | cut -d' ' -f1)
+NEED_INSTALL=0
+
+if [ -f "$LOCK_CACHE" ]; then
+  [ "$LOCK_SHA" != "$(cat "$LOCK_CACHE")" ] && NEED_INSTALL=1
+elif [ ! -f node_modules/.package-lock.json ] || [ package-lock.json -nt node_modules/.package-lock.json ]; then
+  NEED_INSTALL=1
+fi
+
+if [ "$NEED_INSTALL" -eq 1 ]; then
+  echo "📦 lockfile changed — reconciling dependencies"
+  npm install --ignore-scripts --no-audit --no-fund || {
+    echo "❌ dependency install failed"; exit 1;
+  }
+fi
+# Written BEFORE the checks: "are the deps on disk built from this lockfile"
+# is true regardless of what the test suite says next. Writing it only on a
+# green run means one unrelated test failure re-runs the whole install.
+echo "$LOCK_SHA" > "$LOCK_CACHE"
+
+# ── §3 Checks ────────────────────────────────────────────────────────
+echo "── tsc --noEmit"
+npx tsc --noEmit || { echo "❌ typecheck failed — push blocked"; exit 1; }
+
+if [ "${SKIP_PREPUSH_TESTS:-0}" = "1" ]; then
+  echo "⚠️  SKIP_PREPUSH_TESTS=1 — skipping jest"
+else
+  echo "── jest --no-coverage --ci"
+  npx jest --no-coverage --ci || { echo "❌ tests failed — push blocked"; exit 1; }
+fi
+
+echo "✅ pre-push checks passed"

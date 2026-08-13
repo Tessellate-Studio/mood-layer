@@ -14,6 +14,7 @@ Quick reference for where every doc lives and what it contains.
 | **Weekly digest** | [`WEEKLY_DIGEST.md`](./WEEKLY_DIGEST.md) | Weekly priority decisions (roadmap-pulse, rubric-sdk scoring, dependencies). Newest on top |
 | **Anti-patterns** | [`memory/project_anti_patterns.md`](./memory/project_anti_patterns.md) | Build guardrails (no data leaves device, no colour, no gamify, Reanimated mocking, SVG generation). Cross-link to forge/standards/anti-patterns.md |
 | **Regression log** | [`memory/project_regression_log.md`](./memory/project_regression_log.md) | Every bug (symptom → root → fix → test → lesson). Read before fixing anything familiar |
+| **Decisions** | [`memory/decisions/`](./memory/decisions/) | ADR / pitch / RFD records from `/forge:plan`, numbered by type (`adr-001-…`). Started 2026-08-13 with the crash-reporting decision |
 
 ---
 
@@ -39,7 +40,7 @@ Quick reference for where every doc lives and what it contains.
 
 ## What's NOT here (yet)
 
-- **User paths** — no `USER_PATHS.md` (add if happy/edge/uncovered-flow analysis exceeds a BACKLOG entry).
+- **User paths** — no `USER_PATHS.md` (add if happy/edge/uncovered-flow analysis exceeds a BACKLOG entry). `CLAUDE.md` still lists it as a planning doc; that is aspirational, not a claim it exists.
 - **Release roadmap** — no `RELEASE_V2.md` (add if major scope is in flight; today's scope: v0.2.0 shipped).
 - **Long-form planning** — no `backlog/` subdirectory (add when parked items need detail; today's items fit in BACKLOG.md).
 

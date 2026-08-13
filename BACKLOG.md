@@ -63,6 +63,12 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
   v0.2.0 device pass. Steps land in the manual runbook once the personal
   account exists. *Owner: user.* (Supersedes the 2026-07-12 "direct under
   Tessellate org, DUNS applied" decision.)
+  **Data-safety form (added 2026-08-13):** the listing must declare **"Crash
+  logs — collected, optional, not linked to identity"**. Opt-in crash
+  reporting shipped that day (`memory/decisions/adr-001-crash-reporting.md`),
+  and the form is the only place that fact becomes visible outside the app's
+  own Settings copy. Nothing else in the declaration changes: no analytics, no
+  accounts, and the circle relay carries only the user's own gated summary.
 
 ## Post-launch — verify after v0.2.0 is live
 

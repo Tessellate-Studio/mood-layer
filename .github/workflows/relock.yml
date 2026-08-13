@@ -22,6 +22,15 @@ name: Relock
 on:
   workflow_dispatch:
 
+# The push step needs write access, and the default token is read-only.
+# Without this the job runs, regenerates the lockfile correctly, and then dies
+# on `git push` with "Permission to … denied to github-actions[bot]" (403) —
+# which is what it did on its first real use, 2026-08-13, run 31687269714.
+# The workflow that exists to fix Windows/Linux lockfile drift had never
+# actually been able to commit its fix.
+permissions:
+  contents: write
+
 jobs:
   relock:
     runs-on: ubuntu-latest
