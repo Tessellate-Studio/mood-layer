@@ -25,7 +25,11 @@ set -e
 # worktree runs its own checked-out hook. An absolute override makes every
 # worktree run the MAIN checkout's possibly-stale copy — the trap alate
 # documents in its own regression log.
-WT_HOOKSPATH=$(git config --worktree core.hooksPath 2>/dev/null)
+# `|| true` is load-bearing: git config exits 1 when the key is unset, and
+# under `set -e` a bare assignment from a failing command substitution kills
+# the script — silently, before the first echo. Caught on this hook's own
+# first run: every push was rejected with no output at all.
+WT_HOOKSPATH=$(git config --worktree core.hooksPath 2>/dev/null || true)
 if [ -n "$WT_HOOKSPATH" ] && [ "$WT_HOOKSPATH" != ".husky" ] && [ -f .husky/pre-push ]; then
   git config --worktree core.hooksPath .husky
   echo "🔁 hooksPath was '$WT_HOOKSPATH' — reset to relative '.husky'; re-running this worktree's own hook"
