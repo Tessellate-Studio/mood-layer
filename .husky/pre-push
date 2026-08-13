@@ -51,11 +51,18 @@ fi
 # time, so a fresh worktree that was just bootstrapped is recognised as
 # current and skips a pointless 4-minute reinstall.
 #
-# `npm install`, not `npm ci`: ci DELETES node_modules and re-extracts it, and
-# on Windows that whole-tree wipe is the one npm operation that reliably trips
-# over a concurrent file handle (Defender, another session) — ENOTEMPTY, a
-# different package each time. install reconciles in place from the same
-# lockfile: same result, no wipe window.
+# `npm ci`, NOT `npm install` — reversed 2026-08-13, same day this hook
+# shipped, because `npm install` here silently REWROTE package-lock.json on
+# every run: on Windows it prunes optional wasm-platform entries that only
+# `npm ci` reads, so the hook was quietly authoring the exact lockfile
+# corruption of regression row 13 and sweeping it into whatever commit
+# followed. A gate that mutates tracked files is not a gate.
+#
+# The cost is real and accepted: `npm ci` DELETES node_modules and re-extracts,
+# and on Windows that wipe occasionally loses a race with Defender or another
+# session (ENOTEMPTY). That failure is LOUD and retryable; a corrupted lockfile
+# is silent and ships. The §2a freshness check means this runs only when the
+# lockfile actually changed, so most pushes never pay it.
 LOCK_CACHE="$(git rev-parse --git-dir)/.pre-push-lock-sha"
 LOCK_SHA=$(sha256sum package-lock.json | cut -d' ' -f1)
 NEED_INSTALL=0
@@ -67,10 +74,23 @@ elif [ ! -f node_modules/.package-lock.json ] || [ package-lock.json -nt node_mo
 fi
 
 if [ "$NEED_INSTALL" -eq 1 ]; then
-  echo "📦 lockfile changed — reconciling dependencies"
-  npm install --ignore-scripts --no-audit --no-fund || {
-    echo "❌ dependency install failed"; exit 1;
+  echo "📦 lockfile changed — installing from it (npm ci)"
+  npm ci --ignore-scripts --no-audit --no-fund || {
+    echo "⚠️  npm ci failed — retrying once (the tree-wipe race is transient)"
+    npm ci --ignore-scripts --no-audit --no-fund || {
+      echo "❌ dependency install failed. If this is ENOTEMPTY, just push again."
+      echo "   Do NOT 'fix' it with npm install — that prunes the lockfile (row 13)."
+      exit 1
+    }
   }
+fi
+
+# Belt and braces: if anything above still moved the lockfile, stop rather
+# than let a push carry a mutation nobody asked for.
+if ! git diff --quiet -- package-lock.json; then
+  echo "❌ package-lock.json was modified by the pre-push install — refusing to push."
+  echo "   Restore it (git checkout -- package-lock.json) and push again."
+  exit 1
 fi
 # Written BEFORE the checks: "are the deps on disk built from this lockfile"
 # is true regardless of what the test suite says next. Writing it only on a

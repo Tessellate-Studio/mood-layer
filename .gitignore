@@ -31,6 +31,14 @@ yarn-error.*
 *.pem
 
 # local env files
+# Plain `.env` is ignored too (added 2026-08-13). Expo's template covers only
+# `.env*.local`, leaving `.env` committable — and this app's first env var
+# arrived the same week (EXPO_PUBLIC_SENTRY_DSN). That one is a write-only
+# ingest key and harmless in a diff, but the next one may not be, and a repo
+# whose whole posture is "nothing leaves the device" should not ship a
+# committable secrets file. Values that must reach a build go through
+# EXPO_PUBLIC_* + `eas env:create`, never a tracked file.
+.env
 .env*.local
 
 # typescript

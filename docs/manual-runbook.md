@@ -26,7 +26,7 @@ is the Circle relay ([Done](#done)).
 |---|---|---|
 | [Repo back to private](#repo-back-to-private--parked) | ⏸️ | **Parked 2026-08-12 — stays public for now.** Nothing to do; steps kept for when you reopen it |
 | [EAS dev build](#eas-dev-build--gates-four-on-device-checks) | 🟡 | One build, then walk four on-device checks Expo Go cannot run |
-| [Crash reporting go-live](#crash-reporting-go-live) | 🟡 | Create the Sentry project + set the DSN; the shipped code is inert until then |
+| [Crash reporting go-live](#crash-reporting-go-live) | 🟡 | Project + local DSN done; the EAS env var waits for the first `eas build` |
 | [Ops watchdog](#ops-watchdog) | 🟡 | One dispatch to verify, then set `OPS_WATCHDOG_ENABLED=true` |
 | [Publish to Google Play](#publish-to-google-play-indie-route) | 🔲 | Create the personal developer account ($25); steps land here once it exists |
 | [Device testing on Expo Go](#device-testing-on-expo-go) | 📖 | Reference only — no action outstanding |
@@ -43,21 +43,27 @@ as it did before. Decision + privacy contract:
 `memory/decisions/adr-001-crash-reporting.md` and `docs/SECURITY.md` → "Crash
 reports".
 
-**What's left:** two steps, both yours — the Sentry org blocks members from
-creating projects (a 403 the loom rollout hit too).
+**What's left:** the EAS half, and it is **blocked on the first EAS build**,
+not on you doing anything today.
 
-**Steps:**
+1. ✅ **Sentry project** — created by the user 2026-08-13, `bot-h0/mood-layer`.
+2. ✅ **Local builds** — `EXPO_PUBLIC_SENTRY_DSN` written to `.env.local` in
+   the main checkout (2026-08-13). Deliberately `.env.local`, not `.env`:
+   `.gitignore` covers `.env*.local` but **not** plain `.env`, so a key put
+   there would be committed. The DSN itself is a write-only ingest key that
+   ships inside the binary anyway — the habit is what matters.
+3. 🚧 **EAS builds** — `eas env:create` fails with *"EAS project not
+   configured"*: this app has never been linked (`eas init` has never run,
+   consistent with the EAS dev-build item below). It will be linked the first
+   time you run a build, and **that is the moment to add the var**:
+   ```bash
+   eas env:create --name EXPO_PUBLIC_SENTRY_DSN --value <dsn> --environment production
+   ```
+   (repeat for `preview` if you test there). Get `<dsn>` from
+   `.env.local`, or sentry.io → mood-layer → Settings → Client Keys.
 
-1. sentry.io → org `bot-h0` → **Create Project** → platform **React Native**,
-   name/slug **mood-layer**. Copy the DSN.
-2. Set it as `EXPO_PUBLIC_SENTRY_DSN`. It is a write-only ingest key, not a
-   secret — it ships inside the binary by design:
-   - local dev build: add `EXPO_PUBLIC_SENTRY_DSN=<dsn>` to `.env`
-   - EAS builds:
-     ```bash
-     eas env:create --name EXPO_PUBLIC_SENTRY_DSN --value <dsn> --environment production
-     ```
-     (repeat for `preview` if you test there)
+   Until then, **EAS-built APKs have no DSN and report nothing** — the same
+   inert behaviour as before this feature. Only local dev builds report.
 
 **Verify:**
 - [ ] In a dev/production build — **not** Expo Go, where the SDK is skipped by
