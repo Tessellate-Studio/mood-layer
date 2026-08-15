@@ -1,20 +1,48 @@
 name: Build Android APK
 
+# Two triggers, two different outputs:
+#   - workflow_dispatch → arm64-only, debug-signed APK. The sideload path
+#     that has always existed; needs no secrets.
+#   - push of a `v*` tag → RELEASE path: all ABIs, signed with the upload
+#     keystore, produces APK + AAB, and uploads the AAB to Play Console's
+#     INTERNAL TESTING track. Ported from alate 2026-08-15.
+# Promoting internal → production stays a manual Play Console click, on
+# purpose — an automated pipeline should not be the first thing to push
+# this app to production.
+#
+# The release path FAILS CLOSED on missing secrets (see "Restore release
+# signing keystore"). Until ANDROID_KEYSTORE / KEYSTORE_PASSWORD /
+# KEY_PASSWORD / GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_B64 are set on this repo,
+# do not push a `v*` tag — the run will stop at the keystore step.
+# Setup steps: docs/manual-runbook.md → "Publish to Google Play".
+
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   build:
     runs-on: ubuntu-latest
     # First real run (29563745748, 2026-07-17) proved a cold RN 0.83 release
     # build does NOT fit in 45 min on a hosted runner — Gradle alone ran 44
-    # min before the timeout cancelled it. 90 gives cold builds room; the
-    # Gradle cache + single-ABI build below pull warm builds far under it.
-    timeout-minutes: 90
+    # min before the timeout cancelled it. 90 gave cold single-ABI builds room;
+    # the Gradle cache + single-ABI build below pull warm builds far under it.
+    #
+    # 2026-08-15: raised 90 → 120 because the release path (tag pushes) builds
+    # TWO ABIs plus bundleRelease, and a cold one of those against a 90-min cap
+    # would likely be killed at the last step — discarding a good build, which
+    # is exactly the failure alate's workflow header documents. This is a stall
+    # bound, not a performance target: nothing is spent unless it is hit.
+    timeout-minutes: 120
     env:
       # Secrets can't be referenced in a step's `if:` directly; this flag
       # lets the litmus-dispatch step skip cleanly while the PAT is unset.
       HAS_LITMUS_TOKEN: ${{ secrets.LITMUS_DISPATCH_TOKEN != '' }}
+      # "Is this a real release?" — read by the build step's shell and by
+      # every release-only step's `if:`. Tag pushes only.
+      IS_RELEASE: ${{ startsWith(github.ref, 'refs/tags/v') }}
 
     steps:
       - uses: actions/checkout@v7
@@ -47,13 +75,101 @@ jobs:
       - name: Expo prebuild (generate android/)
         run: npx expo prebuild --platform android --no-install
 
-      # arm64-v8a ONLY: this APK is sideloaded onto the user's own phone
-      # (arm64, like every Android released since ~2017) — compiling the
-      # other three ABIs quadruples native build time for nothing. Remove
-      # the -P flag if this ever needs to ship to a store or an x86 emulator.
-      - name: Build release APK (arm64-v8a)
+      - name: Restore release signing keystore
+        # RELEASE PATH ONLY. Fails closed if any release secret is missing —
+        # and does it HERE, right after prebuild, rather than at the step that
+        # needs each one. The Play service-account key is checked here too
+        # (it is not used until the very last step) because the alternative is
+        # discovering a missing secret after an hour of gradle: fail-fast on
+        # the whole set costs nothing, fail-late costs a full build.
+        #
+        # CI must never generate a keystore:
+        # CI must never generate a keystore. alate's CI did exactly that in
+        # 2026-04 — an `else` branch made a throwaway keystore, signed with
+        # a hardcoded password, and printed it base64 into the build log,
+        # leaking the signing key (alate anti-pattern #19). Bootstrapping an
+        # upload keystore is a deliberate, local, one-off action.
+        #
+        # Secrets are read via `env:`, never inlined as `${{ }}` in the
+        # script body, so a shell trace cannot surface the value.
+        #
+        # To populate the secrets (keystore must use alias `mood-layer`):
+        #   base64 -w0 mood-layer-release.keystore \
+        #     | gh secret set ANDROID_KEYSTORE -R Tessellate-Studio/mood-layer
+        if: env.IS_RELEASE == 'true'
+        env:
+          ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_B64: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_B64 }}
+        run: |
+          missing=
+          if [ -z "$ANDROID_KEYSTORE" ];  then missing="$missing ANDROID_KEYSTORE"; fi
+          if [ -z "$KEYSTORE_PASSWORD" ]; then missing="$missing KEYSTORE_PASSWORD"; fi
+          if [ -z "$KEY_PASSWORD" ];      then missing="$missing KEY_PASSWORD"; fi
+          if [ -z "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_B64" ]; then missing="$missing GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_B64"; fi
+          if [ -n "$missing" ]; then
+            echo "::error::Missing required signing secret(s):$missing"
+            echo "::error::Set them under Settings → Secrets and variables → Actions. CI does not generate keystores."
+            exit 1
+          fi
+          echo "$ANDROID_KEYSTORE" | base64 -d > android/app/mood-layer-release.keystore
+          echo "Release keystore restored from secret ($(wc -c < android/app/mood-layer-release.keystore) bytes)"
+
+      - name: Patch build.gradle to use the release keystore
+        # `expo prebuild` regenerates android/ on every run, so this append
+        # is re-applied each time rather than checked in. Passwords come
+        # straight from secrets — no hardcoded fallback, ever.
+        if: env.IS_RELEASE == 'true'
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          cat >> android/app/build.gradle << EOF
+
+          android.signingConfigs {
+            release {
+              storeFile = file("mood-layer-release.keystore")
+              storePassword = "$KEYSTORE_PASSWORD"
+              keyAlias = "mood-layer"
+              keyPassword = "$KEY_PASSWORD"
+            }
+          }
+          android.buildTypes.release.signingConfig = android.signingConfigs.release
+          EOF
+
+      # Dispatch builds stay arm64-v8a ONLY: that APK is sideloaded onto the
+      # user's own phone (arm64, like every Android released since ~2017), and
+      # compiling the other three ABIs quadruples native build time for
+      # nothing.
+      #
+      # A store release cannot take that shortcut — an arm64-only AAB silently
+      # excludes every armeabi-v7a device — but it does not need all four
+      # either: x86 and x86_64 are emulators and Chromebooks, neither of which
+      # this app targets. Two ABIs is the honest minimum for real phones, and
+      # halves the build against the timeout above. Add x86_64 here if
+      # Chromebook installs ever matter.
+      #
+      # Both artifacts come out of ONE gradle session (cheaper than two steps):
+      # Play has required AAB for new submissions since Aug 2021, and the APK
+      # stays for on-device QA.
+      - name: Build release artifacts
         working-directory: android
-        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
+        env:
+          # Gradle invokes the JS bundler internally during assembleRelease,
+          # and that is where babel-preset-expo inlines EXPO_PUBLIC_* reads
+          # into the Hermes bytecode — setting them on prebuild is not enough.
+          # Unset today (the secret does not exist yet), which just means the
+          # build ships with crash reporting inert: src/services/crashReporting.ts
+          # no-ops on an empty DSN, and the Settings toggle stays off-by-default
+          # regardless. Set the secret before the first Play release.
+          EXPO_PUBLIC_SENTRY_DSN: ${{ secrets.EXPO_PUBLIC_SENTRY_DSN }}
+        run: |
+          if [ "$IS_RELEASE" = "true" ]; then
+            ./gradlew assembleRelease bundleRelease --no-daemon -PreactNativeArchitectures=armeabi-v7a,arm64-v8a
+          else
+            ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
+          fi
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v7
@@ -61,6 +177,43 @@ jobs:
           name: mood-layer-apk
           path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30
+
+      - name: Upload AAB artifact (backup)
+        # Downloadable audit/fallback copy of the exact bundle the next step
+        # ships, in case the Play upload ever has to be done by hand.
+        if: env.IS_RELEASE == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: mood-layer-release.aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      - name: Restore Play Store service account key
+        # Presence was already asserted by the keystore step above, so this
+        # only decodes. To populate the secret locally:
+        #   base64 -w0 /path/to/play-service-account-key.json \
+        #     | gh secret set GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_B64 -R Tessellate-Studio/mood-layer
+        if: env.IS_RELEASE == 'true'
+        env:
+          GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_B64: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_B64 }}
+        run: |
+          echo "$GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_B64" | base64 -d > /tmp/play-service-account.json
+          echo "Play service account key restored"
+
+      - name: Release to Play Console (internal testing track)
+        # Deliberately `internal`, never `production` — see the header. Play
+        # rejects a bundle whose versionCode it has already seen, so bump
+        # `android.versionCode` in app.json before tagging (it is manual here:
+        # eas.json sets appVersionSource=local and this pipeline is bare
+        # gradle, so nothing auto-increments it).
+        if: env.IS_RELEASE == 'true'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJson: /tmp/play-service-account.json
+          packageName: com.tessellate.moodlayer
+          releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
+          track: internal
+          status: completed
 
       - name: Notify litmus (testing lab)
         # Fires litmus's E2E + rule-compliance workflows against this run's
