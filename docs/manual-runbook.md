@@ -28,7 +28,7 @@ is the Circle relay ([Done](#done)).
 | [EAS dev build](#eas-dev-build--gates-four-on-device-checks) | 🟡 | One build, then walk four on-device checks Expo Go cannot run |
 | [Crash reporting go-live](#crash-reporting-go-live) | 🟡 | Project + local DSN done; the EAS env var waits for the first `eas build` |
 | [Ops watchdog](#ops-watchdog) | 🟡 | One dispatch to verify, then set `OPS_WATCHDOG_ENABLED=true` |
-| [Publish to Google Play](#publish-to-google-play-indie-route) | 🔲 | Create the personal developer account ($25); steps land here once it exists |
+| [Publish to Google Play](#publish-to-google-play-indie-route) | 🔲 | Developer account ($25), then four repo secrets — CI already builds + uploads the AAB |
 | [Device testing on Expo Go](#device-testing-on-expo-go) | 📖 | Reference only — no action outstanding |
 | [Circle relay](#done) | ✅ | — |
 | [Pulse scoring dependency](#done) | ✅ | — |
@@ -196,28 +196,66 @@ SDK 53+ (regression-log #4), so anything notification-shaped no-ops there.
 
 **Status:** 🔲 No developer account yet. Not going the DUNS/org route — DUNS is
 for registered organisations and this ships as an individual.
+**The CI half is done** (2026-08-15): pushing a `v*` tag builds a signed
+phone-ABI AAB (`armeabi-v7a` + `arm64-v8a`) and uploads it to the
+internal-testing track
+([`build-android-apk.yml`](../.github/workflows/build-android-apk.yml), ported
+from alate). It fails closed on missing secrets, so **do not tag until steps
+1–4 below are done** — the run stops at the keystore step.
 
-**What's left:** Create the personal Google Play developer account ($25
-one-time). Concrete steps land in this section once it exists — the console
-flow depends on what the account offers on the day.
+**What's left:** The account ($25), an upload keystore, a Play service
+account, and four repo secrets.
 
 **Steps:**
 
 1. play.google.com/console → **Create developer account** → *Yourself* →
    pay the $25 one-time fee → complete identity verification.
-2. Plan for Google's requirement on individual accounts created since 2023: a
+2. Create the app under package `com.tessellate.moodlayer` (Play never lets
+   you change a package id later — alate had to make a fresh console app over
+   exactly this). Fill **App content → Data safety**; the crash-reporting
+   entry it needs is written up in [`SECURITY.md`](./SECURITY.md).
+3. Generate the upload keystore **locally** — CI will never do this, by
+   design (a leaked-key incident in alate is why). The alias must be
+   `mood-layer`; the workflow hardcodes it:
+   ```bash
+   keytool -genkeypair -v -keystore mood-layer-release.keystore -alias mood-layer -keyalg RSA -keysize 2048 -validity 10000
+   ```
+   Back the file up somewhere permanent — losing it means losing the ability
+   to update the app.
+4. Create a Play service account (Play Console → **Users and permissions** →
+   invite the Google Cloud service account, grant *Release to testing tracks*),
+   download its JSON key, then set the four secrets:
+   ```bash
+   base64 -w0 mood-layer-release.keystore | gh secret set ANDROID_KEYSTORE -R Tessellate-Studio/mood-layer
+   gh secret set KEYSTORE_PASSWORD -R Tessellate-Studio/mood-layer
+   gh secret set KEY_PASSWORD -R Tessellate-Studio/mood-layer
+   base64 -w0 play-service-account-key.json | gh secret set GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_B64 -R Tessellate-Studio/mood-layer
+   ```
+   Optional but worth doing before the first release: `EXPO_PUBLIC_SENTRY_DSN`
+   — without it the store build ships with crash reporting inert.
+5. Release: bump `android.versionCode` in `app.json` (Play rejects a
+   versionCode it has already seen — nothing auto-increments it here), then
+   tag:
+   ```bash
+   git tag v0.2.0 && git push origin v0.2.0
+   ```
+6. Plan for Google's requirement on individual accounts created since 2023: a
    **closed test with 12 testers running 14 continuous days** before production
    access unlocks. Recruit the testers before you need them.
-3. Until then the distribution channel is sideloading the CI APK — including for
-   circle members who want the peer-app sharing:
-   ```bash
-   gh workflow run build-android-apk.yml --ref master -R Tessellate-Studio/mood-layer
-   gh run download <run-id> && adb install -r <apk>
-   ```
+7. Promoting internal → **Production** stays a manual Play Console click, on
+   purpose. CI stops at internal.
+
+Until the account exists the distribution channel is sideloading the CI APK —
+including for circle members who want the peer-app sharing. A manual dispatch
+is unchanged by the above (arm64-only, debug-signed, no secrets needed):
+```bash
+gh workflow run build-android-apk.yml --ref master -R Tessellate-Studio/mood-layer
+```
 
 **Verify:**
 - [ ] The account exists and shows *verified* in Play Console
-- [ ] An internal-testing release accepts an upload
+- [ ] A `v*` tag run reaches "Release to Play Console" green
+- [ ] The build appears on the internal-testing track with the new versionCode
 
 ---
 
