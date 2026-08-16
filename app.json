@@ -24,7 +24,11 @@
       "package": "com.tessellate.moodlayer",
       "versionCode": 2,
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": true
+      "predictiveBackGestureEnabled": true,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -47,6 +51,12 @@
       ],
       "expo-background-task",
       "@sentry/react-native"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "89875025-f53e-45ad-a6c5-a498f5cc8a12"
+      }
+    },
+    "owner": "newbietrawler"
   }
 }

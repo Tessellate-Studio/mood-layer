@@ -164,6 +164,17 @@ jobs:
           # no-ops on an empty DSN, and the Settings toggle stays off-by-default
           # regardless. Set the secret before the first Play release.
           EXPO_PUBLIC_SENTRY_DSN: ${{ secrets.EXPO_PUBLIC_SENTRY_DSN }}
+          # REQUIRED, not optional (2026-08-16). @sentry/react-native's Gradle
+          # script adds a `…_SentryUpload_…` task that shells out to sentry-cli
+          # to push source maps. With no auth token it exits 1 and takes the
+          # WHOLE build down — `sentry.gradle` line 132 — which is exactly how
+          # the first Android build after adding Sentry died, here AND on EAS
+          # (regression row 15). That upload is deliberately unwanted: it costs
+          # a build-time credential and a network round-trip on every build, to
+          # buy readable stack traces we can live without. Crash REPORTING is
+          # unaffected; only symbolication is, so traces arrive minified.
+          # eas.json carries the same flag for cloud builds.
+          SENTRY_DISABLE_AUTO_UPLOAD: 'true'
         run: |
           if [ "$IS_RELEASE" = "true" ]; then
             ./gradlew assembleRelease bundleRelease --no-daemon -PreactNativeArchitectures=armeabi-v7a,arm64-v8a
