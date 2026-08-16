@@ -159,9 +159,19 @@ describe('computeStatsForWeek', () => {
   });
 
   it('counts distinct active days', () => {
-    const day1 = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7, 9, 0);
-    const day1b = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7, 20, 0);
-    const day2 = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6, 9, 0);
+    // Anchored to the MONDAY of the target week, not to `now - 7`. Two
+    // consecutive days are only in the same ISO week if the first one isn't a
+    // Sunday — `now - 7` and `now - 6` straddle the boundary every Sunday,
+    // which failed this test (and master's CI) on 2026-08-16. Monday and
+    // Tuesday always share a week, in every timezone.
+    const monday = new Date(
+      inWeek.getFullYear(),
+      inWeek.getMonth(),
+      inWeek.getDate() - ((inWeek.getDay() + 6) % 7)
+    );
+    const day1 = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate(), 9, 0);
+    const day1b = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate(), 20, 0);
+    const day2 = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 1, 9, 0);
     const result = computeStatsForWeek(
       [day1, day1b, day2].map((d) => checkIn(d.toISOString())),
       [],
