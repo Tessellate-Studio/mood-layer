@@ -58,7 +58,9 @@ The trust boundary, reviewed before code (BACKLOG P0 entry):
   to the recipient's public key. The relay stores an opaque `{nonce, box}`.
 - **Send-and-forget server:** Supabase edge function `moodlayer-relay`
   (alate project, dedicated `moodlayer` schema — NOT exposed via PostgREST;
-  the function talks to Postgres directly). Rows delete on fetch; unclaimed
+  the function talks to Postgres directly). Deployed with `verify_jwt` **OFF**
+  — the per-pairing bearer tokens below are the auth, so a redeploy that turns
+  it back on locks every paired device out. Rows delete on fetch; unclaimed
   invites expire at 48 h, unfetched messages at 14 days (inline sweeps).
 - **Identity:** device keypair in the OS secure store (`expo-secure-store`);
   pairing = QR/link invite handshake; auth = relay-minted per-pairing bearer

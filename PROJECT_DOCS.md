@@ -61,6 +61,6 @@ Quick reference for where every doc lives and what it contains.
 
 **WEEKLY_DIGEST:** appended automatically by roadmap-pulse. Trigger it manually if a decision is urgent and can't wait for Sunday.
 
-**BACKLOG → manual runbook:** when a decision is made (not evaluated, decided), copy its *exactly-how* steps to the runbook. BACKLOG evolves; the runbook is stable and indexed. Once a setup is done, delete its section, collapse it to a `## Done` one-liner and repoint its table row at `#done` — that closes the BACKLOG entry too. A finished setup left as a full section is how the runbook rots.
+**BACKLOG → manual runbook:** when a decision is made (not evaluated, decided), copy its *exactly-how* steps to the runbook. BACKLOG evolves; the runbook is stable and indexed. Once a setup is done, delete its section AND its table row — that closes the BACKLOG entry too. The runbook carries outstanding work only; the decision stays in BACKLOG and the steps stay in git. Keep a residual action, never a finished setup.
 
 **Shared rules (forge):** CLAUDE.md summarizes them. When forge changes the rule, update the summary here on the next session. The source of truth is `forge/standards/anti-patterns.md` + `forge/references/CLAUDE.base.md`, not this copy.
