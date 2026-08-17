@@ -20,6 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Line } from 'react-native-svg';
 
 import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
+import { CRASH_TEST_ENABLED } from '@/constants/devFlags';
 import LogoDivider from '@/components/LogoDivider';
 import PaperTexture from '@/components/PaperTexture';
 import SectionHeader from '@/components/SectionHeader';
@@ -59,6 +60,12 @@ export default function SettingsScreen() {
   const reduceMotionOverride = useSettingsStore((s) => s.reduceMotionOverride);
   const setReduceMotionOverride = useSettingsStore((s) => s.setReduceMotionOverride);
   const crashReportingEnabled = useSettingsStore((s) => s.crashReportingEnabled);
+  // Throwing during render is the only way to exercise ScreenErrorBoundary —
+  // see the comment on the trigger row below.
+  const [crashTest, setCrashTest] = React.useState(false);
+  if (crashTest) {
+    throw new Error('Test crash from Settings — verifying the crash pipeline end to end');
+  }
   const setCrashReportingEnabled = useSettingsStore((s) => s.setCrashReportingEnabled);
   const [aboutOpen, setAboutOpen] = React.useState(false);
 
@@ -212,6 +219,28 @@ export default function SettingsScreen() {
             sent — what broke and which screens you were on. What you record
             here never leaves your phone.
           </Text>
+          {/* Build-gated: EXPO_PUBLIC_ENABLE_CRASH_TEST is set on the EAS
+              development + preview environments and deliberately NOT on
+              production, so this row cannot reach a shipped app. It exists
+              because the crash pipeline could not be verified end-to-end
+              without it — the JS path (error boundary → reportError →
+              scrubEvent → Sentry) has no other trigger, and the native path
+              is switched off on purpose (ADR-001). Throwing from render, not
+              from onPress: React error boundaries only catch render and
+              lifecycle errors, so an onPress throw would sail straight past
+              ScreenErrorBoundary and prove nothing. */}
+          {CRASH_TEST_ENABLED ? (
+            <Pressable
+              testID="settings-crash-test"
+              accessibilityRole="button"
+              accessibilityLabel="Send a test crash"
+              style={styles.row}
+              onPress={() => setCrashTest(true)}
+            >
+              <Text style={styles.rowLabel}>Send a test crash</Text>
+              <Text style={styles.rowValue}>Dev only</Text>
+            </Pressable>
+          ) : null}
         </View>
 
         <View style={styles.sectionHeader}>
