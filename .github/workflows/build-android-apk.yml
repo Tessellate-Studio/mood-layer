@@ -83,7 +83,6 @@ jobs:
         # discovering a missing secret after an hour of gradle: fail-fast on
         # the whole set costs nothing, fail-late costs a full build.
         #
-        # CI must never generate a keystore:
         # CI must never generate a keystore. alate's CI did exactly that in
         # 2026-04 — an `else` branch made a throwaway keystore, signed with
         # a hardcoded password, and printed it base64 into the build log,
