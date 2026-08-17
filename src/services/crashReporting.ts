@@ -115,6 +115,24 @@ export function initCrashReporting(): void {
     dsn,
     // No IP, no device identifiers beyond the diagnostic contexts.
     sendDefaultPii: false,
+    // THE LOAD-BEARING LINE FOR THE PRIVACY CONTRACT (2026-08-17).
+    // A native crash is captured and transmitted by the Android/iOS SDK
+    // WITHOUT passing through the JS layer, so `beforeSend` — and therefore
+    // scrubEvent — never runs on it. Proven on a real device: a forced
+    // native crash reached Sentry carrying `user.id` and `user.geo`
+    // (city-level, derived from the request IP), while every unit test here
+    // passed, because they only ever exercised the JS path (regression 16).
+    //
+    // Disabling native crash handling is what makes the documented contract
+    // TRUE rather than aspirational: every event Sentry can now receive is a
+    // JS event, and every JS event goes through scrubEvent.
+    //
+    // The cost is accepted and recorded in ADR-001: native-only failures
+    // (OOM, ANR, a crash inside a native module) go unreported. This app's
+    // known crash class is JS — including the import-time failure that
+    // red-screened v1. Do NOT flip this back to widen coverage without
+    // redoing the privacy review; it silently widens what leaves the device.
+    enableNativeCrashHandling: false,
     // Performance/replay would sample screens and interactions — never for
     // this app.
     tracesSampleRate: 0,

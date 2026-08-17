@@ -30,6 +30,20 @@ reasoning and the rejected alternative (a local-only crash journal):
   journal), `server_name`, and every non-navigation breadcrumb — console and
   network crumbs dropped outright, navigation crumbs keep the route name and
   lose their params. Tracing, screenshots, view-hierarchy capture: all off.
+- **CORRECTION (2026-08-17), found by testing on a real device.** The
+  scrubbing claim above was true only for JS errors. A NATIVE crash is sent
+  by the Android/iOS SDK without passing through the JS layer, so
+  `beforeSend`/`scrubEvent` never ran on it — and a forced native crash
+  reached Sentry (issue MOOD-LAYER-1) carrying `user.id` and `user.geo`
+  (city-level, derived from the request IP). Every unit test passed while
+  that was shipping. **Fixed** by `enableNativeCrashHandling: false`, so
+  every event Sentry can receive is a JS event and therefore scrubbed;
+  native-only failures (OOM, ANR, native-module crashes) are consequently
+  NOT reported, which is the accepted trade (ADR-001). Regression row 16.
+- **Server-side residual, needs a human:** Sentry infers `user.geo` from the
+  request IP at ingest, regardless of what the SDK sends. Enable **Prevent
+  Storing of IP Addresses** in the project security settings, and delete the
+  MOOD-LAYER-1 event, which still holds that geo data.
 - **Enforcement is tests, not config claims:**
   `src/__tests__/crashReporting.test.ts` asserts each line above. A regression
   there breaks this review, loudly.

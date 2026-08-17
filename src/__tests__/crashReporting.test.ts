@@ -77,3 +77,50 @@ describe('scrubEvent — what must never leave the device', () => {
     expect(() => scrubEvent({ breadcrumbs: undefined, contexts: undefined } as any)).not.toThrow();
   });
 });
+
+// ── The boundary the JS scrubber CANNOT cross ────────────────────────
+// Verified against a real device event 2026-08-17 (Sentry MOOD-LAYER-1):
+// a NATIVE crash is captured and sent by the Android SDK without ever
+// entering the JS layer, so `beforeSend`/scrubEvent never ran — and the
+// event carried `user.id` and `user.geo` (city-level, from the IP). Every
+// test above passed while that shipped, because they only ever exercised
+// the JS path. The fix is to stop producing events the scrubber cannot
+// reach: with native crash handling off, EVERY event Sentry receives is a
+// JS event, and every JS event goes through scrubEvent.
+
+describe('init options — the contract holds only if all events are JS events', () => {
+  const realDsn = 'https://k@o1.ingest.de.sentry.io/1';
+
+  function initWith(): Record<string, any> | null {
+    jest.resetModules();
+    process.env.EXPO_PUBLIC_SENTRY_DSN = realDsn;
+    let captured: Record<string, any> | null = null;
+    jest.doMock('expo-constants', () => ({ appOwnership: null }));
+    jest.doMock('@sentry/react-native', () => ({
+      init: (opts: Record<string, any>) => { captured = opts; },
+      captureException: jest.fn(),
+      getClient: () => undefined,
+    }));
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    require('@/services/crashReporting').initCrashReporting();
+    return captured;
+  }
+
+  afterEach(() => {
+    delete process.env.EXPO_PUBLIC_SENTRY_DSN;
+    jest.dontMock('expo-constants');
+    jest.dontMock('@sentry/react-native');
+  });
+
+  it('disables native crash handling — native events bypass beforeSend entirely', () => {
+    expect(initWith()?.enableNativeCrashHandling).toBe(false);
+  });
+
+  it('keeps beforeSend wired, so the JS path is still scrubbed', () => {
+    expect(typeof initWith()?.beforeSend).toBe('function');
+  });
+
+  it('never sends default PII', () => {
+    expect(initWith()?.sendDefaultPii).toBe(false);
+  });
+});
