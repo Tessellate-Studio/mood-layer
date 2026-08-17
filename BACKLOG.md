@@ -21,8 +21,9 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
 
 - ~~**Circle: true auto-deliver to recipient (backend automation)**~~ —
   **decided, built and deployed 2026-07-18.** All five blocking decisions were
-  settled; the trust boundary is written up in `docs/SECURITY.md` → "Circle
-  relay" and the exact setup in `docs/manual-runbook.md` → "Circle relay".
+  settled; the trust boundary and the deployed shape are written up in
+  `docs/SECURITY.md` → "Circle relay". One residual action — the two-phone
+  pairing test — is tracked in `docs/manual-runbook.md`.
   Resolutions: **channel** = peer-app delivery (not email/SMS), QR pairing with
   on-device nacl.box encryption; **identity** = per-pairing bearer tokens, no
   accounts; **where** = the *alate* Supabase project, deliberately (free-tier

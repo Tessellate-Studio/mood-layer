@@ -8,15 +8,16 @@ decided lives in [`BACKLOG.md`](../BACKLOG.md); this file holds *exactly how*.
 Legend: ✅ done · 🟡 in progress (action left) · ⏸️ parked (decided, not now) ·
 📖 reference · 🔲 not started.
 
-**When a setup is finished, MOVE IT.** Delete its section, add a one-liner to
-[Done](#done), and repoint its row in the table below at `#done`. A finished
-setup left as a full section is the main way this file rots — it reads as
-outstanding work and buries the items that actually are. A small residual action
-is fine in Done; a whole section is not.
+**When a setup is finished, DELETE IT** — its section and its row, both. This
+file holds outstanding work only; a finished setup left behind reads as work
+and buries the items that actually are. The history is not lost: the decision
+lives in [`BACKLOG.md`](../BACKLOG.md), the steps stay in git. If a finished
+setup has a residual action, keep only that action, as its own row.
 
 Everything not listed here is local-only by design — no backend, auth,
 analytics, or crash-reporting to configure. The one sanctioned off-device path
-is the Circle relay ([Done](#done)).
+is the Circle relay (decision in [`BACKLOG.md`](../BACKLOG.md), trust boundary
+in [`SECURITY.md`](./SECURITY.md)).
 
 ---
 
@@ -29,9 +30,8 @@ is the Circle relay ([Done](#done)).
 | [Crash reporting go-live](#crash-reporting-go-live) | 🟡 | Project + local DSN done; the EAS env var waits for the first `eas build` |
 | [Ops watchdog](#ops-watchdog) | 🟡 | One dispatch to verify, then set `OPS_WATCHDOG_ENABLED=true` |
 | [Publish to Google Play](#publish-to-google-play-indie-route) | 🔲 | Developer account ($25), then four repo secrets — CI already builds + uploads the AAB |
+| [Circle pairing — two-phone test](#circle-pairing--the-two-phone-test) | 🟡 | The relay is live and curl-verified; never exercised across two real phones |
 | [Device testing on Expo Go](#device-testing-on-expo-go) | 📖 | Reference only — no action outstanding |
-| [Circle relay](#done) | ✅ | — |
-| [Pulse scoring dependency](#done) | ✅ | — |
 
 ---
 
@@ -259,6 +259,26 @@ gh workflow run build-android-apk.yml --ref master -R Tessellate-Studio/mood-lay
 
 ---
 
+## Circle pairing — the two-phone test
+
+**Status:** 🟡 Live since 2026-07-18, curl-verified end to end, never run across
+two real phones. Deployed shape: [`SECURITY.md`](./SECURITY.md) → "Circle relay".
+
+**What's left:** One real pairing between two devices.
+
+**Steps:**
+
+1. Install the APK on a second phone (build → download → `adb install -r`, as
+   in [Publish to Google Play](#publish-to-google-play-indie-route)).
+2. Phone A: Circle → the person → **pair it**. Phone B: scan the QR.
+3. Send a weekly summary from A.
+
+**Verify:**
+- [ ] The QR scan pairs both phones
+- [ ] The summary sent from A arrives on B
+
+---
+
 ## Device testing on Expo Go
 
 **Status:** 📖 Reference. **Nothing here is outstanding** — kept because the same
@@ -276,26 +296,3 @@ sits on the **Public** firewall profile.
    firewall is blocking 8081: allow inbound TCP 8081, mark the network Private,
    or run `expo start --tunnel`. Firewall changes and tunnels are
    security-sensitive — the user runs those, not the agent.
-
----
-
-## Done
-
-Kept as one-liners; expand only if one breaks.
-
-- **Circle relay (Supabase, alate project)** — ✅ (2026-07-18) schema `moodlayer`
-  (`invites`, `pairings`, `outbox`; RLS deny-all, not exposed via PostgREST) +
-  edge function `moodlayer-relay` v2 (`verify_jwt` OFF — per-pairing bearer
-  tokens are the auth). Endpoint, baked into the app as `RELAY_URL`, not a
-  secret: `https://ancuwmmivgdvommzigwv.supabase.co/functions/v1/moodlayer-relay`.
-  It rides on the **alate** Supabase project deliberately — a free-tier project
-  pauses after ~1 week idle and a two-user relay would pause constantly; alate's
-  traffic keeps it awake. Verified by curl round-trip: invite → claim →
-  invite-status → send → fetch (delete-on-read) → wrong-token 403 → unpair.
-  Privacy review: `docs/SECURITY.md` → "Circle relay". 🟡 Residual: the real
-  two-phone test (install the APK on a second phone, Circle → person → "pair
-  it", scan the QR across phones, send). Instant push pokes via FCM are
-  deliberately deferred — not needed for a daily/weekly rhythm.
-- **Pulse scoring dependency** — ✅ superseded 2026-07-17: rubric-sdk was merged
-  into `@tessellate-studio/forge` (PR #21, `07e84af`), which is the dependency in
-  `package.json` today. Scoring stays numeric via forge's `evaluateFromContext`.

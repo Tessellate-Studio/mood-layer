@@ -55,10 +55,11 @@ merging, bug-fixing), not just at session start:
 - **External-tool decisions** — decided setups go in
   [`docs/manual-runbook.md`](./docs/manual-runbook.md) with a fixed
   format: **What's left:** [one line] · **Steps:** [numbered, copy-pasteable] ·
-  **Verify:** [how to confirm it worked]. A finished setup MOVES to a `## Done`
-  one-liner — leaving it as a full section is how the file rots. History,
-  context and rejected options go in BACKLOG; the runbook holds exactly-how,
-  nothing else.
+  **Verify:** [how to confirm it worked]. A finished setup is DELETED — section
+  and table row both; keep only a residual action, if there is one. Leaving
+  finished work in the file is how it rots. History, context and rejected
+  options go in BACKLOG; the runbook holds outstanding exactly-how, nothing
+  else.
 - **Doc placement** — [`PROJECT_DOCS.md`](./PROJECT_DOCS.md) maps every doc
   type to its location. Platform rule: `forge/standards/doc-placement.md`.
 - **Standalone runbooks** — a procedure too big to sit as a section in the
