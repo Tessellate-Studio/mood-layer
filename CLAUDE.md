@@ -31,7 +31,13 @@ merging, bug-fixing), not just at session start:
 
 - **Branch placement** — task doesn't fit the current branch → cut
   `fix|feat|docs|chore/<slug>` off `master` automatically; don't ask.
-- **Merged branches** — rename to `done/<original>` after merge; never delete-on-merge.
+- **Merged branches** — delete on merge. Auto-delete is ON here
+  (`delete_branch_on_merge=true`, verified via `gh api repos/Tessellate-Studio/mood-layer`
+  2026-08-16), so there is nothing to do at merge and **nothing to restore
+  afterwards** — a merged branch stays recoverable at
+  `git fetch origin refs\pull\<n>\head`. Prune local leftovers with
+  `git branch -D` (squash merge means `-d` refuses). No `done/` renaming here.
+  Full rule: `forge/standards/workflows.md`.
 - **Merge on green** — PRs open ready (not draft), merge when CI passes
   (carve-outs in `forge/standards/anti-patterns.md`).
 - **Orphan-branch fixes** — port to a fresh branch off `master` automatically.
