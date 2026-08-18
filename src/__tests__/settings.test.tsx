@@ -224,3 +224,16 @@ describe('OnboardingScreen (polished)', () => {
     expect(mockReset).toHaveBeenCalledWith({ index: 0, routes: [{ name: 'Main' }] });
   });
 });
+
+// ── The test-crash trigger must never reach a shipped app ────────────
+// It exists only so the JS crash path can be verified end-to-end on a device
+// (ADR-001 switches native crash capture off, so nothing else produces a
+// scrubbed event). The gate lives in its own module read at build time, where
+// babel-preset-expo inlines EXPO_PUBLIC_* — a production bundle compiles the
+// row away rather than merely hiding it.
+describe('test-crash trigger gate', () => {
+  it('is ABSENT in the default (production) case', () => {
+    render(<SettingsScreen />);
+    expect(screen.queryByTestId('settings-crash-test')).toBeNull();
+  });
+});
