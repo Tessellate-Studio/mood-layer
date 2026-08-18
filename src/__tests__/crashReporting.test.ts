@@ -124,3 +124,23 @@ describe('init options — the contract holds only if all events are JS events',
     expect(initWith()?.sendDefaultPii).toBe(false);
   });
 });
+
+describe('scrubEvent — identity that hides outside `user`', () => {
+  it('drops contexts.device.id, the stable install uuid', () => {
+    // Real-event regression (MOOD-LAYER-2): with `user` deleted, the very
+    // same uuid still shipped as contexts.device.id. Diagnostics about the
+    // device stay; the thing that names the device does not.
+    const e = scrubEvent({
+      ...baseEvent(),
+      contexts: { device: { id: '22680dc617d34b9ea566d0e6fcda492d', model: 'Pixel 2 XL', battery_level: 64 } },
+    });
+    expect(e?.contexts?.device?.id).toBeUndefined();
+    expect(JSON.stringify(e)).not.toMatch(/22680dc6/);
+    // still useful for triage
+    expect(e?.contexts?.device?.model).toBe('Pixel 2 XL');
+  });
+
+  it('does not throw when contexts has no device', () => {
+    expect(() => scrubEvent({ ...baseEvent(), contexts: { os: { name: 'Android' } } })).not.toThrow();
+  });
+});

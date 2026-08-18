@@ -60,6 +60,14 @@ export function scrubEvent(event: SentryEvent | null): SentryEvent | null {
     // this app — that IS the journal. Device/OS/app contexts stay: they are
     // what makes a stack trace actionable.
     delete event.contexts.state;
+
+    // …and the device INSTALL ID, which is a stable per-install UUID, i.e.
+    // identity rather than diagnostics. Verified against a real event
+    // (MOOD-LAYER-2, 2026-08-18): deleting `event.user` alone did NOT remove
+    // it — the same uuid that had been `user.id` on the native crash simply
+    // reappeared as `contexts.device.id`. Stripping one field while its twin
+    // ships elsewhere is theatre, so remove it at the source too.
+    if (event.contexts.device) delete event.contexts.device.id;
   }
 
   if (Array.isArray(event.breadcrumbs)) {
