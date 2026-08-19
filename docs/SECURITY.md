@@ -40,10 +40,25 @@ reasoning and the rejected alternative (a local-only crash journal):
   every event Sentry can receive is a JS event and therefore scrubbed;
   native-only failures (OOM, ANR, native-module crashes) are consequently
   NOT reported, which is the accepted trade (ADR-001). Regression row 16.
-- **Server-side residual, needs a human:** Sentry infers `user.geo` from the
-  request IP at ingest, regardless of what the SDK sends. Enable **Prevent
-  Storing of IP Addresses** in the project security settings, and delete the
-  MOOD-LAYER-1 event, which still holds that geo data.
+- **ACCEPTED RESIDUAL — city-level geolocation (`user.geo`).** Sentry derives
+  it from the request IP inside its own ingest pipeline, and every available
+  control was tried and empirically failed to remove it, each verified against
+  a real delivered event:
+  1. `sendDefaultPii: false` in the SDK — geo still present.
+  2. **Prevent Storing of IP Addresses** (org + project) — geo still present;
+     the raw IP is dropped but the geography already derived from it is not.
+  3. An Advanced Data Scrubbing rule on `$user.geo` — geo still present
+     (event `431cb420…`, 2026-08-19). Scrubbing rules run against the event
+     **as the SDK submitted it**, and `user.geo` does not exist at that
+     point — the ingest pipeline adds it afterwards. A rule cannot remove a
+     field that is not there yet.
+
+  **Disposition: accepted.** What ships is country + city, on an opt-in-only
+  channel, with no user id, no IP stored, and no device id. City-level
+  coarseness is what most crash reporters emit by default. If this ever needs
+  to be zero, the remaining routes are a Sentry support request or a
+  self-hosted Relay in front of ingest — neither justified at this stage.
+  **Do not re-state in any doc that geo is stripped: it is not.**
 - **Enforcement is tests, not config claims:**
   `src/__tests__/crashReporting.test.ts` asserts each line above. A regression
   there breaks this review, loudly.
