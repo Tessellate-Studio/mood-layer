@@ -26,90 +26,10 @@ in [`SECURITY.md`](./SECURITY.md)).
 | Item | Status | What's left |
 |---|---|---|
 | [Repo back to private](#repo-back-to-private--parked) | ⏸️ | **Parked 2026-08-12 — stays public for now.** Nothing to do; steps kept for when you reopen it |
-| [EAS dev build](#eas-dev-build--gates-four-on-device-checks) | 🟡 | One build, then walk four on-device checks Expo Go cannot run |
-| [Crash reporting go-live](#crash-reporting-go-live) | 🟡 | Project + local DSN done; the EAS env var waits for the first `eas build` |
-| [Ops watchdog](#ops-watchdog) | 🟡 | One dispatch to verify, then set `OPS_WATCHDOG_ENABLED=true` |
+| [EAS build + on-device checks](#eas-build--on-device-checks) | 🟡 | Builds work; two notification checks still unwalked |
 | [Publish to Google Play](#publish-to-google-play-indie-route) | 🔲 | Developer account ($25), then four repo secrets — CI already builds + uploads the AAB |
 | [Circle pairing — two-phone test](#circle-pairing--the-two-phone-test) | 🟡 | The relay is live and curl-verified; never exercised across two real phones |
 | [Device testing on Expo Go](#device-testing-on-expo-go) | 📖 | Reference only — no action outstanding |
-
----
-
-## Crash reporting go-live
-
-**Status:** 🟡 Code shipped 2026-08-13 and deliberately **inert** — with no DSN
-configured, `crashReporting.ts` never initializes, so the app behaves exactly
-as it did before. Decision + privacy contract:
-`memory/decisions/adr-001-crash-reporting.md` and `docs/SECURITY.md` → "Crash
-reports".
-
-**What's left:** the EAS half, and it is **blocked on the first EAS build**,
-not on you doing anything today.
-
-1. ✅ **Sentry project** — created by the user 2026-08-13, `bot-h0/mood-layer`.
-2. ✅ **Local builds** — `EXPO_PUBLIC_SENTRY_DSN` written to `.env.local` in
-   the main checkout (2026-08-13). Deliberately `.env.local`, not `.env`:
-   `.gitignore` covers `.env*.local` but **not** plain `.env`, so a key put
-   there would be committed. The DSN itself is a write-only ingest key that
-   ships inside the binary anyway — the habit is what matters.
-3. 🚧 **EAS builds** — `eas env:create` fails with *"EAS project not
-   configured"*: this app has never been linked (`eas init` has never run,
-   consistent with the EAS dev-build item below). It will be linked the first
-   time you run a build, and **that is the moment to add the var**:
-   ```bash
-   eas env:create --name EXPO_PUBLIC_SENTRY_DSN --value <dsn> --environment production
-   ```
-   (repeat for `preview` if you test there). Get `<dsn>` from
-   `.env.local`, or sentry.io → mood-layer → Settings → Client Keys.
-
-   Until then, **EAS-built APKs have no DSN and report nothing** — the same
-   inert behaviour as before this feature. Only local dev builds report.
-
-**Verify:**
-- [ ] In a dev/production build — **not** Expo Go, where the SDK is skipped by
-      design — turn "Send crash reports" **on** in Settings, force a crash, and
-      confirm the event lands in Sentry.
-- [ ] Inspect that event: no `user`, no IP, no `extra`, no state dump, only
-      navigation breadcrumbs. Anything more is a privacy regression — stop and
-      re-read `services/crashReporting.ts`.
-- [ ] With the toggle **off** (the default), nothing arrives at all.
-
-**Play listing:** this adds a "Crash logs — optional" entry to the data-safety
-form when you fill it in.
-
----
-
-## Ops watchdog
-
-**Status:** 🟡 Workflow shipped 2026-08-13, inert until you switch it on.
-
-**What it is:** an hourly probe that the **circle relay** is alive — the app's
-only server, and one that lives in *alate's* Supabase project (it was put
-there so alate's traffic keeps the free tier awake). If that project ever
-pauses, circle delivery stops silently for everyone; nothing in this repo
-watched for that until now. The probe POSTs an unknown action and expects the
-dispatcher's `{"error":"unknown action"}` — it writes nothing and needs no
-token. On failure it opens one `ops-alert` issue, which the daily
-crash-monitor task already triages.
-
-**Steps:**
-
-1. Verify it before trusting it:
-   ```bash
-   gh workflow run ops-watchdog.yml --repo Tessellate-Studio/mood-layer
-   gh run list --repo Tessellate-Studio/mood-layer --workflow=ops-watchdog.yml --limit 1
-   ```
-2. Switch the schedule on:
-   ```bash
-   gh variable set OPS_WATCHDOG_ENABLED --repo Tessellate-Studio/mood-layer --body true
-   ```
-
-**Verify:**
-- [ ] The dispatched run is green and logs `OK — circle relay alive`.
-
-**If the repo ever goes back to private:** delete this workflow or set the
-variable to `false` in the same change — scheduled Actions are free on public
-repos only, and this repo has burned the org's minutes once before.
 
 ---
 
@@ -161,36 +81,39 @@ jurisdiction and classes if it ever becomes a priority.
 
 ---
 
-## EAS dev build — gates four on-device checks
+## EAS build + on-device checks
 
-**Status:** 🟡 `eas.json` is scaffolded (dev/preview/production) and EAS login is
-done. The build itself has never been run.
+**Status:** 🟡 **Builds work and install; two notification checks remain.**
+EAS is linked (`@newbietrawler/mood-layer`) and `preview` builds have been
+produced and installed on the Pixel 2 XL repeatedly (2026-08-17..19).
 
-**What's left:** One development build, installed on the phone, then walk the
-four checks Expo Go cannot run — `expo-notifications` was removed from Expo Go in
-SDK 53+ (regression-log #4), so anything notification-shaped no-ops there.
+Use `preview`, not `development`: the `development` profile sets
+`developmentClient: true` and refuses to build until `expo-dev-client` is
+installed, and it needs Metro attached to be useful. `preview` produces a
+standalone sideloadable APK — which is the distribution route anyway.
 
-**Steps:**
+```bash
+eas build --profile preview --platform android
+```
 
-1. Build and install:
-   ```bash
-   eas build --profile development --platform android
-   ```
-   Then install the resulting dev client on the phone.
-2. Walk the four checks:
-   - "Name it" reminders fire, and the notification deep-links into check-in.
-   - Circle scheduled-share reminders fire (circle service fns no-op under Expo
-     Go).
-   - The Phase-2 background relay wakes and the "a week arrived" notification
-     lands.
-   - The app icons look right on the launcher.
+**Walked and passing (2026-08-19):**
+- [x] The binary launches with the native Sentry module linked — the class
+      that red-screened v1 (regression #4)
+- [x] Crash reporting end to end: consent gate off by default, starts on the
+      toggle, persists across restart, JS crash reaches Sentry, payload
+      inspected against the privacy contract
+- [x] Launcher icon and splash look right
 
-**Verify:**
-- [ ] A reminder arrives with the app closed, and tapping it opens check-in
-- [ ] A scheduled circle share sends without the app being opened first
-- [ ] The launcher icon and splash match the intended art
+**Still unwalked — both need the app closed and real waiting, not a command:**
+- [ ] A "Name it" reminder fires with the app closed, and tapping it
+      deep-links into check-in
+- [ ] A scheduled circle share sends without the app being opened first, and
+      the background relay's "a week arrived" notification lands
 
----
+Expo Go cannot test either (`expo-notifications` was removed from Expo Go in
+SDK 53+, regression #4). **Grant the notification permission first** — the
+device context on the last Sentry event showed `POST_NOTIFICATIONS:
+not_granted`, so neither check can pass until that is allowed.
 
 ## Publish to Google Play (indie route)
 
