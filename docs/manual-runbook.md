@@ -27,7 +27,7 @@ in [`SECURITY.md`](./SECURITY.md)).
 |---|---|---|
 | [Repo back to private](#repo-back-to-private--parked) | ⏸️ | **Parked 2026-08-12 — stays public for now.** Nothing to do; steps kept for when you reopen it |
 | [EAS build + on-device checks](#eas-build--on-device-checks) | 🟡 | Builds work; two notification checks still unwalked |
-| [Publish to Google Play](#publish-to-google-play-indie-route) | 🔲 | Developer account ($25), then four repo secrets — CI already builds + uploads the AAB |
+| [Publish to Google Play](#publish-to-google-play-indie-route) | 🟡 | Account exists; needs an upload keystore, a Play service account and four repo secrets — CI already builds + uploads the AAB |
 | [Circle pairing — two-phone test](#circle-pairing--the-two-phone-test) | 🟡 | The relay is live and curl-verified; never exercised across two real phones |
 | [Device testing on Expo Go](#device-testing-on-expo-go) | 📖 | Reference only — no action outstanding |
 
@@ -111,14 +111,32 @@ eas build --profile preview --platform android
       the background relay's "a week arrived" notification lands
 
 Expo Go cannot test either (`expo-notifications` was removed from Expo Go in
-SDK 53+, regression #4). **Grant the notification permission first** — the
-device context on the last Sentry event showed `POST_NOTIFICATIONS:
-not_granted`, so neither check can pass until that is allowed.
+SDK 53+, regression #4).
+
+**Nothing needs granting on this phone.** An earlier version of this section
+said `POST_NOTIFICATIONS` had to be allowed first; that was wrong, and wrong in
+a way worth remembering — the permission is in the manifest, so it reads as
+outstanding, but it is an Android 13+ (API 33) runtime permission and the
+Pixel 2 XL runs Android 11 (SDK 30). On this device it is inert:
+
+```bash
+adb shell dumpsys package com.tessellate.moodlayer | sed -n '/runtime permissions:/,/^$/p'
+```
+
+`POST_NOTIFICATIONS` appears under *requested permissions* but not under
+*runtime permissions*, and `adb shell cmd appops get com.tessellate.moodlayer
+POST_NOTIFICATION` reports `Default mode: allow` — so notifications are on
+unless they were switched off in App info → Notifications, which is where
+Android ≤12 keeps them; they are not on the App permissions screen at all.
+Both checks can be walked as they stand. On an Android 13+ device the in-app
+prompt ([`notifications.ts:83`](../src/services/notifications.ts#L83)) has to
+be accepted first.
 
 ## Publish to Google Play (indie route)
 
-**Status:** 🔲 No developer account yet. Not going the DUNS/org route — DUNS is
-for registered organisations and this ships as an individual.
+**Status:** 🟡 Developer account exists (confirmed 2026-08-20). Not the
+DUNS/org route — DUNS is for registered organisations and this ships as an
+individual.
 **The CI half is done** (2026-08-15): pushing a `v*` tag builds a signed
 phone-ABI AAB (`armeabi-v7a` + `arm64-v8a`) and uploads it to the
 internal-testing track
@@ -126,13 +144,13 @@ internal-testing track
 from alate). It fails closed on missing secrets, so **do not tag until steps
 1–4 below are done** — the run stops at the keystore step.
 
-**What's left:** The account ($25), an upload keystore, a Play service
-account, and four repo secrets.
+**What's left:** An upload keystore, a Play service account, and four repo
+secrets — step 1 is done.
 
 **Steps:**
 
-1. play.google.com/console → **Create developer account** → *Yourself* →
-   pay the $25 one-time fee → complete identity verification.
+1. ~~play.google.com/console → **Create developer account** → *Yourself* →
+   pay the $25 one-time fee → complete identity verification.~~ **Done.**
 2. Create the app under package `com.tessellate.moodlayer` (Play never lets
    you change a package id later — alate had to make a fresh console app over
    exactly this). Fill **App content → Data safety**; the crash-reporting
