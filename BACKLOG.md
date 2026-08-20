@@ -58,12 +58,15 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
   **Re-decided 2026-07-18 — the org/DUNS route is OFF.** DUNS is for registered
   organizations; publishing happens as an **individual** instead: a personal
   Google Play developer account ($25 one-time), then Google's 2023+ individual
-  requirement of a **12-tester / 14-day closed test** before production. Until
-  that account exists, sideloading the CI APK stays the distribution — including
-  for circle members who want the peer-app pairing. Still depends on a clean
-  v0.2.0 device pass. Steps land in the manual runbook once the personal
-  account exists. *Owner: user.* (Supersedes the 2026-07-12 "direct under
-  Tessellate org, DUNS applied" decision.)
+  requirement of a **12-tester / 14-day closed test** before production. The
+  personal account now exists (confirmed 2026-08-20) and CI already builds +
+  uploads the AAB — but **parked (user's call, 2026-08-19)**: not the current
+  focus, so the remaining setup (upload keystore, Play service account, four
+  repo secrets) isn't being worked. Until it's resumed, sideloading the CI APK
+  stays the distribution — including for circle members who want the peer-app
+  pairing. Exact steps for resuming: manual runbook →
+  "Publish to Google Play (indie route) — parked". *Owner: user.* (Supersedes
+  the 2026-07-12 "direct under Tessellate org, DUNS applied" decision.)
   **Data-safety form (added 2026-08-13):** the listing must declare **"Crash
   logs — collected, optional, not linked to identity"**. Opt-in crash
   reporting shipped that day (`memory/decisions/adr-001-crash-reporting.md`),
