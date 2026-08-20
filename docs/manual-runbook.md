@@ -27,7 +27,7 @@ in [`SECURITY.md`](./SECURITY.md)).
 |---|---|---|
 | [Repo back to private](#repo-back-to-private--parked) | ⏸️ | **Parked 2026-08-12 — stays public for now.** Nothing to do; steps kept for when you reopen it |
 | [EAS build + on-device checks](#eas-build--on-device-checks) | 🟡 | Builds work; two notification checks still unwalked |
-| [Publish to Google Play](#publish-to-google-play-indie-route) | 🟡 | Account exists; needs an upload keystore, a Play service account and four repo secrets — CI already builds + uploads the AAB |
+| [Publish to Google Play](#publish-to-google-play-indie-route--parked) | ⏸️ | **Parked — not the focus right now.** Account exists, CI already builds + uploads the AAB; steps kept for when you resume |
 | [Circle pairing — two-phone test](#circle-pairing--the-two-phone-test) | 🟡 | The relay is live and curl-verified; never exercised across two real phones |
 | [Device testing on Expo Go](#device-testing-on-expo-go) | 📖 | Reference only — no action outstanding |
 
@@ -132,22 +132,22 @@ Both checks can be walked as they stand. On an Android 13+ device the in-app
 prompt ([`notifications.ts:83`](../src/services/notifications.ts#L83)) has to
 be accepted first.
 
-## Publish to Google Play (indie route)
+## Publish to Google Play (indie route) — parked
 
-**Status:** 🟡 Developer account exists (confirmed 2026-08-20). Not the
-DUNS/org route — DUNS is for registered organisations and this ships as an
-individual.
-**The CI half is done** (2026-08-15): pushing a `v*` tag builds a signed
-phone-ABI AAB (`armeabi-v7a` + `arm64-v8a`) and uploads it to the
-internal-testing track
+**Status:** ⏸️ **Deliberately parked (user's call) — not the focus right
+now.** Not an oversight and not a to-do: resume when Google Play distribution
+actually matters. Developer account exists (confirmed 2026-08-20) and the CI
+half is done (2026-08-15) — pushing a `v*` tag builds a signed phone-ABI AAB
+(`armeabi-v7a` + `arm64-v8a`) and uploads it to the internal-testing track
 ([`build-android-apk.yml`](../.github/workflows/build-android-apk.yml), ported
 from alate). It fails closed on missing secrets, so **do not tag until steps
-1–4 below are done** — the run stops at the keystore step.
+2–4 below are done** — the run stops at the keystore step.
 
-**What's left:** An upload keystore, a Play service account, and four repo
-secrets — step 1 is done.
+**What's left:** Nothing, until you decide to resume. The steps below are
+kept for when you do: an upload keystore, a Play service account, and four
+repo secrets — step 1 (the account) is already done.
 
-**Steps:**
+**Steps (when you resume):**
 
 1. ~~play.google.com/console → **Create developer account** → *Yourself* →
    pay the $25 one-time fee → complete identity verification.~~ **Done.**
@@ -186,9 +186,9 @@ secrets — step 1 is done.
 7. Promoting internal → **Production** stays a manual Play Console click, on
    purpose. CI stops at internal.
 
-Until the account exists the distribution channel is sideloading the CI APK —
-including for circle members who want the peer-app sharing. A manual dispatch
-is unchanged by the above (arm64-only, debug-signed, no secrets needed):
+While parked, the distribution channel is sideloading the CI APK — including
+for circle members who want the peer-app sharing. A manual dispatch is
+unchanged by the above (arm64-only, debug-signed, no secrets needed):
 ```bash
 gh workflow run build-android-apk.yml --ref master -R Tessellate-Studio/mood-layer
 ```
@@ -209,8 +209,11 @@ two real phones. Deployed shape: [`SECURITY.md`](./SECURITY.md) → "Circle rela
 
 **Steps:**
 
-1. Install the APK on a second phone (build → download → `adb install -r`, as
-   in [Publish to Google Play](#publish-to-google-play-indie-route)).
+1. Install the APK on a second phone:
+   ```bash
+   gh workflow run build-android-apk.yml --ref master -R Tessellate-Studio/mood-layer
+   gh run download <run-id> --name mood-layer-apk && adb install -r <apk>
+   ```
 2. Phone A: Circle → the person → **pair it**. Phone B: scan the QR.
 3. Send a weekly summary from A.
 
