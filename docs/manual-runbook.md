@@ -26,9 +26,9 @@ in [`SECURITY.md`](./SECURITY.md)).
 | Item | Status | What's left |
 |---|---|---|
 | [Repo back to private](#repo-back-to-private--parked) | ⏸️ | **Parked 2026-08-12 — stays public for now.** Nothing to do; steps kept for when you reopen it |
-| [EAS build + on-device checks](#eas-build--on-device-checks) | 🟡 | Builds work; two notification checks still unwalked |
+| [EAS build + on-device checks](#eas-build--on-device-checks) | 🟡 | Both notification checks walked 2026-08-20; two defects filed ([#73](https://github.com/Tessellate-Studio/mood-layer/issues/73), [#74](https://github.com/Tessellate-Studio/mood-layer/issues/74)) |
 | [Publish to Google Play](#publish-to-google-play-indie-route--parked) | ⏸️ | **Parked — not the focus right now.** Account exists, CI already builds + uploads the AAB; steps kept for when you resume |
-| [Circle pairing — two-phone test](#circle-pairing--the-two-phone-test) | 🟡 | The relay is live and curl-verified; never exercised across two real phones |
+| [Circle pairing — two-phone test](#circle-pairing--the-two-phone-test) | 🟢 | Walked 2026-08-20 against the live relay with a scripted stand-in peer — invite, claim, seal, send, receive, decrypt. Two real handsets remain untried, but nothing now depends on that |
 | [Device testing on Expo Go](#device-testing-on-expo-go) | 📖 | Reference only — no action outstanding |
 
 ---
@@ -104,11 +104,29 @@ eas build --profile preview --platform android
       inspected against the privacy contract
 - [x] Launcher icon and splash look right
 
-**Still unwalked — both need the app closed and real waiting, not a command:**
-- [ ] A "Name it" reminder fires with the app closed, and tapping it
-      deep-links into check-in
-- [ ] A scheduled circle share sends without the app being opened first, and
-      the background relay's "a week arrived" notification lands
+**Walked 2026-08-20 — both, on the CI-signed APK:**
+- [x] A "Name it" reminder fires with the app closed — verified twice (17:00
+      and 18:00). The app was killed with `am kill`, not force-stop, which
+      matters: force-stop cancels the alarm and the test would pass vacuously
+- [ ] …and tapping it deep-links into check-in — **fails**
+      ([#73](https://github.com/Tessellate-Studio/mood-layer/issues/73)). It
+      lands on Layers. `navigate()` is called before the navigator mounts and
+      is silently dropped; confirmed by contrast — the same notification tapped
+      with the app already open goes to check-in correctly
+- [x] A scheduled circle share sends without the app being opened first —
+      the background job sealed and posted a summary, and the peer decrypted it
+- [x] The relay's "a week arrived" notification lands — though on the wrong
+      channel, at the wrong importance
+      ([#74](https://github.com/Tessellate-Studio/mood-layer/issues/74))
+
+**The two-phone dependency is gone.** `scratchpad/peer` in the 2026-08-20
+session held a ~90-line script that speaks the relay's wire protocol: it
+decodes the invite QR straight out of an `adb` screenshot, claims the pairing,
+and does real `nacl.box` sealing against the device's public key. Nothing
+mocked — the deployed edge function, real crypto, and the relay confirmed the
+device's key matched the QR. Rebuild it from
+[`circleRelay.ts`](../src/services/circleRelay.ts) if it is needed again; the
+four actions are `invite`, `claim`, `send`, `fetch`.
 
 Expo Go cannot test either (`expo-notifications` was removed from Expo Go in
 SDK 53+, regression #4).
