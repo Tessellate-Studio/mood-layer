@@ -9,8 +9,10 @@ import {
   configureHandler,
   ensureChannel,
   ensurePermissions,
+  notifyCircleReceived,
   rescheduleCircle,
   rescheduleNameIt,
+  subscribeToNotificationTaps,
 } from '@/services/notifications';
 import type { CirclePerson, NameItSettings } from '@/types/models';
 
@@ -172,5 +174,65 @@ describe('configureHandler / ensureChannel', () => {
       'name-it',
       expect.any(Object)
     );
+  });
+});
+
+describe('notifyCircleReceived', () => {
+  // Regression row 22: the channel was created and then never attached, so
+  // every arrival landed on expo's fallback channel at HIGH importance —
+  // heads-up, when the whole point of this notification is to be quiet.
+  // On Android the channel travels on the TRIGGER, not the content.
+  it("delivers on the circle channel, not expo's fallback", async () => {
+    await notifyCircleReceived(['Ada']);
+
+    expect(Notifications.setNotificationChannelAsync).toHaveBeenCalledWith(
+      'circle',
+      expect.objectContaining({ importance: Notifications.AndroidImportance.DEFAULT })
+    );
+    const [[arg]] = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+    expect(arg.trigger).toEqual({ channelId: 'circle' });
+  });
+
+  it('creates the channel BEFORE scheduling — a trigger naming a channel that does not exist yet still falls back', async () => {
+    await notifyCircleReceived(['Ada']);
+    const channelOrder = (Notifications.setNotificationChannelAsync as jest.Mock).mock
+      .invocationCallOrder[0];
+    const scheduleOrder = (Notifications.scheduleNotificationAsync as jest.Mock).mock
+      .invocationCallOrder[0];
+    expect(channelOrder).toBeLessThan(scheduleOrder);
+  });
+
+  it('names who, never what', async () => {
+    await notifyCircleReceived(['Ada', 'Grace']);
+    const [[arg]] = (Notifications.scheduleNotificationAsync as jest.Mock).mock.calls;
+    expect(arg.content.title).toBe('A week from Ada and Grace arrived');
+    expect(arg.content.data).toEqual({ route: 'Circle' });
+  });
+});
+
+describe('subscribeToNotificationTaps', () => {
+  // Now that navigate() QUEUES instead of dropping (row 21), a cold-start
+  // response that expo keeps around would deep-link on a LATER ordinary
+  // launch — a bug the old dropped-on-the-floor behaviour hid. Clear it once
+  // it has been handed over.
+  it('clears the cold-start response after delivering it', async () => {
+    const response = { notification: { request: { content: { data: { route: 'CheckInFlow' } } } } };
+    (Notifications.getLastNotificationResponseAsync as jest.Mock).mockResolvedValueOnce(response);
+
+    const onData = jest.fn();
+    subscribeToNotificationTaps(onData);
+    await new Promise((r) => setImmediate(r));
+
+    expect(onData).toHaveBeenCalledWith({ route: 'CheckInFlow' });
+    expect(Notifications.clearLastNotificationResponseAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not clear when the app was not launched by a tap', async () => {
+    (Notifications.getLastNotificationResponseAsync as jest.Mock).mockResolvedValueOnce(null);
+
+    subscribeToNotificationTaps(jest.fn());
+    await new Promise((r) => setImmediate(r));
+
+    expect(Notifications.clearLastNotificationResponseAsync).not.toHaveBeenCalled();
   });
 });

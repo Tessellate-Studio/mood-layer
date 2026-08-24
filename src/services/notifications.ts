@@ -124,7 +124,7 @@ export async function ensureCircleChannel(): Promise<void> {
   const Notifications = getNotifications();
   if (!Notifications) return;
   await Notifications.setNotificationChannelAsync(CIRCLE_CHANNEL_ID, {
-    name: 'Circle share reminders',
+    name: 'Circle',
     importance: Notifications.AndroidImportance.DEFAULT,
     sound: null,
   });
@@ -147,7 +147,11 @@ export async function notifyCircleReceived(names: string[]): Promise<void> {
       body: 'Open your circle whenever you are ready.',
       data: { route: 'Circle' },
     },
-    trigger: null, // now
+    // ChannelAwareTriggerInput: delivers immediately, like `trigger: null`, but
+    // ON OUR CHANNEL. `null` carries no channelId, so every arrival used to land
+    // on expo's fallback channel at HIGH importance — a heads-up banner for a
+    // notification whose entire intent is to be quiet (regression row 22).
+    trigger: { channelId: CIRCLE_CHANNEL_ID },
   });
 }
 
@@ -235,9 +239,20 @@ export function subscribeToNotificationTaps(
     onData(r.notification.request.content.data);
   });
 
-  // Cold start: app launched by tapping a reminder.
-  void Notifications.getLastNotificationResponseAsync().then((r) => {
-    if (r) onData(r.notification.request.content.data);
+  // Cold start: app launched by tapping a reminder. Clear it once handed over
+  // — expo keeps the last response for the session, and now that navigate()
+  // QUEUES rather than drops (navigationRef.ts), a leftover response would
+  // deep-link on some later ordinary launch. The old drop-on-the-floor
+  // behaviour hid that; this is the bill for fixing it. The clear runs in
+  // `finally` so a throw inside onData can't skip it and leave the response
+  // to redeliver on the next launch.
+  void Notifications.getLastNotificationResponseAsync().then(async (r) => {
+    if (!r) return;
+    try {
+      onData(r.notification.request.content.data);
+    } finally {
+      await Notifications.clearLastNotificationResponseAsync();
+    }
   });
 
   return () => sub.remove();
