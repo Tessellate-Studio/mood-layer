@@ -26,7 +26,7 @@ in [`SECURITY.md`](./SECURITY.md)).
 | Item | Status | What's left |
 |---|---|---|
 | [Repo back to private](#repo-back-to-private--parked) | ⏸️ | **Parked 2026-08-12 — stays public for now.** Nothing to do; steps kept for when you reopen it |
-| [EAS build + on-device checks](#eas-build--on-device-checks) | 🟡 | Both notification checks walked 2026-08-20; two defects filed ([#73](https://github.com/Tessellate-Studio/mood-layer/issues/73), [#74](https://github.com/Tessellate-Studio/mood-layer/issues/74)) |
+| [EAS build + on-device checks](#eas-build--on-device-checks) | 🟡 | Fixes for both notification defects landed on `fix/notification-deeplink-and-channel` ([#73](https://github.com/Tessellate-Studio/mood-layer/issues/73), [#74](https://github.com/Tessellate-Studio/mood-layer/issues/74)); device re-verification outstanding |
 | [Publish to Google Play](#publish-to-google-play-indie-route--parked) | ⏸️ | **Parked — not the focus right now.** Account exists, CI already builds + uploads the AAB; steps kept for when you resume |
 | [Circle pairing — two-phone test](#circle-pairing--the-two-phone-test) | 🟢 | Walked 2026-08-20 against the live relay with a scripted stand-in peer — invite, claim, seal, send, receive, decrypt. Two real handsets remain untried, but nothing now depends on that |
 | [Device testing on Expo Go](#device-testing-on-expo-go) | 📖 | Reference only — no action outstanding |
@@ -108,16 +108,19 @@ eas build --profile preview --platform android
 - [x] A "Name it" reminder fires with the app closed — verified twice (17:00
       and 18:00). The app was killed with `am kill`, not force-stop, which
       matters: force-stop cancels the alarm and the test would pass vacuously
-- [ ] …and tapping it deep-links into check-in — **fails**
-      ([#73](https://github.com/Tessellate-Studio/mood-layer/issues/73)). It
-      lands on Layers. `navigate()` is called before the navigator mounts and
-      is silently dropped; confirmed by contrast — the same notification tapped
-      with the app already open goes to check-in correctly
+- [ ] …and tapping it deep-links into check-in — **was failing**
+      ([#73](https://github.com/Tessellate-Studio/mood-layer/issues/73), landed
+      as regression row 21). Fix queues the route until the navigator is ready
+      instead of dropping it; unit-tested, **device re-verification of the
+      cold-tap case still outstanding**
 - [x] A scheduled circle share sends without the app being opened first —
       the background job sealed and posted a summary, and the peer decrypted it
-- [x] The relay's "a week arrived" notification lands — though on the wrong
-      channel, at the wrong importance
-      ([#74](https://github.com/Tessellate-Studio/mood-layer/issues/74))
+- [ ] The relay's "a week arrived" notification lands — **was on the wrong
+      channel, at the wrong importance**
+      ([#74](https://github.com/Tessellate-Studio/mood-layer/issues/74), landed
+      as regression row 22). Fix attaches the trigger to the `circle` channel;
+      unit-tested, **device re-verification via `dumpsys notification
+      --noredact` still outstanding**
 
 **The two-phone dependency is gone.** `scratchpad/peer` in the 2026-08-20
 session held a ~90-line script that speaks the relay's wire protocol: it

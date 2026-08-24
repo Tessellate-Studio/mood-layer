@@ -10,7 +10,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import ScreenErrorBoundary from '@/components/ScreenErrorBoundary';
 import { CircleIcon, ExperimentsIcon, InsightsIcon, QuiltIcon, type TabIconProps } from '@/components/TabIcon';
 import { colors, fonts } from '@/constants/theme';
-import { navigationRef } from '@/navigation/navigationRef';
+import { flushPendingNavigation, navigationRef } from '@/navigation/navigationRef';
 import BreathingScreen from '@/screens/BreathingScreen';
 import CheckInFlowScreen from '@/screens/CheckInFlowScreen';
 import CircleScreen from '@/screens/CircleScreen';
@@ -136,8 +136,10 @@ export default function AppNavigator() {
     pickInitialRoute(useSettingsStore.getState().onboardingCompletedAt)
   );
 
+  // onReady is the first moment a queued deep link can be delivered — a
+  // notification tap always arrives before it (regression row 21).
   return (
-    <NavigationContainer ref={navigationRef}>
+    <NavigationContainer ref={navigationRef} onReady={flushPendingNavigation}>
       <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Onboarding" component={SafeOnboardingScreen} />
         <Stack.Screen name="Main" component={MainTabs} />
