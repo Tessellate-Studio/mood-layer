@@ -40,6 +40,22 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
 
 ## P1 — do next
 
+- **Usage analytics — third sanctioned-exception decision needed** — rubric
+  not yet scored (no `evaluateFromContext` run against this entry). User wants
+  to know within the next few weeks which features/moods are most used and
+  whether the app is understandable enough to avoid silent abandonment.
+  Scoped, not decided: `memory/decisions/adr-002-usage-analytics.md` proposes
+  event-level-only analytics (screen views, feature taps, session
+  starts/onboarding drop-off) — explicitly narrower than "which moods," since
+  that touches the exact data this app promises never leaves the device.
+  Recorded provisionally in `docs/SECURITY.md` → "Usage analytics" as
+  PROPOSED, not counted toward the "TWO sanctioned exceptions" line until
+  accepted. **Blocking on the user:** tool choice (Aptabase vs. PostHog EU),
+  and whether "features, not moods" is an acceptable answer. Do not bundle
+  into the in-flight crash-reporting or Play Store submission work — own PR,
+  after acceptance. *Owner: user (decision), then agent (implementation
+  plan in the ADR).*
+
 - ~~**Install the app icons from the logo handoff**~~ — shipped 2026-07-13,
   PR #14 (`e862632`).
   **Still open:** never eyeballed on a phone — icons resolve correctly in the
