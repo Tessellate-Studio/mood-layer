@@ -1,0 +1,126 @@
+name: iOS Release (TestFlight)
+
+# Ported from alate's ios-release.yml (2026-08-25), after the first mood-layer
+# iOS build + submit was done by hand: build succeeded (92546281, v0.2.0
+# build 1), submit succeeded (ascAppId 6804997227 created on App Store
+# Connect), but nothing automated the next one. This workflow closes that gap.
+#
+# GUARDRAILS — why this workflow looks the way it does:
+#   - Tag push is the ONLY automatic trigger, matching build-android-apk.yml's
+#     release path and the CI-spend rule ("release tags are the one allowed
+#     automatic build" — an EAS iOS build costs real build credits).
+#   - `--no-wait`: EAS builds in the cloud, so waiting would idle a GitHub
+#     runner for ~15-20 min per release and buy nothing (this app's own build
+#     history: buildDuration ~350s of runner-visible work, most of it queued
+#     server-side). The job queues the work, prints the dashboard URL, and
+#     exits in seconds. The trade-off is real and deliberate: a FAILED build
+#     shows up on the EAS dashboard, NOT as a red X here. Check the URL this
+#     job prints.
+#   - `--auto-submit`: EAS submits to App Store Connect itself once the build
+#     finishes, server-side. That is what makes the `--no-wait` choice safe —
+#     the submit does not depend on this job still running.
+#   - `submit-latest` mode submits the newest EXISTING finished build and
+#     starts no new one. It is the free way to exercise this pipeline
+#     end-to-end (and the way to recover when a build succeeded but its
+#     submit failed) without spending a build credit.
+#   - Fail closed on a missing EXPO_TOKEN.
+#
+# Credentials live on EAS, not here: iOS signing is `credentialsSource:
+# remote`, `ascAppId` (6804997227) is in eas.json under submit.production.ios,
+# and EXPO_PUBLIC_* are EAS environment variables. This workflow therefore
+# needs exactly one secret: EXPO_TOKEN — NOT YET SET on this repo (checked
+# 2026-08-25: only EXPO_PUBLIC_SENTRY_DSN and LITMUS_DISPATCH_TOKEN exist).
+# Add it before the first run: generate a token at
+# https://expo.dev/accounts/newbietrawler/settings/access-tokens, then
+# `gh secret set EXPO_TOKEN --repo Tessellate-Studio/mood-layer`.
+#
+# Unlike alate, this repo has no OTA path (expo-updates is not installed —
+# see CLAUDE.md) and app.json/eas.json are not runtime-fingerprint sources
+# here, so editing eas.json (done in this PR, to pin ascAppId) carries none
+# of alate's OTA-stranding risk.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'build-and-submit = new EAS iOS build, auto-submitted to TestFlight (costs a build credit). submit-latest = submit the newest existing finished build, no new build (free).'
+        type: choice
+        options:
+          - build-and-submit
+          - submit-latest
+        default: build-and-submit
+  push:
+    tags:
+      - 'v*'
+
+# Never cancel in flight: unlike a test run, a superseded run here may
+# already have queued a build or a store submission.
+concurrency:
+  group: ios-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Verify EXPO_TOKEN is present (fail closed)
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::error::EXPO_TOKEN secret is missing. Generate one at https://expo.dev/accounts/newbietrawler/settings/access-tokens and add it under Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          echo "EXPO_TOKEN present."
+
+      - name: Install eas-cli
+        # No `npm ci` — eas-cli reads app.json/eas.json and hands the build
+        # to EAS, which installs dependencies in the cloud. Skipping the
+        # install keeps this job at seconds instead of minutes.
+        run: npm install -g eas-cli
+
+      - name: Resolve mode
+        id: mode
+        # Tag pushes carry no inputs, so they fall through to a full
+        # build-and-submit — the release behaviour that matches Android.
+        run: |
+          MODE="${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'build-and-submit' }}"
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+          echo "Resolved mode: $MODE"
+
+      - name: Submit the latest existing build (no new build)
+        if: steps.mode.outputs.mode == 'submit-latest'
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          echo "Submitting the newest FINISHED iOS build to App Store Connect."
+          eas submit --platform ios --latest --non-interactive
+
+      - name: Build iOS and auto-submit to TestFlight
+        if: steps.mode.outputs.mode == 'build-and-submit'
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          eas build \
+            --platform ios \
+            --profile production \
+            --non-interactive \
+            --auto-submit \
+            --no-wait
+
+      - name: Where to watch it
+        if: steps.mode.outputs.mode == 'build-and-submit'
+        run: |
+          echo "::notice::Build queued on EAS. This job does NOT wait for it."
+          echo "::notice::Watch https://expo.dev/accounts/newbietrawler/projects/mood-layer/builds — a failure appears there, not as a red X on this run."
+          echo "::notice::TestFlight processing by Apple takes a further ~10-30 min after the submit completes."
