@@ -83,10 +83,20 @@ jobs:
           fi
           echo "EXPO_TOKEN present."
 
+      - name: Install dependencies
+        # Ported from alate assuming eas-cli never touches node_modules
+        # locally — wrong here. `eas submit` (and `eas build`, before it hands
+        # off to the cloud) evaluates the full Expo config via @expo/config,
+        # which resolves every entry in app.json's `plugins` array
+        # (expo-font, expo-camera, @sentry/react-native, ...) as an npm
+        # package. With no node_modules that resolution throws
+        # "Failed to resolve plugin ... Do you have node modules installed?"
+        # before eas-cli ever reaches the network — proven by the first
+        # `submit-latest` dispatch on this workflow (run 32937563851,
+        # 2026-08-26), which failed in under 2s for exactly this reason.
+        run: npm ci
+
       - name: Install eas-cli
-        # No `npm ci` — eas-cli reads app.json/eas.json and hands the build
-        # to EAS, which installs dependencies in the cloud. Skipping the
-        # install keeps this job at seconds instead of minutes.
         run: npm install -g eas-cli
 
       - name: Resolve mode
