@@ -9,7 +9,10 @@ sanctioned exceptions** (the circle relay, and opt-in crash reports — both
 reviewed below). All user data (emotion check-ins, journal text) stays
 on-device in AsyncStorage. No accounts, no analytics. Any dependency or change
 that would move emotional data off the device is a security/privacy finding by
-definition — see the hard rules in `CLAUDE.md`.
+definition — see the hard rules in `CLAUDE.md`. A **third exception is
+proposed but not yet decided** — see "Usage analytics" below; until the user
+explicitly accepts it, the posture above still reads as two, and any PR that
+starts sending events off-device ahead of that decision is a finding.
 
 ## Crash reports — sanctioned exception #2 (privacy review, 2026-08-13)
 
@@ -73,6 +76,33 @@ reasoning and the rejected alternative (a local-only crash journal):
   a feeling.
 - **Play Store:** needs a "Crash logs — optional" data-safety entry when the
   listing is filled in (BACKLOG P2).
+
+## Usage analytics — PROPOSED, not yet a sanctioned exception (scoped 2026-08-26)
+
+Not decided. Scoped in response to the user wanting to know which
+features/moods are most used and whether the app is understandable enough to
+avoid silent abandonment. Full reasoning, tool comparison, and rejected wider
+scope: `memory/decisions/adr-002-usage-analytics.md`.
+
+Recorded here now, ahead of a decision, so a future security sweep doesn't
+mistake a stray analytics dependency for something already reviewed — it
+isn't. Do **not** treat this section as authorization to send events
+off-device; treat the "TWO sanctioned exceptions" line above as still
+accurate until ADR-002's status changes from "proposed" to "accepted."
+
+**Proposed shape**, narrower than the literal ask because the literal ask
+(which *moods*) is the exact data class this app promises never leaves the
+device:
+- Event-level only — screen views, feature taps, session starts, onboarding
+  step/completion — enum-only properties, never a mood word, intensity,
+  journal/reflection text, or any free-form string.
+- No persistent per-user or per-device identifier; no account; anonymous
+  session-scoped id only, discarded on app close.
+- Off by default, one Settings toggle, same three-gate shape as crash
+  reporting (consent / Expo Go guard / allowlist enforced in code + tests).
+- Tool TBD (Aptabase vs. self-hosted or EU-hosted PostHog) — see ADR-002 for
+  the comparison; either choice must have autocapture/session-replay/heatmaps
+  verifiably off before this section can be marked accepted.
 
 ## Circle relay — the sanctioned exception (privacy review, 2026-07-18)
 
