@@ -70,22 +70,32 @@ describe('the underneath map', () => {
     }
   });
 
-  it("'numb' stays in sync with its masking-state twin", () => {
+  it.each(['numb', 'guilty'])("'%s' stays in sync with its masking-state twin", (id) => {
     // The same state is deliberately reachable from the check-in (masking
     // chip) and the field guide — their family mappings must not drift.
-    const masking = MASKING_STATES.find((m) => m.id === 'numb')!;
-    const state = UNDERNEATH_MAP.find((s) => s.id === 'numb')!;
+    const masking = MASKING_STATES.find((m) => m.id === id)!;
+    const state = UNDERNEATH_MAP.find((s) => s.id === id)!;
+    expect(state).toBeDefined();
     expect(state.underneath).toEqual(masking.unpacksTo);
+  });
+
+  it('masking ids never collide with emotion word ids', () => {
+    // A masking id doubling as a word id would render duplicate chips on the
+    // feel step and let one stored id mean two different things.
+    for (const id of maskingIds) {
+      expect(gradientIds).not.toContain(id);
+      expect(extendedIds).not.toContain(id);
+    }
   });
 
   it('state ids never collide with emotion word ids', () => {
     // Word ids are stored in check-ins, so a collision would corrupt lookups.
-    // Masking overlap is allowed — 'numb' is deliberately both a check-in
-    // cover and an underneath entry (two doors into the same room).
+    // Masking overlap is allowed — 'numb' and 'guilty' are deliberately both
+    // check-in covers and underneath entries (two doors into the same room).
     for (const state of UNDERNEATH_MAP) {
       expect(gradientIds).not.toContain(state.id);
       expect(extendedIds).not.toContain(state.id);
-      if (state.id !== 'numb') {
+      if (state.id !== 'numb' && state.id !== 'guilty') {
         expect(maskingIds).not.toContain(state.id);
       }
     }
@@ -117,6 +127,12 @@ describe('extended vocabulary (word finder)', () => {
   it("keeps 'anxious' out of every family (it lives in the underneath map)", () => {
     expect(extendedIds).not.toContain('anxious');
     expect(gradientIds).not.toContain('anxious');
+  });
+
+  it('files the guilt cluster under sadness (guilt = anger at self braided with sadness)', () => {
+    for (const id of ['ashamed', 'regretful', 'remorseful', 'embarrassed']) {
+      expect(findVocabularyWord(id)?.family.id).toBe('sadness');
+    }
   });
 
   it('allWordsForFamily merges gradient + extended, sorted mild → intense', () => {

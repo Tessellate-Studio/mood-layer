@@ -14,6 +14,7 @@ import { RESISTANCE_TELLS } from '@/content/resistance';
 import { INSIGHT_TEMPLATES } from '@/content/insights';
 import { JUDGMENT_EXAMPLES } from '@/content/judgmentExamples';
 import { ONBOARDING_SLIDES } from '@/content/onboarding';
+import { CHECK_IN_COPY } from '@/content/checkInCopy';
 
 const FAMILY_IDS: EmotionFamilyId[] = [
   'anger',
@@ -193,9 +194,9 @@ describe('emotion families', () => {
 });
 
 describe('masking states', () => {
-  it('has the five masking states with prompts that unpack to valid families', () => {
+  it('has the six masking states with prompts that unpack to valid families', () => {
     const ids = MASKING_STATES.map((m) => m.id).sort();
-    expect(ids).toEqual(['busy', 'fine', 'numb', 'overwhelmed', 'stressed']);
+    expect(ids).toEqual(['busy', 'fine', 'guilty', 'numb', 'overwhelmed', 'stressed']);
     for (const state of MASKING_STATES) {
       expect(state.label.length).toBeGreaterThan(0);
       expect(state.prompt.length).toBeGreaterThan(0);
@@ -204,6 +205,13 @@ describe('masking states', () => {
         expect(FAMILY_IDS).toContain(family);
       }
     }
+  });
+
+  it("unpacks 'guilty' through anger first — guilt as anger turned inward", () => {
+    const guilty = MASKING_STATES.find((m) => m.id === 'guilty');
+    // Position matters: the underneath panel renders unpacksTo in order, so
+    // anger leading is the pedagogy, not a coincidence.
+    expect(guilty?.unpacksTo[0]).toBe('anger');
   });
 });
 
@@ -328,6 +336,35 @@ describe('judgment examples', () => {
       expect(example.judgment.length).toBeGreaterThan(0);
       expect(example.feeling.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('check-in copy', () => {
+  const values = Object.values(CHECK_IN_COPY);
+
+  it('every line is non-empty', () => {
+    expect(values.length).toBeGreaterThan(0);
+    for (const line of values) {
+      expect(line.trim().length).toBeGreaterThan(0);
+    }
+  });
+
+  it('copy stays gentle: no exclamations, never directive', () => {
+    for (const line of values) {
+      expect(line).not.toContain('!');
+      expect(line.toLowerCase()).not.toContain('you should');
+      expect(line.toLowerCase()).not.toContain('you must');
+    }
+  });
+
+  it('speaks in layer language — never stitch/quilt/sew', () => {
+    for (const line of values) {
+      expect(line.toLowerCase()).not.toMatch(/quilt|stitch|sew/);
+    }
+  });
+
+  it('the feel hint invites several words, not just one', () => {
+    expect(CHECK_IN_COPY.feelHint.toLowerCase()).toContain('several');
   });
 });
 

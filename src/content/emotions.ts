@@ -143,7 +143,7 @@ export const EMOTION_FAMILIES: Record<EmotionFamilyId, EmotionFamily> = {
  * families it usually hides.
  */
 export interface MaskingState {
-  id: 'stressed' | 'overwhelmed' | 'numb' | 'fine' | 'busy';
+  id: 'stressed' | 'overwhelmed' | 'numb' | 'fine' | 'busy' | 'guilty';
   label: string;
   /** Gentle invitation to look underneath — never a correction. */
   prompt: string;
@@ -182,6 +182,13 @@ export const MASKING_STATES: MaskingState[] = [
     label: 'Busy',
     prompt: "Busyness can be a way of outrunning a feeling — want to pause and check?",
     unpacksTo: ['fear', 'sadness'],
+  },
+  {
+    id: 'guilty',
+    label: 'Guilty',
+    prompt:
+      "Guilt is often anger turned toward yourself, with sadness close behind — want to see what's underneath?",
+    unpacksTo: ['anger', 'sadness', 'fear'],
   },
 ];
 

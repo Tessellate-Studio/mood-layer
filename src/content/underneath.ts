@@ -5,10 +5,10 @@
 // already feels and follow it down to the feeling that wants to be felt.
 // Tone: hedged and invitational — a place to look, never a diagnosis.
 //
-// Distinct from MASKING_STATES (emotions.ts): those five are quick covers
-// offered during a check-in; this map is the fuller educational reference on
-// the field-guide screen. 'Numb' appears in both on purpose — different doors
-// into the same room.
+// Distinct from MASKING_STATES (emotions.ts): those are quick covers offered
+// during a check-in; this map is the fuller educational reference on the
+// field-guide screen. 'Numb' and 'Guilty' appear in both on purpose —
+// different doors into the same room.
 
 import type { EmotionFamilyId } from '@/types/models';
 
@@ -79,6 +79,14 @@ export const UNDERNEATH_MAP: UnderneathEntry[] = [
       'Bitterness tends to be old anger braided with loss. Something mattered, it went wrong, and neither the anger nor the grief got fully felt — so they set together, like resin.',
     underneath: ['anger', 'sadness'],
     invitation: 'If the bitterness could speak, what would it say it lost?',
+  },
+  {
+    id: 'guilty',
+    label: 'Guilty',
+    description:
+      'Guilt is often anger turned on yourself — a standard you care about, crossed by your own hand — with sadness close behind for whatever was hurt. Underneath there is sometimes a fear of what the mistake says about you. Felt directly, it tends to point toward repair.',
+    underneath: ['anger', 'sadness', 'fear'],
+    invitation: 'If the guilt could ask for one small repair, what would it be?',
   },
   {
     id: 'cynical',

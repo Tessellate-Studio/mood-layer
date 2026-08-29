@@ -16,19 +16,21 @@ import {
   View,
 } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Svg, { Line } from 'react-native-svg';
 
 import EmotionChip from '@/components/EmotionChip';
 import FamilyGroup from '@/components/FamilyGroup';
-import LearnLink from '@/components/LearnLink';
+import LearnLink, { CaptionLink } from '@/components/LearnLink';
 import ModalHeader from '@/components/ModalHeader';
 import { PatchPreview } from '@/components/QuiltPatch';
 import WordTemperatureRow from '@/components/WordTemperatureRow';
 import { borderRadius, colors, familyPalette, hitTarget, spacing, typography } from '@/constants/theme';
 import PaperTexture from '@/components/PaperTexture';
 import { BODY_MAP } from '@/content/bodyMap';
+import { CHECK_IN_COPY } from '@/content/checkInCopy';
 import { EMOTION_FAMILIES, MASKING_STATES, type EmotionWord } from '@/content/emotions';
 import { noteReflection } from '@/content/noteReflection';
 import { allWordsForFamily, findVocabularyWord } from '@/content/vocabulary';
@@ -47,8 +49,10 @@ import {
   nextStep,
   prevStep,
   setIntensity,
+  feelStepHint,
   setNote,
   STEP_ORDER,
+  type FeelHint,
   toCheckInInput,
   toggleBody,
   toggleEmotion,
@@ -59,6 +63,22 @@ import {
 } from '@/utils/checkInFlow';
 
 type CheckInRoute = RouteProp<RootStackParamList, 'CheckInFlow'>;
+type Nav = NativeStackNavigationProp<RootStackParamList>;
+
+// One home for the hold-to-learn gesture: the feel hint promises holding ANY
+// word teaches you about it, so every chip on the step routes through here.
+const openFamilyHelper = (family: EmotionFamilyId) =>
+  useHelperSheetStore.getState().open(family);
+
+/** The feel step's single hint slot — which testID + copy each state renders. */
+const FEEL_HINTS: Record<FeelHint, { testID: string; copy: string }> = {
+  masking: { testID: 'masking-continue-hint', copy: CHECK_IN_COPY.maskingContinueHint },
+  temperature: {
+    testID: 'temperature-continue-hint',
+    copy: CHECK_IN_COPY.temperatureContinueHint,
+  },
+  invite: { testID: 'add-another-hint', copy: CHECK_IN_COPY.addAnotherInvitation },
+};
 
 const STEP_TITLES: Record<CheckInStep, string> = {
   feel: 'What are you feeling right now?',
@@ -83,6 +103,9 @@ export default function CheckInFlowScreen() {
 
   const title = source === 'name-it' && state.step === 'feel' ? 'Can you name it?' : STEP_TITLES[state.step];
   const stepIndex = STEP_ORDER.indexOf(state.step);
+  // feelStepHint is priority-ordered, so at most one hint ever renders.
+  const hintKey = feelStepHint(state);
+  const feelHint = hintKey ? FEEL_HINTS[hintKey] : null;
 
   // Each step is its own page — never inherit the previous step's scroll
   // position (app-wide bug, 2026-07-17).
@@ -143,16 +166,9 @@ export default function CheckInFlowScreen() {
         {state.step === 'stitch' && <StitchStep state={state} />}
       </ScrollView>
 
-      {state.step === 'feel' && state.masking.length > 0 && state.selections.length === 0 ? (
-        <Text style={styles.continueHint} testID="masking-continue-hint">
-          Name what&apos;s underneath to continue.
-        </Text>
-      ) : null}
-      {state.step === 'feel' &&
-      state.selections.length > 0 &&
-      state.selections.some((sel) => sel.intensity === null) ? (
-        <Text style={styles.continueHint} testID="temperature-continue-hint">
-          Tap a swatch beside each word to set how strongly it&apos;s here.
+      {feelHint ? (
+        <Text style={styles.continueHint} testID={feelHint.testID}>
+          {feelHint.copy}
         </Text>
       ) : null}
 
@@ -220,6 +236,9 @@ function FeelStep({
   scrollTo,
 }: StepProps & { scrollTo(y: number): void }) {
   const selectedMasking = MASKING_STATES.filter((m) => state.masking.includes(m.id));
+  // Pushing keeps this modal (and the in-progress check-in) mounted
+  // underneath — the field guide's back button returns straight here.
+  const navigation = useNavigation<Nav>();
   // Families start folded (one open at a time) so the step reads as a short,
   // calm list instead of ~50 chips at once. Chosen words stay pinned under
   // their folded family — each with its temperature dial right there, so
@@ -240,10 +259,18 @@ function FeelStep({
   };
   return (
     <View style={styles.stepGap}>
-      <Text style={styles.feelHint}>
-        Open whichever sounds close — naming even one word is plenty. The
-        swatches beside a chosen word set how strongly it&apos;s here.
-      </Text>
+      <Text style={styles.feelHint}>{CHECK_IN_COPY.feelHint}</Text>
+      <View style={styles.guideRow}>
+        <Text style={styles.feelHint} testID="feel-hold-hint">
+          {CHECK_IN_COPY.holdToLearnHint}
+        </Text>
+        <CaptionLink
+          testID="checkin-field-guide-link"
+          accessibilityLabel="Open the field guide"
+          label={CHECK_IN_COPY.fieldGuideLink}
+          onPress={() => navigation.navigate('FieldGuide')}
+        />
+      </View>
       {Object.values(EMOTION_FAMILIES).map((family) => {
         // Full vocabulary reachable, gradient shown first: the curated words
         // carry most check-ins; "+ more words" opens the extended list.
@@ -274,7 +301,6 @@ function FeelStep({
                   onChangeIntensity={(intensity) =>
                     setState((s) => setIntensity(s, sel.emotionId, intensity))
                   }
-                  onLongPress={() => useHelperSheetStore.getState().open(sel.family)}
                 />
               ))}
             </View>
@@ -303,6 +329,7 @@ function FeelStep({
                         : undefined
                     }
                     onPress={() => setState((s) => toggleEmotion(s, word.id, family.id))}
+                    onLongPress={() => openFamilyHelper(family.id)}
                   />
                 );
               })}
@@ -325,7 +352,7 @@ function FeelStep({
         );
       })}
 
-      <Text style={styles.maskingIntro}>or, if it&apos;s more like…</Text>
+      <Text style={styles.maskingIntro}>{CHECK_IN_COPY.maskingIntro}</Text>
       <View style={styles.chipWrap}>
         {MASKING_STATES.map((m) => (
           <EmotionChip
@@ -335,6 +362,12 @@ function FeelStep({
             dashed
             selected={state.masking.includes(m.id)}
             onPress={() => toggleMaskingAndReveal(m.id)}
+            onLongPress={() => {
+              // What a cover word "carries" is its own prompt + families, not
+              // one family's sheet (holding 'Fine' → sadness would read as a
+              // diagnosis). Hold reveals the underneath panel; never deselects.
+              if (!state.masking.includes(m.id)) toggleMaskingAndReveal(m.id);
+            }}
           />
         ))}
       </View>
@@ -384,6 +417,7 @@ function FeelStep({
                             : undefined
                         }
                         onPress={() => setState((s) => toggleEmotion(s, word.id, familyId))}
+                        onLongPress={() => openFamilyHelper(familyId)}
                       />
                     );
                   })}
@@ -414,9 +448,7 @@ function FeelStep({
               </View>
             );
           })}
-          <Text style={styles.underneathHint}>
-            Naming even one is enough — or open “learn” to feel your way in.
-          </Text>
+          <Text style={styles.underneathHint}>{CHECK_IN_COPY.underneathHint}</Text>
         </View>
       ))}
     </View>
@@ -593,6 +625,12 @@ const styles = StyleSheet.create({
   },
   feelHint: {
     ...typography.caption,
+  },
+  guideRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
   },
   underneathPanel: {
     backgroundColor: colors.paperRaised,

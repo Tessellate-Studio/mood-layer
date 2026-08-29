@@ -9,6 +9,7 @@ import { StyleSheet, View } from 'react-native';
 import EmotionChip from '@/components/EmotionChip';
 import IntensityDial from '@/components/IntensityDial';
 import { familyPalette, spacing } from '@/constants/theme';
+import { useHelperSheetStore } from '@/store/helperSheetStore';
 import type { EmotionFamilyId, Intensity } from '@/types/models';
 
 interface Props {
@@ -20,7 +21,8 @@ interface Props {
   /** Tap the chip to let the word go. */
   onToggle(): void;
   onChangeIntensity(intensity: Intensity): void;
-  /** Long-press doorway to the family helper (optional). */
+  /** Long-press doorway. Defaults to the family helper sheet, so every
+   *  surface that shows a weighed word teaches on hold without wiring. */
   onLongPress?(): void;
   /** Chip id (testID `chip-${chipId}`). Defaults to `picked-${wordId}` so the
    *  row never collides with the word-cloud chip for the same word. */
@@ -46,7 +48,7 @@ export function WordTemperatureRow({
           selected
           fill={intensity !== null ? familyPalette[family].shades[intensity] : undefined}
           onPress={onToggle}
-          onLongPress={onLongPress}
+          onLongPress={onLongPress ?? (() => useHelperSheetStore.getState().open(family))}
         />
       </View>
       <IntensityDial
