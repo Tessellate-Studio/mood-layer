@@ -29,12 +29,14 @@ import ExperimentsScreen from '@/screens/ExperimentsScreen';
 import JudgmentFlowScreen from '@/screens/JudgmentFlowScreen';
 import NameItSetupScreen from '@/screens/NameItSetupScreen';
 import { useExperimentStore, type PracticeSession } from '@/store/experimentStore';
+import { useHelperSheetStore } from '@/store/helperSheetStore';
 
 const initialExperiments = useExperimentStore.getState();
 
 beforeEach(() => {
   jest.clearAllMocks();
   useExperimentStore.setState(initialExperiments, true);
+  useHelperSheetStore.setState({ family: null });
 });
 
 function renderScreen(node: React.ReactElement) {
@@ -140,6 +142,31 @@ describe('JudgmentFlowScreen', () => {
 
     await waitFor(() => expect(useExperimentStore.getState().judgmentEntries).toHaveLength(1));
     expect(useExperimentStore.getState().judgmentEntries[0].uncoveredFeelings).toEqual([]);
+  });
+
+  it('long-pressing a word chip opens its family helper sheet', async () => {
+    // The check-in flow teaches "Hold any word to learn what it carries" — the
+    // gesture must not go dead on this screen's visually identical chips.
+    renderScreen(<JudgmentFlowScreen />);
+    fireEvent.changeText(await screen.findByTestId('judgment-target-0'), 'myself');
+    fireEvent.changeText(screen.getByTestId('judgment-for-0'), 'being slow');
+    fireEvent.press(screen.getByTestId('judgment-next'));
+
+    fireEvent.press(await screen.findByTestId('judgment-family-fear'));
+    fireEvent(screen.getByTestId('chip-judgment-feeling-worried'), 'longPress');
+    expect(useHelperSheetStore.getState().family).toBe('fear');
+  });
+
+  it('long-pressing a picked chip (temperature row) opens the helper too', async () => {
+    renderScreen(<JudgmentFlowScreen />);
+    fireEvent.changeText(await screen.findByTestId('judgment-target-0'), 'myself');
+    fireEvent.changeText(screen.getByTestId('judgment-for-0'), 'being slow');
+    fireEvent.press(screen.getByTestId('judgment-next'));
+
+    fireEvent.press(await screen.findByTestId('judgment-family-sadness'));
+    fireEvent.press(screen.getByTestId('chip-judgment-feeling-hurt'));
+    fireEvent(screen.getByTestId('chip-judgment-picked-hurt'), 'longPress');
+    expect(useHelperSheetStore.getState().family).toBe('sadness');
   });
 
   it('cannot advance with no complete judgment', async () => {
