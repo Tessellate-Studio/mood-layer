@@ -31,3 +31,13 @@ numbered entries get added as they're earned.
 6. **SVG quilt patterns are generated primitives, not `<Pattern>` defs** —
    rn-svg pattern support is quirky and untestable; pure generator functions
    with unit tests only.
+7. **Every `Gesture.*` callback is UI-thread worklet code** (earned 2026-08-29,
+   regression #23). Any plain JS function it touches — a prop, a store action,
+   a setState — goes through `runOnJS`, no exceptions: a direct call is a
+   fatal UI-runtime error that kills the app outside every JS error boundary
+   and, with `enableNativeCrashHandling: false`, leaves no Sentry event. Jest
+   can't reproduce the crash, so pin the wiring instead: drive the recorded
+   handlers (gesture mock in `jest.setup.js`) and assert the callback was
+   handed to `runOnJS`, as `sheet.test.tsx` does. If gesture code multiplies,
+   consider `eslint-plugin-reanimated`'s `js-function-in-worklet` — declined
+   for now with a single call site (a dep for one lint of one file).
