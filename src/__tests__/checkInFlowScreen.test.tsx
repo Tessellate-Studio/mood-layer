@@ -8,16 +8,18 @@ import { NavigationContainer } from '@react-navigation/native';
 
 import CheckInFlowScreen from '@/screens/CheckInFlowScreen';
 import { useCheckInStore } from '@/store/checkInStore';
+import { useHelperSheetStore } from '@/store/helperSheetStore';
 import { useSettingsStore } from '@/store/settingsStore';
 
 // Mutable route params — flipped per test to exercise manual vs name-it.
 let mockParams: { source: 'manual' | 'name-it' } = { source: 'manual' };
 const mockGoBack = jest.fn();
+const mockNavigate = jest.fn();
 
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
   useRoute: () => ({ params: mockParams }),
-  useNavigation: () => ({ goBack: mockGoBack, navigate: jest.fn() }),
+  useNavigation: () => ({ goBack: mockGoBack, navigate: mockNavigate }),
 }));
 
 const initialCheckIns = useCheckInStore.getState();
@@ -26,8 +28,10 @@ const initialSettings = useSettingsStore.getState();
 beforeEach(() => {
   mockParams = { source: 'manual' };
   mockGoBack.mockClear();
+  mockNavigate.mockClear();
   useCheckInStore.setState(initialCheckIns, true);
   useSettingsStore.setState(initialSettings, true);
+  useHelperSheetStore.setState({ family: null });
 });
 
 const renderScreen = () =>
@@ -113,6 +117,36 @@ describe('CheckInFlowScreen', () => {
     expect(checkIns[0].emotions).toEqual([{ emotionId: 'sad', family: 'sadness', intensity: 3 }]);
     expect(checkIns[0].source).toBe('manual');
     expect(mockGoBack).toHaveBeenCalled();
+  });
+
+  it('long-pressing any word chip opens its family helper sheet', () => {
+    renderScreen();
+    fireEvent.press(screen.getByTestId('family-sadness'));
+    fireEvent(screen.getByTestId('chip-sad'), 'longPress');
+    expect(useHelperSheetStore.getState().family).toBe('sadness');
+  });
+
+  it('long-pressing an underneath-panel chip opens that family helper too', () => {
+    renderScreen();
+    fireEvent.press(screen.getByTestId('chip-stressed')); // masking → panel
+    fireEvent(screen.getByTestId('chip-under-uneasy'), 'longPress');
+    expect(useHelperSheetStore.getState().family).toBe('fear');
+  });
+
+  it('tells the user words can be held, and links to the field guide', () => {
+    renderScreen();
+    expect(screen.getByTestId('feel-hold-hint')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('checkin-field-guide-link'));
+    // Pushed above the modal — the in-progress check-in survives underneath.
+    expect(mockNavigate).toHaveBeenCalledWith('FieldGuide');
+  });
+
+  it("offers the 'Guilty' doorway and unpacks it through anger", () => {
+    renderScreen();
+    fireEvent.press(screen.getByTestId('chip-guilty'));
+    expect(screen.getByTestId('underneath-guilty')).toBeTruthy();
+    // Anger leads the unpack (guilt = anger turned inward).
+    expect(screen.getByTestId('chip-under-irritated')).toBeTruthy();
   });
 
   it('shows the name-it heading and a finish-early affordance', () => {

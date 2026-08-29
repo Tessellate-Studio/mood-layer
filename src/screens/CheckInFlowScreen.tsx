@@ -16,6 +16,7 @@ import {
   View,
 } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Svg, { Line } from 'react-native-svg';
@@ -60,6 +61,7 @@ import {
 } from '@/utils/checkInFlow';
 
 type CheckInRoute = RouteProp<RootStackParamList, 'CheckInFlow'>;
+type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 const STEP_TITLES: Record<CheckInStep, string> = {
   feel: 'What are you feeling right now?',
@@ -221,6 +223,9 @@ function FeelStep({
   scrollTo,
 }: StepProps & { scrollTo(y: number): void }) {
   const selectedMasking = MASKING_STATES.filter((m) => state.masking.includes(m.id));
+  // Pushing keeps this modal (and the in-progress check-in) mounted
+  // underneath — the field guide's back button returns straight here.
+  const navigation = useNavigation<Nav>();
   // Families start folded (one open at a time) so the step reads as a short,
   // calm list instead of ~50 chips at once. Chosen words stay pinned under
   // their folded family — each with its temperature dial right there, so
@@ -242,6 +247,21 @@ function FeelStep({
   return (
     <View style={styles.stepGap}>
       <Text style={styles.feelHint}>{CHECK_IN_COPY.feelHint}</Text>
+      <View style={styles.guideRow}>
+        <Text style={styles.feelHint} testID="feel-hold-hint">
+          {CHECK_IN_COPY.holdToLearnHint}
+        </Text>
+        <Pressable
+          testID="checkin-field-guide-link"
+          accessibilityRole="button"
+          accessibilityLabel="Open the field guide"
+          hitSlop={8}
+          style={styles.fieldGuideLink}
+          onPress={() => navigation.navigate('FieldGuide')}
+        >
+          <Text style={styles.fieldGuideLinkText}>{CHECK_IN_COPY.fieldGuideLink} →</Text>
+        </Pressable>
+      </View>
       {Object.values(EMOTION_FAMILIES).map((family) => {
         // Full vocabulary reachable, gradient shown first: the curated words
         // carry most check-ins; "+ more words" opens the extended list.
@@ -301,6 +321,7 @@ function FeelStep({
                         : undefined
                     }
                     onPress={() => setState((s) => toggleEmotion(s, word.id, family.id))}
+                    onLongPress={() => useHelperSheetStore.getState().open(family.id)}
                   />
                 );
               })}
@@ -382,6 +403,7 @@ function FeelStep({
                             : undefined
                         }
                         onPress={() => setState((s) => toggleEmotion(s, word.id, familyId))}
+                        onLongPress={() => useHelperSheetStore.getState().open(familyId)}
                       />
                     );
                   })}
@@ -405,6 +427,7 @@ function FeelStep({
                         onChangeIntensity={(intensity) =>
                           setState((s) => setIntensity(s, sel.emotionId, intensity))
                         }
+                        onLongPress={() => useHelperSheetStore.getState().open(sel.family)}
                       />
                     ))}
                   </View>
@@ -589,6 +612,21 @@ const styles = StyleSheet.create({
   },
   feelHint: {
     ...typography.caption,
+  },
+  guideRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+  },
+  fieldGuideLink: {
+    minHeight: hitTarget,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xs,
+  },
+  fieldGuideLinkText: {
+    ...typography.caption,
+    color: colors.inkSoft,
   },
   underneathPanel: {
     backgroundColor: colors.paperRaised,
