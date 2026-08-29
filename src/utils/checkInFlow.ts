@@ -67,14 +67,22 @@ export function canProceed(s: FlowState): boolean {
   return true;
 }
 
+export type FeelHint = 'masking' | 'temperature' | 'invite';
+
 /**
- * After the first word is named AND weighed, gently invite company — we
- * rarely feel just one thing (the no-cap note above). Exactly one weighed
- * selection, so this never stacks with the temperature or masking hints,
- * and it retires the moment a second word arrives: invitation, not nag.
+ * The one gentle hint allowed above the footer on the feel step —
+ * priority-ordered here so hints can never stack. 'invite' asks for company
+ * after the first word is named AND weighed (we rarely feel just one thing —
+ * the no-cap note above) and retires the moment a second word arrives:
+ * invitation, not nag. It also stays quiet while a masking panel is open,
+ * whose own hint says one is enough.
  */
-export function shouldInviteAnother(s: FlowState): boolean {
-  return s.step === 'feel' && s.selections.length === 1 && s.selections[0].intensity !== null;
+export function feelStepHint(s: FlowState): FeelHint | null {
+  if (s.step !== 'feel') return null;
+  if (s.selections.length === 0) return s.masking.length > 0 ? 'masking' : null;
+  if (s.selections.some((x) => x.intensity === null)) return 'temperature';
+  if (s.selections.length === 1 && s.masking.length === 0) return 'invite';
+  return null;
 }
 
 export function nextStep(s: FlowState): FlowState {

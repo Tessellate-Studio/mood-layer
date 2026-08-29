@@ -49,9 +49,10 @@ import {
   nextStep,
   prevStep,
   setIntensity,
+  feelStepHint,
   setNote,
-  shouldInviteAnother,
   STEP_ORDER,
+  type FeelHint,
   toCheckInInput,
   toggleBody,
   toggleEmotion,
@@ -63,6 +64,21 @@ import {
 
 type CheckInRoute = RouteProp<RootStackParamList, 'CheckInFlow'>;
 type Nav = NativeStackNavigationProp<RootStackParamList>;
+
+// One home for the hold-to-learn gesture: the feel hint promises holding ANY
+// word teaches you about it, so every chip on the step routes through here.
+const openFamilyHelper = (family: EmotionFamilyId) =>
+  useHelperSheetStore.getState().open(family);
+
+/** The feel step's single hint slot — which testID + copy each state renders. */
+const FEEL_HINTS: Record<FeelHint, { testID: string; copy: string }> = {
+  masking: { testID: 'masking-continue-hint', copy: CHECK_IN_COPY.maskingContinueHint },
+  temperature: {
+    testID: 'temperature-continue-hint',
+    copy: CHECK_IN_COPY.temperatureContinueHint,
+  },
+  invite: { testID: 'add-another-hint', copy: CHECK_IN_COPY.addAnotherInvitation },
+};
 
 const STEP_TITLES: Record<CheckInStep, string> = {
   feel: 'What are you feeling right now?',
@@ -147,23 +163,15 @@ export default function CheckInFlowScreen() {
         {state.step === 'stitch' && <StitchStep state={state} />}
       </ScrollView>
 
-      {state.step === 'feel' && state.masking.length > 0 && state.selections.length === 0 ? (
-        <Text style={styles.continueHint} testID="masking-continue-hint">
-          {CHECK_IN_COPY.maskingContinueHint}
-        </Text>
-      ) : null}
-      {state.step === 'feel' &&
-      state.selections.length > 0 &&
-      state.selections.some((sel) => sel.intensity === null) ? (
-        <Text style={styles.continueHint} testID="temperature-continue-hint">
-          {CHECK_IN_COPY.temperatureContinueHint}
-        </Text>
-      ) : null}
-      {shouldInviteAnother(state) ? (
-        <Text style={styles.continueHint} testID="add-another-hint">
-          {CHECK_IN_COPY.addAnotherInvitation}
-        </Text>
-      ) : null}
+      {(() => {
+        // feelStepHint is priority-ordered, so at most one hint ever renders.
+        const hint = feelStepHint(state);
+        return hint ? (
+          <Text style={styles.continueHint} testID={FEEL_HINTS[hint].testID}>
+            {FEEL_HINTS[hint].copy}
+          </Text>
+        ) : null;
+      })()}
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
         {stepIndex > 0 && state.step !== 'stitch' ? (
@@ -298,7 +306,7 @@ function FeelStep({
                   onChangeIntensity={(intensity) =>
                     setState((s) => setIntensity(s, sel.emotionId, intensity))
                   }
-                  onLongPress={() => useHelperSheetStore.getState().open(sel.family)}
+                  onLongPress={() => openFamilyHelper(sel.family)}
                 />
               ))}
             </View>
@@ -327,7 +335,7 @@ function FeelStep({
                         : undefined
                     }
                     onPress={() => setState((s) => toggleEmotion(s, word.id, family.id))}
-                    onLongPress={() => useHelperSheetStore.getState().open(family.id)}
+                    onLongPress={() => openFamilyHelper(family.id)}
                   />
                 );
               })}
@@ -360,6 +368,7 @@ function FeelStep({
             dashed
             selected={state.masking.includes(m.id)}
             onPress={() => toggleMaskingAndReveal(m.id)}
+            onLongPress={() => openFamilyHelper(m.unpacksTo[0])}
           />
         ))}
       </View>
@@ -409,7 +418,7 @@ function FeelStep({
                             : undefined
                         }
                         onPress={() => setState((s) => toggleEmotion(s, word.id, familyId))}
-                        onLongPress={() => useHelperSheetStore.getState().open(familyId)}
+                        onLongPress={() => openFamilyHelper(familyId)}
                       />
                     );
                   })}
@@ -433,7 +442,7 @@ function FeelStep({
                         onChangeIntensity={(intensity) =>
                           setState((s) => setIntensity(s, sel.emotionId, intensity))
                         }
-                        onLongPress={() => useHelperSheetStore.getState().open(sel.family)}
+                        onLongPress={() => openFamilyHelper(sel.family)}
                       />
                     ))}
                   </View>

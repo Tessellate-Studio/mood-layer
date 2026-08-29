@@ -79,6 +79,15 @@ describe('the underneath map', () => {
     expect(state.underneath).toEqual(masking.unpacksTo);
   });
 
+  it('masking ids never collide with emotion word ids', () => {
+    // A masking id doubling as a word id would render duplicate chips on the
+    // feel step and let one stored id mean two different things.
+    for (const id of maskingIds) {
+      expect(gradientIds).not.toContain(id);
+      expect(extendedIds).not.toContain(id);
+    }
+  });
+
   it('state ids never collide with emotion word ids', () => {
     // Word ids are stored in check-ins, so a collision would corrupt lookups.
     // Masking overlap is allowed — 'numb' and 'guilty' are deliberately both

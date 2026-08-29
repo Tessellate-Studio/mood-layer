@@ -78,7 +78,7 @@ export const INSIGHT_TEMPLATES: InsightTemplate[] = [
     render: () => ({
       title: 'A muffled week',
       body:
-        'Several check-ins this week started from words like stressed, numb, or fine. You cannot selectively numb, so welcoming the hard feelings is also what lets joy back in. When one of those words comes up again, you could peek at what is underneath it.',
+        'Several check-ins this week started from a cover word rather than the feeling underneath. You cannot selectively numb, so welcoming the hard feelings is also what lets joy back in. When a cover word comes up again, you could peek at what it is keeping warm.',
     }),
   },
   {

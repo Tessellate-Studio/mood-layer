@@ -148,6 +148,12 @@ describe('CheckInFlowScreen', () => {
     expect(useHelperSheetStore.getState().family).toBe('fear');
   });
 
+  it("long-pressing a masking chip teaches its leading family — 'any word' means any", () => {
+    renderScreen();
+    fireEvent(screen.getByTestId('chip-guilty'), 'longPress');
+    expect(useHelperSheetStore.getState().family).toBe('anger');
+  });
+
   it('tells the user words can be held, and links to the field guide', () => {
     renderScreen();
     expect(screen.getByTestId('feel-hold-hint')).toBeTruthy();

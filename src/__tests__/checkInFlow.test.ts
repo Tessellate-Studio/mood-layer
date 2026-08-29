@@ -6,8 +6,8 @@ import {
   nextStep,
   prevStep,
   setIntensity,
+  feelStepHint,
   setNote,
-  shouldInviteAnother,
   toCheckInInput,
   toggleBody,
   toggleEmotion,
@@ -76,22 +76,30 @@ describe('checkInFlow reducer', () => {
     expect(canProceed(s)).toBe(true);
   });
 
-  it('invites another word only after exactly one is named AND weighed', () => {
+  it('shows at most one feel-step hint, priority-ordered', () => {
     let s = initialFlowState('manual');
-    // Empty feel step: nothing to build on yet.
-    expect(shouldInviteAnother(s)).toBe(false);
+    // Empty feel step: nothing to say yet.
+    expect(feelStepHint(s)).toBeNull();
+    // A masking cover alone: point underneath.
+    s = toggleMasking(s, 'fine');
+    expect(feelStepHint(s)).toBe('masking');
     // Named but unweighed: the temperature hint owns the moment.
     s = toggleEmotion(s, 'sad', 'sadness');
-    expect(shouldInviteAnother(s)).toBe(false);
-    // One word, weighed: the invitation appears.
+    expect(feelStepHint(s)).toBe('temperature');
+    // One weighed word while a masking panel is open: the panel's own hint
+    // already says one is enough — no contradictory invitation.
     s = setIntensity(s, 'sad', 2);
-    expect(shouldInviteAnother(s)).toBe(true);
-    // A second word (even unweighed) means it has done its job.
+    expect(feelStepHint(s)).toBeNull();
+    // Panel closed, exactly one weighed word: the invitation appears.
+    s = toggleMasking(s, 'fine');
+    expect(feelStepHint(s)).toBe('invite');
+    // A second word retires it (unweighed → temperature owns the slot again).
     s = toggleEmotion(s, 'worried', 'fear');
-    expect(shouldInviteAnother(s)).toBe(false);
-    // And it never fires off the feel step.
-    s = toggleEmotion(s, 'worried', 'fear');
-    expect(shouldInviteAnother(nextStep(s))).toBe(false);
+    expect(feelStepHint(s)).toBe('temperature');
+    s = setIntensity(s, 'worried', 2);
+    expect(feelStepHint(s)).toBeNull();
+    // And nothing fires off the feel step.
+    expect(feelStepHint(nextStep(s))).toBeNull();
   });
 
   it('only allows finish-early for name-it flows mid-stream', () => {

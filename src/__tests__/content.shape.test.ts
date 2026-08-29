@@ -209,8 +209,9 @@ describe('masking states', () => {
 
   it("unpacks 'guilty' through anger first — guilt as anger turned inward", () => {
     const guilty = MASKING_STATES.find((m) => m.id === 'guilty');
-    expect(guilty).toBeDefined();
-    expect(guilty?.unpacksTo).toContain('anger');
+    // Position matters: the underneath panel renders unpacksTo in order, so
+    // anger leading is the pedagogy, not a coincidence.
+    expect(guilty?.unpacksTo[0]).toBe('anger');
   });
 });
 
