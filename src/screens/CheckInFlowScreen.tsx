@@ -29,6 +29,7 @@ import WordTemperatureRow from '@/components/WordTemperatureRow';
 import { borderRadius, colors, familyPalette, hitTarget, spacing, typography } from '@/constants/theme';
 import PaperTexture from '@/components/PaperTexture';
 import { BODY_MAP } from '@/content/bodyMap';
+import { CHECK_IN_COPY } from '@/content/checkInCopy';
 import { EMOTION_FAMILIES, MASKING_STATES, type EmotionWord } from '@/content/emotions';
 import { noteReflection } from '@/content/noteReflection';
 import { allWordsForFamily, findVocabularyWord } from '@/content/vocabulary';
@@ -145,14 +146,14 @@ export default function CheckInFlowScreen() {
 
       {state.step === 'feel' && state.masking.length > 0 && state.selections.length === 0 ? (
         <Text style={styles.continueHint} testID="masking-continue-hint">
-          Name what&apos;s underneath to continue.
+          {CHECK_IN_COPY.maskingContinueHint}
         </Text>
       ) : null}
       {state.step === 'feel' &&
       state.selections.length > 0 &&
       state.selections.some((sel) => sel.intensity === null) ? (
         <Text style={styles.continueHint} testID="temperature-continue-hint">
-          Tap a swatch beside each word to set how strongly it&apos;s here.
+          {CHECK_IN_COPY.temperatureContinueHint}
         </Text>
       ) : null}
 
@@ -240,10 +241,7 @@ function FeelStep({
   };
   return (
     <View style={styles.stepGap}>
-      <Text style={styles.feelHint}>
-        Open whichever sounds close — naming even one word is plenty. The
-        swatches beside a chosen word set how strongly it&apos;s here.
-      </Text>
+      <Text style={styles.feelHint}>{CHECK_IN_COPY.feelHint}</Text>
       {Object.values(EMOTION_FAMILIES).map((family) => {
         // Full vocabulary reachable, gradient shown first: the curated words
         // carry most check-ins; "+ more words" opens the extended list.
@@ -325,7 +323,7 @@ function FeelStep({
         );
       })}
 
-      <Text style={styles.maskingIntro}>or, if it&apos;s more like…</Text>
+      <Text style={styles.maskingIntro}>{CHECK_IN_COPY.maskingIntro}</Text>
       <View style={styles.chipWrap}>
         {MASKING_STATES.map((m) => (
           <EmotionChip
@@ -414,9 +412,7 @@ function FeelStep({
               </View>
             );
           })}
-          <Text style={styles.underneathHint}>
-            Naming even one is enough — or open “learn” to feel your way in.
-          </Text>
+          <Text style={styles.underneathHint}>{CHECK_IN_COPY.underneathHint}</Text>
         </View>
       ))}
     </View>

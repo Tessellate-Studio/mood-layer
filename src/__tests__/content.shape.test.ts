@@ -14,6 +14,7 @@ import { RESISTANCE_TELLS } from '@/content/resistance';
 import { INSIGHT_TEMPLATES } from '@/content/insights';
 import { JUDGMENT_EXAMPLES } from '@/content/judgmentExamples';
 import { ONBOARDING_SLIDES } from '@/content/onboarding';
+import { CHECK_IN_COPY } from '@/content/checkInCopy';
 
 const FAMILY_IDS: EmotionFamilyId[] = [
   'anger',
@@ -334,6 +335,35 @@ describe('judgment examples', () => {
       expect(example.judgment.length).toBeGreaterThan(0);
       expect(example.feeling.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('check-in copy', () => {
+  const values = Object.values(CHECK_IN_COPY);
+
+  it('every line is non-empty', () => {
+    expect(values.length).toBeGreaterThan(0);
+    for (const line of values) {
+      expect(line.trim().length).toBeGreaterThan(0);
+    }
+  });
+
+  it('copy stays gentle: no exclamations, never directive', () => {
+    for (const line of values) {
+      expect(line).not.toContain('!');
+      expect(line.toLowerCase()).not.toContain('you should');
+      expect(line.toLowerCase()).not.toContain('you must');
+    }
+  });
+
+  it('speaks in layer language — never stitch/quilt/sew', () => {
+    for (const line of values) {
+      expect(line.toLowerCase()).not.toMatch(/quilt|stitch|sew/);
+    }
+  });
+
+  it('the feel hint invites several words, not just one', () => {
+    expect(CHECK_IN_COPY.feelHint.toLowerCase()).toContain('several');
   });
 });
 
