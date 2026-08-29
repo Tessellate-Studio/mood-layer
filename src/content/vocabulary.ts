@@ -56,11 +56,18 @@ export const EXTENDED_VOCABULARY: Record<EmotionFamilyId, EmotionWord[]> = {
     { id: 'terrified', label: 'Terrified', intensityHint: 4 },
     { id: 'petrified', label: 'Petrified', intensityHint: 4 },
   ],
+  // The guilt cluster (embarrassed → ashamed) lives here: guilt is anger at
+  // yourself braided with sadness for what was hurt, and the check-in also
+  // offers 'Guilty' as a masking doorway (emotions.ts) into the same room.
   sadness: [
     { id: 'lonely', label: 'Lonely', intensityHint: 2 },
     { id: 'gloomy', label: 'Gloomy', intensityHint: 2 },
     { id: 'withdrawn', label: 'Withdrawn', intensityHint: 2 },
     { id: 'discouraged', label: 'Discouraged', intensityHint: 2 },
+    { id: 'embarrassed', label: 'Embarrassed', intensityHint: 2 },
+    { id: 'regretful', label: 'Regretful', intensityHint: 2 },
+    { id: 'remorseful', label: 'Remorseful', intensityHint: 3 },
+    { id: 'ashamed', label: 'Ashamed', intensityHint: 3 },
     { id: 'defeated', label: 'Defeated', intensityHint: 3 },
     { id: 'miserable', label: 'Miserable', intensityHint: 3 },
     { id: 'anguished', label: 'Anguished', intensityHint: 4 },

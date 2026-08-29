@@ -193,9 +193,9 @@ describe('emotion families', () => {
 });
 
 describe('masking states', () => {
-  it('has the five masking states with prompts that unpack to valid families', () => {
+  it('has the six masking states with prompts that unpack to valid families', () => {
     const ids = MASKING_STATES.map((m) => m.id).sort();
-    expect(ids).toEqual(['busy', 'fine', 'numb', 'overwhelmed', 'stressed']);
+    expect(ids).toEqual(['busy', 'fine', 'guilty', 'numb', 'overwhelmed', 'stressed']);
     for (const state of MASKING_STATES) {
       expect(state.label.length).toBeGreaterThan(0);
       expect(state.prompt.length).toBeGreaterThan(0);
@@ -204,6 +204,12 @@ describe('masking states', () => {
         expect(FAMILY_IDS).toContain(family);
       }
     }
+  });
+
+  it("unpacks 'guilty' through anger first — guilt as anger turned inward", () => {
+    const guilty = MASKING_STATES.find((m) => m.id === 'guilty');
+    expect(guilty).toBeDefined();
+    expect(guilty?.unpacksTo).toContain('anger');
   });
 });
 
