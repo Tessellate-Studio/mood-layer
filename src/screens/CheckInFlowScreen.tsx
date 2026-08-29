@@ -23,7 +23,7 @@ import Svg, { Line } from 'react-native-svg';
 
 import EmotionChip from '@/components/EmotionChip';
 import FamilyGroup from '@/components/FamilyGroup';
-import LearnLink from '@/components/LearnLink';
+import LearnLink, { CaptionLink } from '@/components/LearnLink';
 import ModalHeader from '@/components/ModalHeader';
 import { PatchPreview } from '@/components/QuiltPatch';
 import WordTemperatureRow from '@/components/WordTemperatureRow';
@@ -265,16 +265,12 @@ function FeelStep({
         <Text style={styles.feelHint} testID="feel-hold-hint">
           {CHECK_IN_COPY.holdToLearnHint}
         </Text>
-        <Pressable
+        <CaptionLink
           testID="checkin-field-guide-link"
-          accessibilityRole="button"
           accessibilityLabel="Open the field guide"
-          hitSlop={8}
-          style={styles.fieldGuideLink}
+          label={`${CHECK_IN_COPY.fieldGuideLink} →`}
           onPress={() => navigation.navigate('FieldGuide')}
-        >
-          <Text style={styles.fieldGuideLinkText}>{CHECK_IN_COPY.fieldGuideLink} →</Text>
-        </Pressable>
+        />
       </View>
       {Object.values(EMOTION_FAMILIES).map((family) => {
         // Full vocabulary reachable, gradient shown first: the curated words
@@ -633,15 +629,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
-  },
-  fieldGuideLink: {
-    minHeight: hitTarget,
-    justifyContent: 'center',
-    paddingHorizontal: spacing.xs,
-  },
-  fieldGuideLinkText: {
-    ...typography.caption,
-    color: colors.inkSoft,
   },
   underneathPanel: {
     backgroundColor: colors.paperRaised,

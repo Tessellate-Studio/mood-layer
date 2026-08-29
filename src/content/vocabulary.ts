@@ -7,10 +7,10 @@
 // contempt. 'Anxious' is deliberately absent everywhere — anxiety is
 // resisted fear (see content/underneath.ts), not a flavour of fear.
 //
-// These words are education-only for now: the check-in keeps its short
-// curated gradients so naming stays easy. Word ids are unique across
-// gradients AND this list, so any word could become check-in-selectable
-// later without a data migration.
+// These words ARE check-in-selectable (behind each family's "+ more words"
+// unfold — rebalance, 2026-07-17) and get persisted into check-ins, so ids
+// here are load-bearing: renaming or removing one orphans stored entries.
+// Ids stay unique across gradients AND this list.
 
 import type { EmotionFamilyId, Intensity } from '@/types/models';
 import {

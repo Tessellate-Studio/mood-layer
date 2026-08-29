@@ -1,7 +1,8 @@
-// The app's one "learn →" affordance: opens a family's helper sheet (host
-// lives once in App.tsx) from any screen. A quiet caption visually, but
-// padded to the 44px hit target — caption-sized text alone is too small to
-// tap reliably (WCAG 2.1 AA, forge hard rule).
+// The app's one quiet caption-link affordance. CaptionLink is the primitive —
+// caption-sized ink text padded to the 44px hit target, because caption text
+// alone is too small to tap reliably (WCAG 2.1 AA, forge hard rule). LearnLink
+// is its main use: "learn →" opens a family's helper sheet (host lives once in
+// App.tsx) from any screen.
 
 import React from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
@@ -11,6 +12,28 @@ import { EMOTION_FAMILIES } from '@/content/emotions';
 import { useHelperSheetStore } from '@/store/helperSheetStore';
 import type { EmotionFamilyId } from '@/types/models';
 
+interface CaptionLinkProps {
+  label: string;
+  accessibilityLabel: string;
+  onPress(): void;
+  testID: string;
+}
+
+export function CaptionLink({ label, accessibilityLabel, onPress, testID }: CaptionLinkProps) {
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      hitSlop={8}
+      style={styles.link}
+      onPress={onPress}
+    >
+      <Text style={styles.text}>{label}</Text>
+    </Pressable>
+  );
+}
+
 interface Props {
   family: EmotionFamilyId;
   testID: string;
@@ -19,16 +42,12 @@ interface Props {
 export function LearnLink({ family, testID }: Props) {
   const label = EMOTION_FAMILIES[family].label;
   return (
-    <Pressable
+    <CaptionLink
       testID={testID}
-      accessibilityRole="button"
       accessibilityLabel={`Learn about ${label}`}
-      hitSlop={8}
-      style={styles.link}
+      label="learn →"
       onPress={() => useHelperSheetStore.getState().open(family)}
-    >
-      <Text style={styles.text}>learn →</Text>
-    </Pressable>
+    />
   );
 }
 
