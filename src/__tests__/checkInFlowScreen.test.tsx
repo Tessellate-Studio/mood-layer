@@ -119,6 +119,21 @@ describe('CheckInFlowScreen', () => {
     expect(mockGoBack).toHaveBeenCalled();
   });
 
+  it('invites a second word once the first is weighed, then steps back', () => {
+    renderScreen();
+    expect(screen.queryByTestId('add-another-hint')).toBeNull();
+    fireEvent.press(screen.getByTestId('family-sadness'));
+    fireEvent.press(screen.getByTestId('chip-sad'));
+    // Unweighed: the temperature hint owns the slot, not the invitation.
+    expect(screen.getByTestId('temperature-continue-hint')).toBeTruthy();
+    expect(screen.queryByTestId('add-another-hint')).toBeNull();
+    fireEvent.press(screen.getByTestId('dial-sad-2'));
+    expect(screen.getByTestId('add-another-hint')).toBeTruthy();
+    // A second word means the invitation has done its job.
+    fireEvent.press(screen.getByTestId('chip-hurt'));
+    expect(screen.queryByTestId('add-another-hint')).toBeNull();
+  });
+
   it('long-pressing any word chip opens its family helper sheet', () => {
     renderScreen();
     fireEvent.press(screen.getByTestId('family-sadness'));

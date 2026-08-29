@@ -67,6 +67,16 @@ export function canProceed(s: FlowState): boolean {
   return true;
 }
 
+/**
+ * After the first word is named AND weighed, gently invite company — we
+ * rarely feel just one thing (the no-cap note above). Exactly one weighed
+ * selection, so this never stacks with the temperature or masking hints,
+ * and it retires the moment a second word arrives: invitation, not nag.
+ */
+export function shouldInviteAnother(s: FlowState): boolean {
+  return s.step === 'feel' && s.selections.length === 1 && s.selections[0].intensity !== null;
+}
+
 export function nextStep(s: FlowState): FlowState {
   const i = STEP_ORDER.indexOf(s.step);
   if (i >= STEP_ORDER.length - 1) return s;

@@ -7,6 +7,7 @@ import {
   prevStep,
   setIntensity,
   setNote,
+  shouldInviteAnother,
   toCheckInInput,
   toggleBody,
   toggleEmotion,
@@ -73,6 +74,24 @@ describe('checkInFlow reducer', () => {
     s = setIntensity(s, 'sad', 4);
     expect(s.selections[0].intensity).toBe(4);
     expect(canProceed(s)).toBe(true);
+  });
+
+  it('invites another word only after exactly one is named AND weighed', () => {
+    let s = initialFlowState('manual');
+    // Empty feel step: nothing to build on yet.
+    expect(shouldInviteAnother(s)).toBe(false);
+    // Named but unweighed: the temperature hint owns the moment.
+    s = toggleEmotion(s, 'sad', 'sadness');
+    expect(shouldInviteAnother(s)).toBe(false);
+    // One word, weighed: the invitation appears.
+    s = setIntensity(s, 'sad', 2);
+    expect(shouldInviteAnother(s)).toBe(true);
+    // A second word (even unweighed) means it has done its job.
+    s = toggleEmotion(s, 'worried', 'fear');
+    expect(shouldInviteAnother(s)).toBe(false);
+    // And it never fires off the feel step.
+    s = toggleEmotion(s, 'worried', 'fear');
+    expect(shouldInviteAnother(nextStep(s))).toBe(false);
   });
 
   it('only allows finish-early for name-it flows mid-stream', () => {

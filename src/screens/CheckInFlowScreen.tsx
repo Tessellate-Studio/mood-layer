@@ -50,6 +50,7 @@ import {
   prevStep,
   setIntensity,
   setNote,
+  shouldInviteAnother,
   STEP_ORDER,
   toCheckInInput,
   toggleBody,
@@ -156,6 +157,11 @@ export default function CheckInFlowScreen() {
       state.selections.some((sel) => sel.intensity === null) ? (
         <Text style={styles.continueHint} testID="temperature-continue-hint">
           {CHECK_IN_COPY.temperatureContinueHint}
+        </Text>
+      ) : null}
+      {shouldInviteAnother(state) ? (
+        <Text style={styles.continueHint} testID="add-another-hint">
+          {CHECK_IN_COPY.addAnotherInvitation}
         </Text>
       ) : null}
 
