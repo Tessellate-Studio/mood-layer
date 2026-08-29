@@ -148,10 +148,16 @@ describe('CheckInFlowScreen', () => {
     expect(useHelperSheetStore.getState().family).toBe('fear');
   });
 
-  it("long-pressing a masking chip teaches its leading family — 'any word' means any", () => {
+  it("long-pressing a masking chip reveals its underneath panel — 'any word' means any", () => {
     renderScreen();
+    // What a cover word carries is its own prompt + families, so hold opens
+    // the panel (never a single family's sheet, which would read as a
+    // diagnosis for hedged covers like 'Fine').
     fireEvent(screen.getByTestId('chip-guilty'), 'longPress');
-    expect(useHelperSheetStore.getState().family).toBe('anger');
+    expect(screen.getByTestId('underneath-guilty')).toBeTruthy();
+    // Holding again never deselects — the gesture teaches, it doesn't toggle.
+    fireEvent(screen.getByTestId('chip-guilty'), 'longPress');
+    expect(screen.getByTestId('underneath-guilty')).toBeTruthy();
   });
 
   it('tells the user words can be held, and links to the field guide', () => {

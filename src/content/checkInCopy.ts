@@ -7,7 +7,7 @@ export const CHECK_IN_COPY = {
   feelHint:
     "Open whichever sounds close and take any words that fit — one or several. The swatches beside a chosen word set how strongly it's here.",
   holdToLearnHint: 'Hold any word to learn what it carries.',
-  fieldGuideLink: 'browse the field guide',
+  fieldGuideLink: 'browse the field guide →',
   addAnotherInvitation: 'We rarely feel just one thing — add any others that are here too.',
   maskingIntro: "or, if it's more like…",
   maskingContinueHint: "Name what's underneath to continue.",

@@ -103,6 +103,9 @@ export default function CheckInFlowScreen() {
 
   const title = source === 'name-it' && state.step === 'feel' ? 'Can you name it?' : STEP_TITLES[state.step];
   const stepIndex = STEP_ORDER.indexOf(state.step);
+  // feelStepHint is priority-ordered, so at most one hint ever renders.
+  const hintKey = feelStepHint(state);
+  const feelHint = hintKey ? FEEL_HINTS[hintKey] : null;
 
   // Each step is its own page — never inherit the previous step's scroll
   // position (app-wide bug, 2026-07-17).
@@ -163,15 +166,11 @@ export default function CheckInFlowScreen() {
         {state.step === 'stitch' && <StitchStep state={state} />}
       </ScrollView>
 
-      {(() => {
-        // feelStepHint is priority-ordered, so at most one hint ever renders.
-        const hint = feelStepHint(state);
-        return hint ? (
-          <Text style={styles.continueHint} testID={FEEL_HINTS[hint].testID}>
-            {FEEL_HINTS[hint].copy}
-          </Text>
-        ) : null;
-      })()}
+      {feelHint ? (
+        <Text style={styles.continueHint} testID={feelHint.testID}>
+          {feelHint.copy}
+        </Text>
+      ) : null}
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
         {stepIndex > 0 && state.step !== 'stitch' ? (
@@ -268,7 +267,7 @@ function FeelStep({
         <CaptionLink
           testID="checkin-field-guide-link"
           accessibilityLabel="Open the field guide"
-          label={`${CHECK_IN_COPY.fieldGuideLink} →`}
+          label={CHECK_IN_COPY.fieldGuideLink}
           onPress={() => navigation.navigate('FieldGuide')}
         />
       </View>
@@ -302,7 +301,6 @@ function FeelStep({
                   onChangeIntensity={(intensity) =>
                     setState((s) => setIntensity(s, sel.emotionId, intensity))
                   }
-                  onLongPress={() => openFamilyHelper(sel.family)}
                 />
               ))}
             </View>
@@ -364,7 +362,12 @@ function FeelStep({
             dashed
             selected={state.masking.includes(m.id)}
             onPress={() => toggleMaskingAndReveal(m.id)}
-            onLongPress={() => openFamilyHelper(m.unpacksTo[0])}
+            onLongPress={() => {
+              // What a cover word "carries" is its own prompt + families, not
+              // one family's sheet (holding 'Fine' → sadness would read as a
+              // diagnosis). Hold reveals the underneath panel; never deselects.
+              if (!state.masking.includes(m.id)) toggleMaskingAndReveal(m.id);
+            }}
           />
         ))}
       </View>
@@ -438,7 +441,6 @@ function FeelStep({
                         onChangeIntensity={(intensity) =>
                           setState((s) => setIntensity(s, sel.emotionId, intensity))
                         }
-                        onLongPress={() => openFamilyHelper(sel.family)}
                       />
                     ))}
                   </View>
