@@ -42,7 +42,10 @@ jest.mock('react-native-reanimated', () => {
     withSequence: (...args) => args[args.length - 1],
     withRepeat: (v) => v,
     cancelAnimation: () => {},
-    runOnJS: (fn) => fn,
+    // A spy that still invokes: tests assert a worklet routed its JS callback
+    // through runOnJS — a direct call is a fatal UI-thread error on device
+    // that node can't reproduce (regression #23).
+    runOnJS: jest.fn((fn) => (...args) => fn(...args)),
     runOnUI: (fn) => fn,
     interpolate: (v) => v,
     Easing: {
@@ -64,24 +67,37 @@ jest.mock(
     __esModule: true,
     makeShareableCloneRecursive: jest.fn(),
     runOnUI: (fn) => fn,
-    runOnJS: (fn) => fn,
+    // Same observable shape as the reanimated mock's runOnJS, so the wiring
+    // assertion works whichever module a component imports it from.
+    runOnJS: jest.fn((fn) => (...args) => fn(...args)),
   }),
   { virtual: true }
 );
 
-// Mock react-native-gesture-handler's GestureDetector as a passthrough View
+// Mock react-native-gesture-handler. Gesture builders RECORD their chained
+// callbacks into `handlers`, and GestureDetector files each gesture under its
+// child's testID in the exported __capturedGestures map, so tests can drive
+// the handlers directly — the earlier swallow-everything proxy meant no test
+// ever executed a gesture callback (regression #23). A chained method missing
+// from the list below throws in the test that needs it: add it there.
 jest.mock('react-native-gesture-handler', () => {
   const React = require('react');
   const { View } = require('react-native');
-  const passthrough = ({ children }) => children ?? null;
+  const capturedGestures = new Map();
+  const captureGesture = ({ gesture, children }) => {
+    capturedGestures.set(children?.props?.testID, gesture);
+    return children ?? null;
+  };
   const chainable = () => {
-    const proxy = new Proxy(() => proxy, {
-      get: () => () => proxy,
-    });
-    return proxy;
+    const gesture = { handlers: {} };
+    for (const name of ['onBegin', 'onStart', 'onChange', 'onUpdate', 'onEnd', 'onFinalize']) {
+      gesture[name] = (fn) => ((gesture.handlers[name] = fn), gesture);
+    }
+    return gesture;
   };
   return {
-    GestureDetector: passthrough,
+    __capturedGestures: capturedGestures,
+    GestureDetector: captureGesture,
     GestureHandlerRootView: ({ children, style }) =>
       React.createElement(View, { style }, children),
     Gesture: {

@@ -7,6 +7,7 @@
 import React from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import Animated, {
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
@@ -68,7 +69,10 @@ export function Sheet({ visible, onClose, children, testID }: Props) {
     })
     .onEnd(() => {
       if (translateY.value > DISMISS_THRESHOLD) {
-        onClose();
+        // onEnd runs as a worklet on the UI thread; onClose is a plain JS
+        // function, so it MUST go through runOnJS — a direct call is a fatal
+        // UI-runtime error that kills the app (regression #23).
+        runOnJS(onClose)();
       } else {
         translateY.value = withSpring(0, motion.spring);
       }
