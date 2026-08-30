@@ -134,6 +134,13 @@ describe('SettingsScreen', () => {
     expect(useSettingsStore.getState().reduceMotionOverride).toBe(false);
   });
 
+  it('show-helpers row brings every first-visit note back', () => {
+    useSettingsStore.setState({ dismissedTips: ['note-quilt', 'home'] });
+    render(<SettingsScreen />);
+    fireEvent.press(screen.getByTestId('settings-show-helpers'));
+    expect(useSettingsStore.getState().dismissedTips).toEqual([]);
+  });
+
   it('expands the about-the-ideas paragraph on press', () => {
     render(<SettingsScreen />);
     expect(screen.queryByText(/practice companion, not therapy/)).toBeNull();
