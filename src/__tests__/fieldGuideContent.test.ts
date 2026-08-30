@@ -130,9 +130,13 @@ describe('extended vocabulary (word finder)', () => {
   });
 
   it('files the guilt cluster under sadness (guilt = anger at self braided with sadness)', () => {
-    for (const id of ['ashamed', 'regretful', 'remorseful', 'embarrassed']) {
+    for (const id of ['ashamed', 'regretful', 'remorseful']) {
       expect(findVocabularyWord(id)?.family.id).toBe('sadness');
     }
+  });
+
+  it("files 'embarrassed' under fear (embarrassment is fear-based — user, 2026-08-30)", () => {
+    expect(findVocabularyWord('embarrassed')?.family.id).toBe('fear');
   });
 
   it('allWordsForFamily merges gradient + extended, sorted mild → intense', () => {
