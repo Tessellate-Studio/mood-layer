@@ -10,7 +10,6 @@ import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } fro
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
-  withDelay,
   withTiming,
 } from 'react-native-reanimated';
 import Svg, { Polygon } from 'react-native-svg';
@@ -34,22 +33,32 @@ export function CoachNote({ id, pointer = 'none', pointerInset, style }: Props) 
   const dismissed = useSettingsStore((s) => s.dismissedTips.includes(id));
   const dismissTip = useSettingsStore((s) => s.dismissTip);
   const { reduced } = useMotion();
+  // Nothing mounts during the entry beat: RN opacity does not gate touches,
+  // so an invisible-but-mounted card would swallow taps meant for the content
+  // underneath — and permanently dismiss a note the user never saw
+  // (adversarial review, 2026-08-30). Mount after the beat, then fade.
+  const [mounted, setMounted] = React.useState(reduced);
   const opacity = useSharedValue(reduced ? 1 : 0);
 
   React.useEffect(() => {
     if (reduced) {
       // Hard rule (CLAUDE.md): animations disable cleanly — snap to rest.
+      setMounted(true);
       opacity.value = 1;
       return;
     }
     // A gentle beat before a gentle fade, both from the shared motion token —
     // the note arrives after the screen has settled, not with it.
-    opacity.value = withDelay(motion.gentleMs, withTiming(1, { duration: motion.gentleMs }));
+    const beat = setTimeout(() => {
+      setMounted(true);
+      opacity.value = withTiming(1, { duration: motion.gentleMs });
+    }, motion.gentleMs);
+    return () => clearTimeout(beat);
   }, [opacity, reduced]);
 
   const entryStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
-  if (dismissed) return null;
+  if (dismissed || !mounted) return null;
 
   const mark = COACH_MARKS[id];
   const triangle = (direction: 'up' | 'down') => (

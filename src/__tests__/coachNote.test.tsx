@@ -16,15 +16,18 @@ beforeEach(() => {
 });
 
 describe('CoachNote', () => {
-  it('renders its copy when not yet dismissed', () => {
+  it('mounts only after the entry beat, then shows its copy', async () => {
     render(<CoachNote id="note-quilt" pointer="up" />);
-    expect(screen.getByTestId('coach-note-quilt')).toBeTruthy();
+    // Nothing during the beat — an invisible mounted card would still be
+    // hit-testable and could swallow a tap into a permanent dismissal.
+    expect(screen.queryByTestId('coach-note-quilt')).toBeNull();
+    expect(await screen.findByTestId('coach-note-quilt')).toBeTruthy();
     expect(screen.getByText(/Each layer here is a check-in/)).toBeTruthy();
   });
 
-  it('tap dismisses persistently — gone on the next render', () => {
+  it('tap dismisses persistently — gone on the next render', async () => {
     render(<CoachNote id="note-quilt" />);
-    fireEvent.press(screen.getByTestId('coach-dismiss-note-quilt'));
+    fireEvent.press(await screen.findByTestId('coach-dismiss-note-quilt'));
     expect(useSettingsStore.getState().dismissedTips).toContain('note-quilt');
     expect(screen.queryByTestId('coach-note-quilt')).toBeNull();
   });
