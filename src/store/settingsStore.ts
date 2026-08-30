@@ -36,6 +36,9 @@ interface SettingsState extends SettingsValues {
   setReduceMotionOverride(override: boolean | null): void;
   setCrashReportingEnabled(enabled: boolean): void;
   dismissTip(tipId: string): void;
+  /** Bring every first-visit helper note back (Settings → "Show the helper
+   *  notes again"). Clears retired tip ids along with the live ones. */
+  restoreTips(): void;
   resetAll(): void;
 }
 
@@ -57,6 +60,7 @@ export const useSettingsStore = create<SettingsState>()(
         set((state) =>
           state.dismissedTips.includes(tipId) ? {} : { dismissedTips: [...state.dismissedTips, tipId] }
         ),
+      restoreTips: () => set({ dismissedTips: [] }),
       resetAll: () => set({ ...DEFAULTS }),
     }),
     { name: 'tml-settings', storage: createJSONStorage(() => AsyncStorage) }
