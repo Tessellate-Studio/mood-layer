@@ -21,7 +21,7 @@ import { borderRadius, colors, hitTarget, motion, spacing, typography } from '@/
 import LogoDivider from '@/components/LogoDivider';
 import LogoMark from '@/components/LogoMark';
 import PaperTexture from '@/components/PaperTexture';
-import ScreenTip from '@/components/ScreenTip';
+import CoachNote from '@/components/CoachNote';
 import ThreadCard from '@/components/ThreadCard';
 import { monthlyMoodDigest, monthlyPracticeReflection } from '@/content/monthlyDigest';
 import { RESISTANCE_TELLS } from '@/content/resistance';
@@ -252,10 +252,6 @@ export default function InsightsScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-insights">
       <PaperTexture />
-      <ScreenTip
-        tipId="insights"
-        text="Patterns from your check-ins appear here each week. At most two a week, always gentle."
-      />
       <View style={styles.headerRow}>
         {markFamilies ? <LogoMark families={markFamilies} size={44} /> : null}
         <View style={styles.headerText}>
@@ -309,6 +305,18 @@ export default function InsightsScreen() {
           }
         />
       )}
+
+      {/* First-visit helper note — no pointer: there is nothing to do here
+          yet, and the note says exactly that. */}
+      <CoachNote
+        id="note-insights"
+        style={{
+          position: 'absolute',
+          top: insets.top + spacing.md + 64,
+          left: spacing.md,
+          right: spacing.md,
+        }}
+      />
     </View>
   );
 }

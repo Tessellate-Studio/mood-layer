@@ -30,13 +30,17 @@ import JudgmentFlowScreen from '@/screens/JudgmentFlowScreen';
 import NameItSetupScreen from '@/screens/NameItSetupScreen';
 import { useExperimentStore, type PracticeSession } from '@/store/experimentStore';
 import { useHelperSheetStore } from '@/store/helperSheetStore';
+import { useSettingsStore } from '@/store/settingsStore';
 
 const initialExperiments = useExperimentStore.getState();
+
+const initialSettings = useSettingsStore.getState();
 
 beforeEach(() => {
   jest.clearAllMocks();
   useExperimentStore.setState(initialExperiments, true);
   useHelperSheetStore.setState({ family: null });
+  useSettingsStore.setState(initialSettings, true);
 });
 
 function renderScreen(node: React.ReactElement) {
@@ -176,6 +180,15 @@ describe('JudgmentFlowScreen', () => {
     expect(screen.getByTestId('judgment-next').props.accessibilityState.disabled).toBe(true);
     fireEvent.press(screen.getByTestId('judgment-next'));
     expect(screen.queryByTestId('judgment-stitch')).toBeNull();
+  });
+});
+
+describe('first-visit helper note', () => {
+  it('floats until dismissed', async () => {
+    renderScreen(<ExperimentsScreen />);
+    expect(await screen.findByTestId('coach-note-experiments')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('coach-dismiss-note-experiments'));
+    expect(screen.queryByTestId('coach-note-experiments')).toBeNull();
   });
 });
 

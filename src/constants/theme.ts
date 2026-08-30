@@ -34,8 +34,13 @@ export const colors = {
   shade4: '#1F1F1D',
   /** Dashed stitch lines between patch segments. */
   stitch: '#141414',
-  /** Backdrop behind sheets/modals (the only alpha colour). */
+  /** Backdrop behind sheets/modals (one of two alpha colours — see paperVeil). */
   scrim: 'rgba(20, 20, 20, 0.35)',
+  /** Floating first-visit helper notes — raised paper at 94%, so the screen
+   *  breathes through the card without any scrim (the second sanctioned alpha
+   *  colour, added 2026-08-30). Text on it stays ink tiers: 94% over cream
+   *  barely moves contrast, so body inkSoft keeps ample AA headroom. */
+  paperVeil: 'rgba(253, 252, 248, 0.94)',
 } as const;
 
 export type IntensityShade = 1 | 2 | 3 | 4;

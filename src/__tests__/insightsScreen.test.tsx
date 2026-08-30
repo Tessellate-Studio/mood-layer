@@ -56,6 +56,16 @@ function renderScreen() {
   );
 }
 
+describe('first-visit helper note', () => {
+  it('floats until dismissed, then stays gone', async () => {
+    renderScreen();
+    expect(await screen.findByTestId('coach-note-insights')).toBeTruthy();
+    fireEvent.press(screen.getByTestId('coach-dismiss-note-insights'));
+    expect(useSettingsStore.getState().dismissedTips).toContain('note-insights');
+    expect(screen.queryByTestId('coach-note-insights')).toBeNull();
+  });
+});
+
 describe('InsightsScreen', () => {
   it('generates last week’s insights on focus and renders the cards', async () => {
     // Four stuck-decision check-ins last week → stuck-decisions template.

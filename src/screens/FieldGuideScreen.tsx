@@ -11,6 +11,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Line } from 'react-native-svg';
 
+import CoachNote from '@/components/CoachNote';
 import EmotionChip from '@/components/EmotionChip';
 import FamilyGroup from '@/components/FamilyGroup';
 import LearnLink from '@/components/LearnLink';
@@ -173,6 +174,19 @@ export default function FieldGuideScreen() {
           nine families. None of them is a test — the closest word is close enough.
         </Text>
       </ScrollView>
+
+      {/* First-visit helper note, floating below the header + intro and
+          pointing down at the family key. */}
+      <CoachNote
+        id="note-field-guide"
+        pointer="down"
+        style={{
+          position: 'absolute',
+          top: insets.top + spacing.md + 104,
+          left: spacing.md,
+          right: spacing.md,
+        }}
+      />
     </View>
   );
 }

@@ -24,7 +24,8 @@ import Svg, { Circle, Line, Path } from 'react-native-svg';
 import { borderRadius, colors, hitTarget, mutedPalette, spacing, typography } from '@/constants/theme';
 import LogoDivider from '@/components/LogoDivider';
 import PaperTexture from '@/components/PaperTexture';
-import ScreenTip from '@/components/ScreenTip';
+import CoachNote from '@/components/CoachNote';
+import { useSettingsStore } from '@/store/settingsStore';
 import ThreadCard from '@/components/ThreadCard';
 import {
   ACTIVE_FREQUENCY_ORDER,
@@ -435,10 +436,6 @@ export default function CircleScreen() {
         testID="screen-circle"
       >
         <Text style={typography.title}>Your circle</Text>
-        <ScreenTip
-          tipId="circle"
-          text="Share a weekly summary with people you trust. You choose what they see and how often. Pair phones to send directly to their app."
-        />
         <Text style={styles.intro}>
           Nothing leaves your phone until you choose it. You control what each person sees and how
           often.
@@ -458,7 +455,11 @@ export default function CircleScreen() {
             accessibilityRole="button"
             accessibilityLabel="Invite someone to your circle"
             style={styles.invite}
-            onPress={() => setInviting(true)}
+            onPress={() => {
+              // Taking the pointed-at action retires its helper note.
+              useSettingsStore.getState().dismissTip('note-circle');
+              setInviting(true);
+            }}
           >
             <Text style={styles.inviteText}>+ Invite someone</Text>
           </Pressable>
@@ -466,6 +467,19 @@ export default function CircleScreen() {
 
         <LogoDivider tip="Change or stop sharing any time. Removing someone deletes everything they were ever sent." />
       </ScrollView>
+
+      {/* First-visit helper note, floating below the title + intro and
+          pointing down toward the invite row. */}
+      <CoachNote
+        id="note-circle"
+        pointer="down"
+        style={{
+          position: 'absolute',
+          top: insets.top + spacing.md + 96,
+          left: spacing.md,
+          right: spacing.md,
+        }}
+      />
     </View>
   );
 }

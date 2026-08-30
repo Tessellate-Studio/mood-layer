@@ -165,6 +165,15 @@ describe('QuiltScreen', () => {
     expect(screen.queryByTestId('weekly-summary')).toBeNull();
   });
 
+  it('floats the first-visit helper note; starting a check-in retires it', async () => {
+    renderScreen();
+    expect(await screen.findByTestId('coach-note-quilt')).toBeTruthy();
+    // Taking the pointed-at action counts as understanding the note.
+    fireEvent.press(screen.getByTestId('checkin-fab'));
+    expect(useSettingsStore.getState().dismissedTips).toContain('note-quilt');
+    expect(screen.queryByTestId('coach-note-quilt')).toBeNull();
+  });
+
   it('renders a pressable patch per seeded check-in', async () => {
     seedToday();
     renderScreen();
