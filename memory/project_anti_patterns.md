@@ -41,3 +41,13 @@ numbered entries get added as they're earned.
    handed to `runOnJS`, as `sheet.test.tsx` does. If gesture code multiplies,
    consider `eslint-plugin-reanimated`'s `js-function-in-worklet` — declined
    for now with a single call site (a dep for one lint of one file).
+8. **A gesture the app teaches anywhere must be wired everywhere it plausibly
+   applies** (earned 2026-08-30). Identical-looking controls with divergent
+   gesture behaviour are a bug, not a styling nuance: the hold-to-learn
+   long-press shipped on the check-in flow's word chips while
+   JudgmentFlowScreen's visually identical chips stayed dead (PR #81; fixed in
+   PR #82). Wire the gesture at the component's own depth and default it from
+   props the component already has — `WordTemperatureRow` defaults
+   `onLongPress` to opening the family helper sheet — so every new surface
+   that reuses the component is correct by default instead of by someone
+   remembering.

@@ -10,15 +10,19 @@ import { NavigationContainer } from '@react-navigation/native';
 import CircleScreen from '@/screens/CircleScreen';
 import { useCircleStore } from '@/store/circleStore';
 import { useCheckInStore } from '@/store/checkInStore';
+import { useSettingsStore } from '@/store/settingsStore';
 import type { CheckIn } from '@/types/models';
 
 const initialCircle = useCircleStore.getState();
 const initialCheckIns = useCheckInStore.getState();
 
+const initialSettings = useSettingsStore.getState();
+
 beforeEach(() => {
   jest.clearAllMocks();
   useCircleStore.setState(initialCircle, true);
   useCheckInStore.setState(initialCheckIns, true);
+  useSettingsStore.setState(initialSettings, true);
 });
 
 // useFocusEffect (the inbox sync) needs a real navigation tree.
@@ -28,6 +32,17 @@ const renderScreen = () =>
       <CircleScreen />
     </NavigationContainer>
   );
+
+describe('first-visit helper note', () => {
+  it('floats until dismissed — and inviting someone retires it too', async () => {
+    renderScreen();
+    expect(await screen.findByTestId('coach-note-circle')).toBeTruthy();
+    // Taking the pointed-at action counts as understanding the note.
+    fireEvent.press(screen.getByTestId('circle-invite'));
+    expect(useSettingsStore.getState().dismissedTips).toContain('note-circle');
+    expect(screen.queryByTestId('coach-note-circle')).toBeNull();
+  });
+});
 
 function seedPerson() {
   return useCircleStore.getState().addPerson({

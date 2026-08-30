@@ -12,11 +12,14 @@ import FieldGuideScreen from '@/screens/FieldGuideScreen';
 import { EMOTION_FAMILIES } from '@/content/emotions';
 import { UNDERNEATH_MAP } from '@/content/underneath';
 import { useHelperSheetStore } from '@/store/helperSheetStore';
+import { useSettingsStore } from '@/store/settingsStore';
 
 const initialHelper = useHelperSheetStore.getState();
+const initialSettings = useSettingsStore.getState();
 
 beforeEach(() => {
   useHelperSheetStore.setState(initialHelper, true);
+  useSettingsStore.setState(initialSettings, true);
 });
 
 function renderScreen(node: React.ReactElement) {
@@ -29,6 +32,13 @@ describe('FieldGuideScreen', () => {
     expect(await screen.findByTestId('screen-field-guide')).toBeTruthy();
     expect(screen.getByText(/underneath/i)).toBeTruthy();
     expect(screen.getByText(/find the word/i)).toBeTruthy();
+  });
+
+  // Tap-dismiss behaviour is proven generically in coachNote.test.tsx;
+  // this pins only the screen-specific fact: the note is wired here.
+  it('floats the first-visit helper note', async () => {
+    renderScreen(<FieldGuideScreen />);
+    expect(await screen.findByTestId('coach-note-field-guide')).toBeTruthy();
   });
 
   it('shows a chip for every surface state', async () => {

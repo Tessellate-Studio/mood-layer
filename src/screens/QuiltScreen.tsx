@@ -32,7 +32,8 @@ import {
 import LayeredClusterVignette from '@/components/LayeredClusterVignette';
 import LogoMark from '@/components/LogoMark';
 import PaperTexture from '@/components/PaperTexture';
-import ScreenTip from '@/components/ScreenTip';
+import CoachNote from '@/components/CoachNote';
+import { useSettingsStore } from '@/store/settingsStore';
 import WeeklySummaryCard from '@/components/WeeklySummaryCard';
 import { homeWeeklySummary } from '@/content/circle';
 import { EMOTION_FAMILIES } from '@/content/emotions';
@@ -89,6 +90,13 @@ export default function QuiltScreen() {
 
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [animateId, setAnimateId] = React.useState<string | null>(null);
+
+  // Both entry points to a check-in (header + and the empty-state row) —
+  // taking the pointed-at action retires its helper note.
+  const beginCheckIn = () => {
+    useSettingsStore.getState().dismissTip('note-quilt');
+    navigation.navigate('CheckInFlow', { source: 'manual' });
+  };
 
   // Content width the canvas gets; QuiltWeek reserves a left margin for
   // weekday labels, so the layout engine is handed the already-margin-less
@@ -162,7 +170,7 @@ export default function QuiltScreen() {
           accessibilityRole="button"
           accessibilityLabel="Add a check-in"
           style={styles.iconButton}
-          onPress={() => navigation.navigate('CheckInFlow', { source: 'manual' })}
+          onPress={beginCheckIn}
         >
           <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
             <Line x1={12} y1={5} x2={12} y2={19} stroke={colors.ink} strokeWidth={1.5} strokeLinecap="round" />
@@ -202,11 +210,6 @@ export default function QuiltScreen() {
         </Pressable>
       </View>
 
-      <ScreenTip
-        tipId="home"
-        text="Each layer is a check-in. Tap one to see what you felt, or add a new one with the button below."
-      />
-
       <WeeklySummaryCard summary={weeklySummary} />
 
       {/* The field guide's home-screen doorway: a FULL row only while the
@@ -241,7 +244,7 @@ export default function QuiltScreen() {
           accessibilityRole="button"
           accessibilityLabel="Layer in today's first entry"
           style={styles.todayRow}
-          onPress={() => navigation.navigate('CheckInFlow', { source: 'manual' })}
+          onPress={beginCheckIn}
         >
           <Text style={styles.todayText}>+ layer in today&apos;s first entry</Text>
         </Pressable>
@@ -273,6 +276,18 @@ export default function QuiltScreen() {
           )}
         />
       )}
+
+      {/* First-visit helper note, floating under the header chrome and
+          pointing up at the + (present on day zero AND returning layouts).
+          pointerInset ≈ settings icon (minWidth 36) + header gap, aiming the
+          tip under the second icon from the right. */}
+      <CoachNote
+        id="note-quilt"
+        topOffset={48}
+        pointer="up"
+        pointerInset={44}
+        style={{ left: spacing.xl }}
+      />
 
       <Modal
         visible={selected !== null}

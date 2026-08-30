@@ -15,6 +15,7 @@ import { INSIGHT_TEMPLATES } from '@/content/insights';
 import { JUDGMENT_EXAMPLES } from '@/content/judgmentExamples';
 import { ONBOARDING_SLIDES } from '@/content/onboarding';
 import { CHECK_IN_COPY } from '@/content/checkInCopy';
+import { COACH_MARKS } from '@/content/coachMarks';
 
 const FAMILY_IDS: EmotionFamilyId[] = [
   'anger',
@@ -365,6 +366,35 @@ describe('check-in copy', () => {
 
   it('the feel hint invites several words, not just one', () => {
     expect(CHECK_IN_COPY.feelHint.toLowerCase()).toContain('several');
+  });
+});
+
+describe('coach marks', () => {
+  it('has exactly one note per coached screen, ids fresh and namespaced', () => {
+    const ids = Object.keys(COACH_MARKS).sort();
+    expect(ids).toEqual([
+      'note-circle',
+      'note-experiments',
+      'note-field-guide',
+      'note-insights',
+      'note-quilt',
+    ]);
+    for (const id of ids) {
+      expect(id.startsWith('note-')).toBe(true);
+      // Fresh ids by design: users who dismissed the retired inline ScreenTips
+      // (ids below) still meet these notes once.
+      expect(['home', 'experiments', 'insights', 'circle']).not.toContain(id);
+    }
+  });
+
+  it('copy stays gentle and speaks in layers', () => {
+    for (const text of Object.values(COACH_MARKS)) {
+      expect(text.trim().length).toBeGreaterThan(0);
+      expect(text).not.toContain('!');
+      expect(text.toLowerCase()).not.toContain('you should');
+      expect(text.toLowerCase()).not.toContain('you must');
+      expect(text.toLowerCase()).not.toMatch(/quilt|stitch|sew/);
+    }
   });
 });
 

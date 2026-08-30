@@ -198,6 +198,20 @@ export default function SettingsScreen() {
             Follows your system setting unless you turn this on.
           </Text>
         </View>
+        <View style={styles.rowGroup}>
+          <Pressable
+            testID="settings-show-helpers"
+            accessibilityRole="button"
+            accessibilityLabel="Show the helper notes again"
+            style={styles.row}
+            onPress={() => useSettingsStore.getState().restoreTips()}
+          >
+            <Text style={styles.rowLabel}>Show the helper notes again</Text>
+          </Pressable>
+          <Text style={styles.rowCaption}>
+            The small first-visit notes return, one to a screen.
+          </Text>
+        </View>
 
         <View style={styles.sectionHeader}>
           <SectionHeader family="sadness" label="Help fix problems" />

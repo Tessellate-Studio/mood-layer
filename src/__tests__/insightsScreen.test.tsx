@@ -56,6 +56,15 @@ function renderScreen() {
   );
 }
 
+describe('first-visit helper note', () => {
+  // Tap-dismiss behaviour is proven generically in coachNote.test.tsx;
+  // this pins only the screen-specific fact: the note is wired here.
+  it('floats on first visit', async () => {
+    renderScreen();
+    expect(await screen.findByTestId('coach-note-insights')).toBeTruthy();
+  });
+});
+
 describe('InsightsScreen', () => {
   it('generates last week’s insights on focus and renders the cards', async () => {
     // Four stuck-decision check-ins last week → stuck-decisions template.

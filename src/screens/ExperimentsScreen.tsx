@@ -22,7 +22,7 @@ import Svg, { Line } from 'react-native-svg';
 import { colors, mutedPalette, spacing, typography } from '@/constants/theme';
 import LogoDivider from '@/components/LogoDivider';
 import PaperTexture from '@/components/PaperTexture';
-import ScreenTip from '@/components/ScreenTip';
+import CoachNote from '@/components/CoachNote';
 import SectionHeader from '@/components/SectionHeader';
 import ThreadCard from '@/components/ThreadCard';
 import { PRACTICE_FAMILY, PRACTICES } from '@/content/practices';
@@ -79,10 +79,6 @@ export default function ExperimentsScreen() {
         testID="screen-experiments"
       >
         <Text style={typography.title}>Experiments</Text>
-        <ScreenTip
-          tipId="experiments"
-          text="Guided practices for working with what you feel. Each one saves a reflection you can revisit later."
-        />
         <Text style={styles.intro}>
           Small practices for meeting what&apos;s here. Take one when it calls — none are homework.
         </Text>
@@ -210,6 +206,10 @@ export default function ExperimentsScreen() {
 
         <LogoDivider tip="Nothing here is a test. Come back to a practice whenever it calls; the rest can wait." />
       </ScrollView>
+
+      {/* First-visit helper note, floating below the title and pointing down
+          at the practices list. */}
+      <CoachNote id="note-experiments" topOffset={44} pointer="down" />
     </View>
   );
 }
