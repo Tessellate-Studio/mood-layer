@@ -57,12 +57,11 @@ function renderScreen() {
 }
 
 describe('first-visit helper note', () => {
-  it('floats until dismissed, then stays gone', async () => {
+  // Tap-dismiss behaviour is proven generically in coachNote.test.tsx;
+  // this pins only the screen-specific fact: the note is wired here.
+  it('floats on first visit', async () => {
     renderScreen();
     expect(await screen.findByTestId('coach-note-insights')).toBeTruthy();
-    fireEvent.press(screen.getByTestId('coach-dismiss-note-insights'));
-    expect(useSettingsStore.getState().dismissedTips).toContain('note-insights');
-    expect(screen.queryByTestId('coach-note-insights')).toBeNull();
   });
 });
 

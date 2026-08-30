@@ -34,11 +34,11 @@ describe('FieldGuideScreen', () => {
     expect(screen.getByText(/find the word/i)).toBeTruthy();
   });
 
-  it('floats the first-visit helper note until dismissed', async () => {
+  // Tap-dismiss behaviour is proven generically in coachNote.test.tsx;
+  // this pins only the screen-specific fact: the note is wired here.
+  it('floats the first-visit helper note', async () => {
     renderScreen(<FieldGuideScreen />);
     expect(await screen.findByTestId('coach-note-field-guide')).toBeTruthy();
-    fireEvent.press(screen.getByTestId('coach-dismiss-note-field-guide'));
-    expect(screen.queryByTestId('coach-note-field-guide')).toBeNull();
   });
 
   it('shows a chip for every surface state', async () => {

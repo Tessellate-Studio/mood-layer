@@ -177,16 +177,7 @@ export default function FieldGuideScreen() {
 
       {/* First-visit helper note, floating below the header + intro and
           pointing down at the family key. */}
-      <CoachNote
-        id="note-field-guide"
-        pointer="down"
-        style={{
-          position: 'absolute',
-          top: insets.top + spacing.md + 104,
-          left: spacing.md,
-          right: spacing.md,
-        }}
-      />
+      <CoachNote id="note-field-guide" topOffset={104} pointer="down" />
     </View>
   );
 }

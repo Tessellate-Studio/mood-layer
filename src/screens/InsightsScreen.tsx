@@ -308,15 +308,7 @@ export default function InsightsScreen() {
 
       {/* First-visit helper note — no pointer: there is nothing to do here
           yet, and the note says exactly that. */}
-      <CoachNote
-        id="note-insights"
-        style={{
-          position: 'absolute',
-          top: insets.top + spacing.md + 64,
-          left: spacing.md,
-          right: spacing.md,
-        }}
-      />
+      <CoachNote id="note-insights" topOffset={64} />
     </View>
   );
 }

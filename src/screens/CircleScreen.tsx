@@ -470,16 +470,7 @@ export default function CircleScreen() {
 
       {/* First-visit helper note, floating below the title + intro and
           pointing down toward the invite row. */}
-      <CoachNote
-        id="note-circle"
-        pointer="down"
-        style={{
-          position: 'absolute',
-          top: insets.top + spacing.md + 96,
-          left: spacing.md,
-          right: spacing.md,
-        }}
-      />
+      <CoachNote id="note-circle" topOffset={96} pointer="down" />
     </View>
   );
 }

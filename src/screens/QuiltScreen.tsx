@@ -91,6 +91,13 @@ export default function QuiltScreen() {
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
   const [animateId, setAnimateId] = React.useState<string | null>(null);
 
+  // Both entry points to a check-in (header + and the empty-state row) —
+  // taking the pointed-at action retires its helper note.
+  const beginCheckIn = () => {
+    useSettingsStore.getState().dismissTip('note-quilt');
+    navigation.navigate('CheckInFlow', { source: 'manual' });
+  };
+
   // Content width the canvas gets; QuiltWeek reserves a left margin for
   // weekday labels, so the layout engine is handed the already-margin-less
   // width (it lays out patches from x=0).
@@ -163,11 +170,7 @@ export default function QuiltScreen() {
           accessibilityRole="button"
           accessibilityLabel="Add a check-in"
           style={styles.iconButton}
-          onPress={() => {
-            // Taking the pointed-at action retires its helper note.
-            useSettingsStore.getState().dismissTip('note-quilt');
-            navigation.navigate('CheckInFlow', { source: 'manual' });
-          }}
+          onPress={beginCheckIn}
         >
           <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
             <Line x1={12} y1={5} x2={12} y2={19} stroke={colors.ink} strokeWidth={1.5} strokeLinecap="round" />
@@ -241,11 +244,7 @@ export default function QuiltScreen() {
           accessibilityRole="button"
           accessibilityLabel="Layer in today's first entry"
           style={styles.todayRow}
-          onPress={() => {
-            // Taking the pointed-at action retires its helper note.
-            useSettingsStore.getState().dismissTip('note-quilt');
-            navigation.navigate('CheckInFlow', { source: 'manual' });
-          }}
+          onPress={beginCheckIn}
         >
           <Text style={styles.todayText}>+ layer in today&apos;s first entry</Text>
         </Pressable>
@@ -279,17 +278,15 @@ export default function QuiltScreen() {
       )}
 
       {/* First-visit helper note, floating under the header chrome and
-          pointing up at the + (present on day zero AND returning layouts). */}
+          pointing up at the + (present on day zero AND returning layouts).
+          pointerInset ≈ settings icon (minWidth 36) + header gap, aiming the
+          tip under the second icon from the right. */}
       <CoachNote
         id="note-quilt"
+        topOffset={48}
         pointer="up"
         pointerInset={44}
-        style={{
-          position: 'absolute',
-          top: insets.top + spacing.md + 48,
-          left: spacing.xl,
-          right: spacing.md,
-        }}
+        style={{ left: spacing.xl }}
       />
 
       <Modal

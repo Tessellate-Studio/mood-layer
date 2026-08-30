@@ -209,16 +209,7 @@ export default function ExperimentsScreen() {
 
       {/* First-visit helper note, floating below the title and pointing down
           at the practices list. */}
-      <CoachNote
-        id="note-experiments"
-        pointer="down"
-        style={{
-          position: 'absolute',
-          top: insets.top + spacing.md + 44,
-          left: spacing.md,
-          right: spacing.md,
-        }}
-      />
+      <CoachNote id="note-experiments" topOffset={44} pointer="down" />
     </View>
   );
 }

@@ -370,10 +370,8 @@ describe('check-in copy', () => {
 });
 
 describe('coach marks', () => {
-  const marks = Object.values(COACH_MARKS);
-
   it('has exactly one note per coached screen, ids fresh and namespaced', () => {
-    const ids = marks.map((m) => m.id).sort();
+    const ids = Object.keys(COACH_MARKS).sort();
     expect(ids).toEqual([
       'note-circle',
       'note-experiments',
@@ -381,22 +379,21 @@ describe('coach marks', () => {
       'note-insights',
       'note-quilt',
     ]);
-    for (const [key, mark] of Object.entries(COACH_MARKS)) {
-      expect(mark.id).toBe(key);
-      expect(mark.id.startsWith('note-')).toBe(true);
+    for (const id of ids) {
+      expect(id.startsWith('note-')).toBe(true);
       // Fresh ids by design: users who dismissed the retired inline ScreenTips
       // (ids below) still meet these notes once.
-      expect(['home', 'experiments', 'insights', 'circle']).not.toContain(mark.id);
-      expect(mark.text.trim().length).toBeGreaterThan(0);
+      expect(['home', 'experiments', 'insights', 'circle']).not.toContain(id);
     }
   });
 
   it('copy stays gentle and speaks in layers', () => {
-    for (const mark of marks) {
-      expect(mark.text).not.toContain('!');
-      expect(mark.text.toLowerCase()).not.toContain('you should');
-      expect(mark.text.toLowerCase()).not.toContain('you must');
-      expect(mark.text.toLowerCase()).not.toMatch(/quilt|stitch|sew/);
+    for (const text of Object.values(COACH_MARKS)) {
+      expect(text.trim().length).toBeGreaterThan(0);
+      expect(text).not.toContain('!');
+      expect(text.toLowerCase()).not.toContain('you should');
+      expect(text.toLowerCase()).not.toContain('you must');
+      expect(text.toLowerCase()).not.toMatch(/quilt|stitch|sew/);
     }
   });
 });

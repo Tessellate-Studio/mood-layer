@@ -184,11 +184,11 @@ describe('JudgmentFlowScreen', () => {
 });
 
 describe('first-visit helper note', () => {
-  it('floats until dismissed', async () => {
+  // Tap-dismiss behaviour is proven generically in coachNote.test.tsx;
+  // this pins only the screen-specific fact: the note is wired here.
+  it('floats on first visit', async () => {
     renderScreen(<ExperimentsScreen />);
     expect(await screen.findByTestId('coach-note-experiments')).toBeTruthy();
-    fireEvent.press(screen.getByTestId('coach-dismiss-note-experiments'));
-    expect(screen.queryByTestId('coach-note-experiments')).toBeNull();
   });
 });
 
