@@ -32,13 +32,12 @@ export const colors = {
   shade2: '#ABABA6',
   shade3: '#6E6E6A',
   shade4: '#1F1F1D',
-  /** Backdrop behind sheets/modals (one of two alpha colours — see paperVeil). */
+  /** Backdrop behind sheets/modals — the single sanctioned alpha colour.
+   *  (paperVeil, the second one, was retired 2026-08-31: a 94%-opaque cream
+   *  card is invisible as an object but silently veils whatever it crosses —
+   *  it faded the home day labels. Floating cards are opaque paperRaised with
+   *  a shadows.floating lift instead.) */
   scrim: 'rgba(20, 20, 20, 0.35)',
-  /** Floating first-visit helper notes — raised paper at 94%, so the screen
-   *  breathes through the card without any scrim (the second sanctioned alpha
-   *  colour, added 2026-08-30). Text on it stays ink tiers: 94% over cream
-   *  barely moves contrast, so body inkSoft keeps ample AA headroom. */
-  paperVeil: 'rgba(253, 252, 248, 0.94)',
 } as const;
 
 export type IntensityShade = 1 | 2 | 3 | 4;
@@ -225,6 +224,19 @@ export const borderRadius = {
 
 /** Minimum touch target (WCAG 2.1 AA / Android). */
 export const hitTarget = 44;
+
+/** Elevation for the rare things that float OVER the page (helper notes).
+ *  Cards in the page's flow stay flat — paper doesn't cast shadows on
+ *  itself; only something lifted off it does. */
+export const shadows = {
+  floating: {
+    shadowColor: colors.ink,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.14,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+} as const;
 
 // Typography — Courier Prime (OFL) throughout: a typewriter on paper.
 // Typewriter voice: Courier Prime (OFL) everywhere, so the whole app reads like

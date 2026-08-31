@@ -308,7 +308,7 @@ export default function InsightsScreen() {
 
       {/* First-visit helper note — no pointer: there is nothing to do here
           yet, and the note says exactly that. */}
-      <CoachNote id="note-insights" topOffset={64} />
+      <CoachNote id="note-insights" topOffset={64} family="enjoyment" />
     </View>
   );
 }

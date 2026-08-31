@@ -177,7 +177,7 @@ export default function FieldGuideScreen() {
 
       {/* First-visit helper note, floating below the header + intro and
           pointing down at the family key. */}
-      <CoachNote id="note-field-guide" topOffset={104} pointer="down" />
+      <CoachNote id="note-field-guide" topOffset={104} family="anticipation" />
     </View>
   );
 }

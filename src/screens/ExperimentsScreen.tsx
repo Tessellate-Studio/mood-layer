@@ -218,7 +218,7 @@ export default function ExperimentsScreen() {
 
       {/* First-visit helper note, floating below the title and pointing down
           at the practices list. */}
-      <CoachNote id="note-experiments" topOffset={44} pointer="down" />
+      <CoachNote id="note-experiments" topOffset={44} family="anger" />
     </View>
   );
 }
