@@ -3,6 +3,9 @@
 // an insight template stops rendering, this suite catches it before any UI
 // does.
 
+import * as fs from 'fs';
+import * as path from 'path';
+import * as ts from 'typescript';
 import type { EmotionFamilyId, ResistanceTellId, WeekStats } from '@/types/models';
 import {
   EMOTION_FAMILIES,
@@ -16,7 +19,6 @@ import { JUDGMENT_EXAMPLES } from '@/content/judgmentExamples';
 import { ONBOARDING_SLIDES } from '@/content/onboarding';
 import { CHECK_IN_COPY } from '@/content/checkInCopy';
 import { COACH_MARKS } from '@/content/coachMarks';
-import { UNDERNEATH_MAP } from '@/content/underneath';
 
 const FAMILY_IDS: EmotionFamilyId[] = [
   'anger',
@@ -51,6 +53,67 @@ function collectStrings(value: unknown, seen = new Set<unknown>()): string[] {
   return Object.entries(value)
     .filter(([key]) => key !== 'id')
     .flatMap(([, v]) => collectStrings(v, seen));
+}
+
+/**
+ * Every literal string/template-literal fragment written in a .ts file's
+ * source — read from the raw text via the TypeScript compiler API, not from
+ * an imported export. Catches copy embedded in generator functions
+ * (`circle.ts`'s `shareSummary`, `monthlyDigest.ts`'s digests) that a
+ * const-only scan would miss, and skips comments by construction (they're
+ * trivia, never AST literal nodes) — so a metaphor mentioned in a code
+ * comment doesn't false-positive against the user-facing-copy ban.
+ *
+ * Also skips string literals that are internal identifiers, not prose a user
+ * reads: type-literal positions (`type X = 'note-quilt' | ...`), object/
+ * interface property KEYS (`'note-quilt': ...`), and the VALUE of a field
+ * literally named `id` (`{ id: 'quilt', ... }`), mirroring collectStrings'
+ * `id`-field skip above.
+ */
+function collectLiteralStrings(sourceText: string, fileName: string): string[] {
+  const sourceFile = ts.createSourceFile(fileName, sourceText, ts.ScriptTarget.Latest, true);
+  const strings: string[] = [];
+
+  const isInternalIdentifier = (node: ts.StringLiteral | ts.NoSubstitutionTemplateLiteral): boolean => {
+    const parent = node.parent;
+    if (!parent) return false;
+    if (ts.isLiteralTypeNode(parent)) return true;
+    if ((ts.isPropertyAssignment(parent) || ts.isPropertySignature(parent)) && parent.name === node) {
+      return true;
+    }
+    if (
+      ts.isPropertyAssignment(parent) &&
+      parent.initializer === node &&
+      ts.isIdentifier(parent.name) &&
+      parent.name.text === 'id'
+    ) {
+      return true;
+    }
+    return false;
+  };
+
+  const visit = (node: ts.Node): void => {
+    if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
+      if (!isInternalIdentifier(node)) strings.push(node.text);
+    } else if (ts.isTemplateExpression(node)) {
+      strings.push(node.head.text);
+      for (const span of node.templateSpans) strings.push(span.literal.text);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return strings;
+}
+
+/** Every `.ts` file directly under a content directory, as [fileName, literalStrings]. */
+function collectContentDirStrings(dir: string): [string, string[]][] {
+  return fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith('.ts'))
+    .map((f): [string, string[]] => {
+      const filePath = path.join(dir, f);
+      return [f, collectLiteralStrings(fs.readFileSync(filePath, 'utf8'), filePath)];
+    });
 }
 
 /** Tone rule (CLAUDE.md): gentle, no exclamations, never directive. */
@@ -451,24 +514,13 @@ describe('content glossary (ADR-003)', () => {
     { canonical: 'layers (never quilt/stitch/sew)', banned: ['quilt', 'stitch', 'sew'] },
   ];
 
-  const CONTENT_SOURCES: Record<string, unknown> = {
-    EMOTION_FAMILIES,
-    MASKING_STATES,
-    EMOTION_HELPERS,
-    RESISTANCE_TELLS,
-    JUDGMENT_EXAMPLES,
-    ONBOARDING_SLIDES,
-    CHECK_IN_COPY,
-    COACH_MARKS,
-    UNDERNEATH_MAP,
-    INSIGHT_TEMPLATES: INSIGHT_TEMPLATES.map((t) => t.render(maxedStats)),
-  };
-
-  // Each source is walked once, up front — the glossary/synonym loop below
-  // only filters these cached strings, however large GLOSSARY grows.
-  const SOURCE_STRINGS: [string, string[]][] = Object.entries(CONTENT_SOURCES).map(
-    ([sourceName, source]) => [sourceName, collectStrings(source)],
-  );
+  // Every literal string in every src/content/*.ts file, parsed from source —
+  // not a hand-picked list of imported exports. That matters here: several
+  // content files (circle.ts, monthlyDigest.ts, noteReflection.ts) build their
+  // copy inside generator functions rather than static consts, so an
+  // import-and-introspect scan silently misses them; a new content file is
+  // covered automatically too, without editing this list.
+  const SOURCE_STRINGS = collectContentDirStrings(path.join(__dirname, '../content'));
 
   it('never uses a banned synonym in place of its glossary term', () => {
     const offenders: string[] = [];
