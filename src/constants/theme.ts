@@ -32,15 +32,12 @@ export const colors = {
   shade2: '#ABABA6',
   shade3: '#6E6E6A',
   shade4: '#1F1F1D',
-  /** Dashed stitch lines between patch segments. */
-  stitch: '#141414',
-  /** Backdrop behind sheets/modals (one of two alpha colours — see paperVeil). */
+  /** Backdrop behind sheets/modals — the single sanctioned alpha colour.
+   *  (paperVeil, the second one, was retired 2026-08-31: a 94%-opaque cream
+   *  card is invisible as an object but silently veils whatever it crosses —
+   *  it faded the home day labels. Floating cards are opaque paperRaised with
+   *  a shadows.floating lift instead.) */
   scrim: 'rgba(20, 20, 20, 0.35)',
-  /** Floating first-visit helper notes — raised paper at 94%, so the screen
-   *  breathes through the card without any scrim (the second sanctioned alpha
-   *  colour, added 2026-08-30). Text on it stays ink tiers: 94% over cream
-   *  barely moves contrast, so body inkSoft keeps ample AA headroom. */
-  paperVeil: 'rgba(253, 252, 248, 0.94)',
 } as const;
 
 export type IntensityShade = 1 | 2 | 3 | 4;
@@ -124,7 +121,7 @@ export interface MutedFamilyPalette {
   /** Soft-tint card fill — a layer you can tell apart, not a highlight.
    *  Every ink tier holds AA on it (verified in designTreatment.test.tsx). */
   fill: string;
-  /** 1px card border + the section header's dashed rule. */
+  /** 1px card border, the section header's solid rule, CoachNote's border. */
   border: string;
   /** The coloured "thread" spine, section glyph strokes, and arrow rings.
    *  Non-text UI: holds ≥3:1 on its fill and on paper (WCAG 1.4.11). */
@@ -139,65 +136,66 @@ export interface MutedFamilyPalette {
  * can tell apart"). Chrome text/lines remain ink tiers; these tints are for
  * card fills, thread spines, section glyphs, and same-hue accents only.
  *
- * Re-tuned twice at the user's direction: 2026-07-18 morning the grey fills
- * ("a bit too dull") became the family pastel mixed 62% into cream; by
- * evening that read "a little too saturated", so fills settled at a 45% mix
- * — the soothing register of the liked Insights page, hue still legible.
- * Borders stay at the full pastel. Tiers verified computationally
- * (designTreatment.test.tsx): captions ≥5.1:1 on every fill, accents ≥4.5:1
- * on fill AND raised paper, threads ≥3:1.
+ * Re-tuned at the user's direction three times: 2026-07-18 morning the grey
+ * fills ("a bit too dull") became the family pastel mixed 62% into cream, by
+ * evening "a little too saturated" pulled them down, and 2026-07-19 "get more
+ * lighter" settled them at a 0.30 mix of shades[4] into cream. 2026-08-31 the
+ * 0.30 register read flat on Experiments ("slightly saturated version of the
+ * mockup"), so fills now sit at a 0.42 mix. Borders stay at the full pastel.
+ * Tiers verified computationally (designTreatment.test.tsx): captions ≥5.2:1
+ * on every fill, accents ≥4.5:1 on fill AND raised paper, threads ≥3:1.
  */
 export const mutedPalette: Record<EmotionFamilyId, MutedFamilyPalette> = {
   anger: {
-    fill: '#F4E3DB',
+    fill: '#F2DBD3',
     border: '#EAB6AB',
     thread: '#8F6F68',
     accent: '#6E5650',
   },
   fear: {
-    fill: '#EAE4EB',
+    fill: '#E4DDE9',
     border: '#C9BADF',
     thread: '#7B7188',
     accent: '#5E5769',
   },
   sadness: {
-    fill: '#E4E8EB',
+    fill: '#DBE3E8',
     border: '#B4C8DE',
     thread: '#6E7A87',
     accent: '#555E68',
   },
   disgust: {
-    fill: '#E4EBDE',
+    fill: '#DCE7D7',
     border: '#B5D2B4',
     thread: '#6D7E6C',
     accent: '#556355',
   },
   enjoyment: {
-    fill: '#F4EBD3',
+    fill: '#F3E7C7',
     border: '#ECD28F',
     thread: '#8B7C54',
     accent: '#6D6142',
   },
   surprise: {
-    fill: '#F4E6D6',
+    fill: '#F3DFCB',
     border: '#ECBF99',
     thread: '#8E735C',
     accent: '#6F5A48',
   },
   contempt: {
-    fill: '#ECE3E4',
+    fill: '#E7DCDF',
     border: '#CFB8C7',
     thread: '#80727B',
     accent: '#635860',
   },
   anticipation: {
-    fill: '#E1EAE6',
+    fill: '#D7E6E2',
     border: '#AACFCE',
     thread: '#687E7E',
     accent: '#506161',
   },
   trust: {
-    fill: '#F2E4E4',
+    fill: '#F0DDDF',
     border: '#E4BAC7',
     thread: '#8B7179',
     accent: '#6B575E',
@@ -227,6 +225,21 @@ export const borderRadius = {
 /** Minimum touch target (WCAG 2.1 AA / Android). */
 export const hitTarget = 44;
 
+/** Elevation for the rare things that float OVER the page (helper notes).
+ *  Cards in the page's flow stay flat — paper doesn't cast shadows on
+ *  itself; only something lifted off it does. */
+export const shadows = {
+  // shadow* props are iOS-only; elevation is what Android (the shipped
+  // platform) actually renders. Both kept so the token is portable.
+  floating: {
+    shadowColor: colors.ink,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.14,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+} as const;
+
 // Typography — Courier Prime (OFL) throughout: a typewriter on paper.
 // Typewriter voice: Courier Prime (OFL) everywhere, so the whole app reads like
 // a page typed onto paper. Monospace is the point — it IS the ink-on-paper feel.
@@ -247,57 +260,57 @@ export const typography = {
   // breathes between its lines.
   display: {
     fontFamily: fonts.display,
-    fontSize: 30,
-    lineHeight: 40,
+    fontSize: 31,
+    lineHeight: 41,
     fontWeight: '400' as const,
     color: colors.ink,
   },
   title: {
     fontFamily: fonts.display,
-    fontSize: 22,
-    lineHeight: 30,
+    fontSize: 23,
+    lineHeight: 31,
     fontWeight: '400' as const,
     color: colors.ink,
   },
   heading: {
     fontFamily: fonts.displayEmphasis,
-    fontSize: 17,
-    lineHeight: 26,
+    fontSize: 18,
+    lineHeight: 27,
     fontWeight: '400' as const,
     color: colors.ink,
   },
   body: {
     fontFamily: fonts.body,
-    fontSize: 15,
-    lineHeight: 25,
+    fontSize: 16,
+    lineHeight: 26,
     fontWeight: '400' as const,
     color: colors.inkSoft,
   },
   bodyLarge: {
     fontFamily: fonts.body,
-    fontSize: 17,
-    lineHeight: 28,
+    fontSize: 18,
+    lineHeight: 29,
     fontWeight: '400' as const,
     color: colors.inkSoft,
   },
   caption: {
     fontFamily: fonts.body,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 13,
+    lineHeight: 19,
     fontWeight: '400' as const,
     color: colors.inkMuted,
   },
   label: {
     fontFamily: fonts.body,
-    fontSize: 14,
-    lineHeight: 21,
+    fontSize: 15,
+    lineHeight: 22,
     fontWeight: '400' as const,
     color: colors.ink,
   },
   overline: {
     fontFamily: fonts.body,
-    fontSize: 11,
-    lineHeight: 16,
+    fontSize: 12,
+    lineHeight: 17,
     fontWeight: '400' as const,
     // Wide tracking on an uppercase monospace label reads like a stamped
     // header on a form — leans into the paper feel.
@@ -305,12 +318,6 @@ export const typography = {
     textTransform: 'uppercase' as const,
     color: colors.inkMuted,
   },
-} as const;
-
-/** Dash patterns for stitched lines (SVG strokeDasharray). */
-export const textures = {
-  stitchDash: [6, 4] as const,
-  stitchDashFine: [3, 3] as const,
 } as const;
 
 /** Shared motion tokens — every animation uses these so reduce-motion and

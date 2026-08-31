@@ -9,6 +9,7 @@
 // (design handoff "Mood Layers"). The week/day row structure below still
 // positions each cluster; only the piece geometry changed.
 
+import { spacing, typography } from '@/constants/theme';
 import { findVocabularyWord } from '@/content/vocabulary';
 import type { CheckIn, EmotionFamilyId, EmotionSelection, Intensity } from '@/types/models';
 import { dayKey, dayPartLabel, weekKey } from '@/utils/dates';
@@ -162,7 +163,7 @@ export function clothPieces(emotions: EmotionSelection[], w: number, h: number):
  * Vertical space a week block spends above its first row: the week label
  * (overline line-height) plus its bottom margin. Mirrors QuiltWeek's header.
  */
-export const WEEK_LABEL_BLOCK = 16 + 8;
+export const WEEK_LABEL_BLOCK = typography.overline.lineHeight + spacing.sm;
 
 /**
  * Scroll offset that brings a check-in's cluster into view inside the quilt

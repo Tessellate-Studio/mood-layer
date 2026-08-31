@@ -25,7 +25,7 @@ import PaperTexture from '@/components/PaperTexture';
 import CoachNote from '@/components/CoachNote';
 import SectionHeader from '@/components/SectionHeader';
 import ThreadCard from '@/components/ThreadCard';
-import { PRACTICE_FAMILY, PRACTICES } from '@/content/practices';
+import { JUDGMENT_FAMILY, PRACTICE_FAMILY, PRACTICES } from '@/content/practices';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { useExperimentStore } from '@/store/experimentStore';
 import { groupSittings } from '@/utils/sittings';
@@ -33,16 +33,16 @@ import type { EmotionFamilyId } from '@/types/models';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-// Layer hues per the settled design: Practices section = sadness blue with
-// anger rose for Under the judgment and per-practice hues (PRACTICE_FAMILY,
-// content/practices.ts); Past reflections = contempt mauve; Learn =
-// anticipation teal; Reminders = trust rose.
-const PRACTICES_FAMILY: EmotionFamilyId = 'sadness';
-const JUDGMENT_FAMILY: EmotionFamilyId = 'contempt';
+// A hue per card (mockup mapping, user 2026-08-31): judgment anger rose,
+// per-practice hues in PRACTICE_FAMILY (enjoyment/disgust/fear), breathing
+// anticipation teal, reflections contempt mauve, field guide surprise tan,
+// Name it sadness blue — no family repeats anywhere on the page. Each
+// section header takes its (first) card's hue.
+const PERSPECTIVE_FAMILY: EmotionFamilyId = 'enjoyment';
 const BREATHING_FAMILY: EmotionFamilyId = 'anticipation';
 const REFLECTIONS_FAMILY: EmotionFamilyId = 'contempt';
-const LEARN_FAMILY: EmotionFamilyId = 'anticipation';
-const REMINDERS_FAMILY: EmotionFamilyId = 'trust';
+const LEARN_FAMILY: EmotionFamilyId = 'surprise';
+const REMINDERS_FAMILY: EmotionFamilyId = 'sadness';
 
 /** The circled → marking a card that leads somewhere (opens a flow). Drawn
  *  as SVG lines — the monospace '→' glyph sat visibly off-centre inside the
@@ -87,7 +87,7 @@ export default function ExperimentsScreen() {
             breathing is NOT one of these — it regulates rather than
             excavates, so it has its own section below (user, 2026-07-18). */}
         <View style={styles.section}>
-          <SectionHeader family={PRACTICES_FAMILY} label="Deep work" />
+          <SectionHeader family={JUDGMENT_FAMILY} label="Deep work" />
           <ThreadCard
             family={JUDGMENT_FAMILY}
             testID="card-judgment"
@@ -100,6 +100,13 @@ export default function ExperimentsScreen() {
             </View>
             <Text style={styles.cardSub}>What would you feel if you couldn&apos;t judge?</Text>
           </ThreadCard>
+        </View>
+
+        {/* Perspective practices get their own header (mockup, 2026-08-31) —
+            three ways of standing somewhere else, distinct from the judgment
+            excavation above. */}
+        <View style={styles.section}>
+          <SectionHeader family={PERSPECTIVE_FAMILY} label="Perspective practices" />
           {PRACTICES.map((practice) => (
             <ThreadCard
               key={practice.id}
@@ -207,9 +214,9 @@ export default function ExperimentsScreen() {
         <LogoDivider tip="Nothing here is a test. Come back to a practice whenever it calls; the rest can wait." />
       </ScrollView>
 
-      {/* First-visit helper note, floating below the title and pointing down
-          at the practices list. */}
-      <CoachNote id="note-experiments" topOffset={44} pointer="down" />
+      {/* First-visit helper note, floating below the title, above the
+          practices list. topOffset clears the title at the post-bump scale. */}
+      <CoachNote id="note-experiments" topOffset={48} family={JUDGMENT_FAMILY} />
     </View>
   );
 }

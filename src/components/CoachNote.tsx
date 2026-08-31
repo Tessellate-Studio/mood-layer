@@ -1,36 +1,47 @@
-// A first-visit helper note: one soft floating card per screen, pointing at
-// the key action, shown once per install (settingsStore.dismissedTips) and
-// gone for good on tap — the whole card is the dismiss target, well past the
-// 44dp hit rule. CoachNote owns the floating frame (absolute, safe-area top,
-// spacing.md gutters); the screen passes only `topOffset`, the height of its
-// own chrome. No scrim — the screen breathes through the paperVeil fill.
+// A first-visit helper note: one opaque raised card per screen, lifted off
+// the page with a real shadow and tinted to the screen's family hue, shown
+// once per install (settingsStore.dismissedTips) and gone for good on tap —
+// the whole card is the dismiss target, well past the 44dp hit rule.
+// CoachNote owns the floating frame (absolute, safe-area top, spacing.md
+// gutters); the screen passes only `topOffset`, the height of its own
+// chrome. Opaque by contract: the old 94% paperVeil card read as damage,
+// not as a card — it silently veiled whatever it crossed (regression #24).
 // Copy lives in content/coachMarks.ts.
 
 import React from 'react';
-import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Polygon } from 'react-native-svg';
 
-import { borderRadius, colors, hitTarget, motion, spacing, typography } from '@/constants/theme';
-import { COACH_MARKS, type CoachMarkId } from '@/content/coachMarks';
+import {
+  borderRadius,
+  colors,
+  motion,
+  mutedPalette,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
+import {
+  COACH_MARKS,
+  COACH_NOTE_DISMISS_HINT,
+  COACH_NOTE_OVERLINE,
+  type CoachMarkId,
+} from '@/content/coachMarks';
 import { useMotion } from '@/hooks/useMotion';
 import { useSettingsStore } from '@/store/settingsStore';
+import type { EmotionFamilyId } from '@/types/models';
 
 interface Props {
   id: CoachMarkId;
   /** Height of the screen's own chrome above the note (header, title…). */
   topOffset: number;
-  /** Which edge grows the little triangle toward the anchored action. */
-  pointer?: 'up' | 'down' | 'none';
-  /** Pointer tip distance from the note's RIGHT edge; omit to centre it. */
-  pointerInset?: number;
-  /** Escape hatch for per-screen frame overrides (e.g. a wider left gutter). */
-  style?: StyleProp<ViewStyle>;
+  /** The screen's layer hue — tints the card border only; text stays ink. */
+  family: EmotionFamilyId;
 }
 
 export function CoachNote(props: Props) {
@@ -41,7 +52,7 @@ export function CoachNote(props: Props) {
   return <CoachNoteCard {...props} />;
 }
 
-function CoachNoteCard({ id, topOffset, pointer = 'none', pointerInset, style }: Props) {
+function CoachNoteCard({ id, topOffset, family }: Props) {
   const dismissTip = useSettingsStore((s) => s.dismissTip);
   const insets = useSafeAreaInsets();
   const { reduced } = useMotion();
@@ -73,47 +84,24 @@ function CoachNoteCard({ id, topOffset, pointer = 'none', pointerInset, style }:
   if (!mounted) return null;
 
   const mark = COACH_MARKS[id];
-  const triangle =
-    pointer === 'none' ? null : (
-      <View
-        style={[
-          styles.pointerHolder,
-          pointerInset !== undefined
-            ? { alignItems: 'flex-end', paddingRight: pointerInset }
-            : null,
-        ]}
-      >
-        <Svg width={16} height={8} viewBox="0 0 16 8">
-          <Polygon
-            points={pointer === 'up' ? '8,0 16,8 0,8' : '0,0 16,0 8,8'}
-            fill={colors.paperVeil}
-          />
-        </Svg>
-      </View>
-    );
 
   return (
     <Animated.View
-      style={[
-        entryStyle,
-        styles.frame,
-        { top: insets.top + spacing.md + topOffset },
-        style,
-      ]}
+      style={[entryStyle, styles.frame, { top: insets.top + spacing.md + topOffset }]}
       testID={`coach-${id}`}
     >
-      {pointer === 'up' ? triangle : null}
       <Pressable
         testID={`coach-dismiss-${id}`}
         accessibilityRole="button"
         accessibilityLabel={mark}
         accessibilityHint="Dismisses this note"
-        style={styles.card}
+        style={[styles.card, { borderColor: mutedPalette[family].border }]}
         onPress={() => dismissTip(id)}
       >
+        <Text style={typography.overline}>{COACH_NOTE_OVERLINE}</Text>
         <Text style={typography.body}>{mark}</Text>
+        <Text style={typography.caption}>{COACH_NOTE_DISMISS_HINT}</Text>
       </Pressable>
-      {pointer === 'down' ? triangle : null}
     </Animated.View>
   );
 }
@@ -125,16 +113,12 @@ const styles = StyleSheet.create({
     right: spacing.md,
   },
   card: {
-    backgroundColor: colors.paperVeil,
-    borderRadius: borderRadius.md,
-    borderWidth: 0.5,
-    borderColor: colors.inkFaint,
+    backgroundColor: colors.paperRaised,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
     padding: spacing.md,
-    minHeight: hitTarget,
-    justifyContent: 'center',
-  },
-  pointerHolder: {
-    alignItems: 'center',
+    gap: spacing.xs,
+    ...shadows.floating,
   },
 });
 

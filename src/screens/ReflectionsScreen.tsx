@@ -15,18 +15,17 @@ import Svg, { Line } from 'react-native-svg';
 import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
 import PaperTexture from '@/components/PaperTexture';
 import ThreadCard from '@/components/ThreadCard';
-import { findPractice, PRACTICE_FAMILY } from '@/content/practices';
+import { findPractice, JUDGMENT_FAMILY, PRACTICE_FAMILY } from '@/content/practices';
 import { findVocabularyWord } from '@/content/vocabulary';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { useExperimentStore, type PracticeSession } from '@/store/experimentStore';
-import type { EmotionFamilyId, JudgmentEntry } from '@/types/models';
+import type { JudgmentEntry } from '@/types/models';
 import { weekKey, weekRangeLabel } from '@/utils/dates';
 import { sessionConclusion, sessionLines } from '@/utils/practiceWork';
 import { groupSittings } from '@/utils/sittings';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-const JUDGMENT_FAMILY: EmotionFamilyId = 'contempt';
 const WEEKDAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 /** One catalog row — a judgment sitting (its grouped entries) or a practice

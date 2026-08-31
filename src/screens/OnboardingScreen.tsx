@@ -1,6 +1,8 @@
 // Onboarding: four paged slides (quilt / fluidity / privacy / guide) with
-// stitch-mark page dots and a Begin button on the last slide. Each slide
-// carries a small monochrome line-art vignette. Content shows immediately
+// solid page dots and a Begin button on the last slide. Every slide's
+// vignette speaks the app's one visual grammar — overlapping translucent
+// family cloth, colour deepening where layers meet (user, 2026-08-31: the
+// mixed line-art/flat idioms read inconsistent). Content shows immediately
 // (the old fade/drift animation was removed — user: "jumpy").
 
 import React from 'react';
@@ -8,9 +10,9 @@ import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } fr
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
+import Svg, { Line, Path, Rect } from 'react-native-svg';
 
-import { borderRadius, colors, familyPalette, hitTarget, mutedPalette, spacing, textures, typography } from '@/constants/theme';
+import { borderRadius, colors, familyPalette, hitTarget, mutedPalette, spacing, typography } from '@/constants/theme';
 import LayeredClusterVignette from '@/components/LayeredClusterVignette';
 import PaperTexture from '@/components/PaperTexture';
 import { EMOTION_FAMILIES } from '@/content/emotions';
@@ -18,6 +20,7 @@ import { ONBOARDING_SLIDES } from '@/content/onboarding';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { useSettingsStore } from '@/store/settingsStore';
 import type { EmotionFamilyId } from '@/types/models';
+import { CLOTH_OPACITY } from '@/utils/quiltLayout';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
@@ -30,61 +33,75 @@ function QuiltVignette() {
   return <LayeredClusterVignette size={88} />;
 }
 
-/** An abstract circle-and-line figure with a gentle sine wave passing through. */
+/** A current of feeling: three long cloth bands crossing mid-frame, their
+ *  overlaps deepening — feelings moving through rather than held still.
+ *  Hoisted like LayeredClusterVignette's PIECES — the slides stay mounted
+ *  and re-render on every page swipe. */
+const FLUIDITY_BANDS: { y: number; family: EmotionFamilyId; transform: string }[] = [
+  { y: 16, family: 'sadness', transform: 'rotate(-6 32 23)' },
+  { y: 26, family: 'anticipation', transform: 'rotate(3 32 33)' },
+  { y: 36, family: 'fear', transform: 'rotate(-4 32 43)' },
+];
+
 function FluidityVignette() {
   return (
     <Svg width={88} height={88} viewBox="0 0 64 64">
-      <Circle cx={32} cy={12} r={6} fill="none" stroke={colors.ink} strokeWidth={1.5} />
-      <Line
-        x1={32}
-        y1={18}
-        x2={32}
-        y2={50}
-        stroke={colors.ink}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-      />
-      <Path
-        d="M2 34 C 8 26, 14 26, 20 34 S 32 42, 38 34 S 50 26, 62 34"
-        fill="none"
-        stroke={colors.inkSoft}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-      />
+      {FLUIDITY_BANDS.map((band) => (
+        <Rect
+          key={band.family}
+          x={4}
+          y={band.y}
+          width={56}
+          height={14}
+          rx={7}
+          fill={familyPalette[band.family].shades[3]}
+          fillOpacity={CLOTH_OPACITY}
+          transform={band.transform}
+        />
+      ))}
     </Svg>
   );
 }
 
-/** A padlock drawn of stitched dashes. */
+/** A padlock built of translucent layers: a fear-cloth body and shackle
+ *  band holding a small trust-cloth layer safe inside — the overlap
+ *  deepening exactly like the quilt does. */
 function PrivacyVignette() {
   return (
     <Svg width={88} height={88} viewBox="0 0 64 64">
       <Path
-        d="M22 28 v-7 a10 10 0 0 1 20 0 v7"
+        d="M22 30 v-8 a10 10 0 0 1 20 0 v8"
         fill="none"
-        stroke={colors.ink}
-        strokeWidth={1.5}
-        strokeDasharray={[...textures.stitchDash]}
+        stroke={familyPalette[SLIDE_FAMILY.privacy].shades[4]}
+        strokeWidth={9}
+        strokeOpacity={CLOTH_OPACITY}
         strokeLinecap="round"
       />
       <Rect
         x={14}
-        y={28}
+        y={26}
         width={36}
-        height={26}
-        rx={5}
-        fill="none"
-        stroke={colors.ink}
-        strokeWidth={1.5}
-        strokeDasharray={[...textures.stitchDash]}
+        height={28}
+        rx={10}
+        fill={familyPalette[SLIDE_FAMILY.privacy].shades[3]}
+        fillOpacity={CLOTH_OPACITY}
       />
-      <Circle cx={32} cy={41} r={2.5} fill={colors.ink} />
+      <Rect
+        x={20}
+        y={32}
+        width={24}
+        height={16}
+        rx={8}
+        fill={familyPalette.trust.shades[3]}
+        fillOpacity={CLOTH_OPACITY}
+      />
     </Svg>
   );
 }
 
-/** The field-guide slide: a spread of nine tiny family swatches — a glimpse
- *  of the vocabulary the guide holds. */
+/** The field-guide slide: all nine families as a woven spread — each piece
+ *  overlapping its neighbours so the seams deepen, a glimpse of the
+ *  vocabulary the guide holds in the quilt's own grammar. */
 function GuideVignette() {
   const families = Object.values(EMOTION_FAMILIES);
   return (
@@ -92,12 +109,13 @@ function GuideVignette() {
       {families.map((family, i) => (
         <Rect
           key={family.id}
-          x={8 + (i % 3) * 17}
-          y={8 + Math.floor(i / 3) * 17}
-          width={13}
-          height={13}
-          rx={3}
+          x={6 + (i % 3) * 17}
+          y={6 + Math.floor(i / 3) * 17}
+          width={21}
+          height={21}
+          rx={7}
           fill={familyPalette[family.id].shades[3]}
+          fillOpacity={CLOTH_OPACITY}
         />
       ))}
     </Svg>
@@ -157,6 +175,7 @@ export default function OnboardingScreen() {
             <View key={slide.id} style={[styles.slide, { width }]}>
               {Vignette ? (
                 <View
+                  testID={`vignette-${slide.id}`}
                   style={[
                     styles.vignette,
                     { borderColor: mutedPalette[SLIDE_FAMILY[slide.id]].border },
@@ -167,7 +186,7 @@ export default function OnboardingScreen() {
                   <Vignette />
                 </View>
               ) : null}
-              <Text style={styles.slideTitle}>{slide.title}</Text>
+              <Text style={typography.display}>{slide.title}</Text>
               <Text style={styles.slideBody}>{slide.body}</Text>
               {index === lastIndex && (
                 <Pressable
@@ -185,7 +204,7 @@ export default function OnboardingScreen() {
         })}
       </ScrollView>
 
-      {/* Stitch-mark page dots — decorative; hidden from screen readers. */}
+      {/* Page dots — decorative; hidden from screen readers. */}
       <View
         style={styles.dots}
         accessibilityElementsHidden
@@ -200,7 +219,6 @@ export default function OnboardingScreen() {
               y2={3}
               stroke={index === page ? colors.ink : colors.inkFaint}
               strokeWidth={2}
-              strokeDasharray={[...textures.stitchDashFine]}
               strokeLinecap="round"
             />
           </Svg>
@@ -226,12 +244,6 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     borderWidth: 1,
     backgroundColor: colors.paperRaised,
-  },
-  slideTitle: {
-    // typography.display sized down a notch so long titles fit small phones.
-    ...typography.display,
-    fontSize: 30,
-    lineHeight: 38,
   },
   slideBody: {
     ...typography.bodyLarge,

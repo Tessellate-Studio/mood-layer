@@ -479,7 +479,8 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   markCardMarked: {
-    borderStyle: 'dashed',
+    // Colour-only (inkFaint -> ink): a width change here would resize the
+    // content box and jump the text 0.5px on every toggle.
     borderColor: colors.ink,
   },
   markTag: {

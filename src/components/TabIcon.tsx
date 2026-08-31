@@ -9,7 +9,7 @@
 import React from 'react';
 import Svg, { Circle, Line, Rect } from 'react-native-svg';
 
-import { familyPalette, textures } from '@/constants/theme';
+import { familyPalette } from '@/constants/theme';
 import type { EmotionFamilyId } from '@/types/models';
 
 export interface TabIconProps {
@@ -113,7 +113,6 @@ export function InsightsIcon({ color, size, focused }: TabIconProps) {
           y2={row.y}
           stroke={focused ? trioStroke(i) : color}
           strokeWidth={focused ? FOCUS_STROKE_WIDTH : STROKE_WIDTH}
-          strokeDasharray={[...textures.stitchDashFine]}
         />
       ))}
     </Svg>

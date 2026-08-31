@@ -468,9 +468,10 @@ export default function CircleScreen() {
         <LogoDivider tip="Change or stop sharing any time. Removing someone deletes everything they were ever sent." />
       </ScrollView>
 
-      {/* First-visit helper note, floating below the title + intro and
-          pointing down toward the invite row. */}
-      <CoachNote id="note-circle" topOffset={96} pointer="down" />
+      {/* First-visit helper note, floating below the title + intro, above
+          the invite row. topOffset clears the intro at the post-bump scale
+          (title +1, two body lines +1 each). */}
+      <CoachNote id="note-circle" topOffset={100} family={PERSON_FAMILY} />
     </View>
   );
 }
@@ -561,6 +562,10 @@ const styles = StyleSheet.create({
     // reads from the toggle + the dormant fade, not a border style.
     borderColor: colors.ink,
     paddingHorizontal: spacing.md,
+    // Vertical padding is load-bearing: a wrapped two-line label used to fill
+    // the 44 minHeight exactly, and Courier Prime's 1.318× text box clipped
+    // the second line to glyph tops on Android (regression log row 25).
+    paddingVertical: spacing.sm,
   },
   optionText: {
     ...typography.label,
@@ -645,7 +650,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderStyle: 'dashed',
     borderColor: colors.inkFaint,
     padding: spacing.md,
   },

@@ -277,17 +277,10 @@ export default function QuiltScreen() {
         />
       )}
 
-      {/* First-visit helper note, floating under the header chrome and
-          pointing up at the + (present on day zero AND returning layouts).
-          pointerInset ≈ settings icon (minWidth 36) + header gap, aiming the
-          tip under the second icon from the right. */}
-      <CoachNote
-        id="note-quilt"
-        topOffset={48}
-        pointer="up"
-        pointerInset={44}
-        style={{ left: spacing.xl }}
-      />
+      {/* First-visit helper note, floating under the header chrome (present
+          on day zero AND returning layouts). The header row's height comes
+          from its 44dp icon buttons, not the type scale. */}
+      <CoachNote id="note-quilt" topOffset={48} family="sadness" />
 
       <Modal
         visible={selected !== null}
@@ -446,7 +439,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderStyle: 'dashed',
     borderColor: colors.inkFaint,
     marginTop: spacing.xs,
   },

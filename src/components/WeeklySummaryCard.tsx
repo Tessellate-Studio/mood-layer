@@ -89,7 +89,8 @@ const styles = StyleSheet.create({
   },
   headline: {
     ...typography.heading,
-    fontSize: 20,
+    fontSize: 21,
+    lineHeight: 28, // >= 21 x 1.318 — keeps descenders inside the line box
   },
   body: {
     ...typography.body,

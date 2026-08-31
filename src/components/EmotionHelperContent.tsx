@@ -96,7 +96,7 @@ export function EmotionHelperContent({ family }: Props) {
           <Text style={styles.arrow}> → </Text>
           <Text style={typography.heading}>{helper.whenResisted.becomes}</Text>
         </View>
-        {/* A thin stitched underline ties the two words together. */}
+        {/* A thin underline ties the two words together. */}
         <Svg width="100%" height={4} accessibilityElementsHidden>
           <Line
             x1="0"
@@ -105,7 +105,6 @@ export function EmotionHelperContent({ family }: Props) {
             y2={2}
             stroke={palette.thread}
             strokeWidth={1}
-            strokeDasharray={[3, 3]}
           />
         </Svg>
         <Text style={[typography.body, styles.becomesDesc]}>

@@ -306,9 +306,10 @@ export default function InsightsScreen() {
         />
       )}
 
-      {/* First-visit helper note — no pointer: there is nothing to do here
-          yet, and the note says exactly that. */}
-      <CoachNote id="note-insights" topOffset={64} />
+      {/* First-visit helper note — there is nothing to do here yet, and the
+          note says exactly that. topOffset clears the title at the post-bump
+          scale. */}
+      <CoachNote id="note-insights" topOffset={68} family="enjoyment" />
     </View>
   );
 }
@@ -421,7 +422,6 @@ const styles = StyleSheet.create({
   },
   tellChipOff: {
     borderColor: colors.inkFaint,
-    borderStyle: 'dashed',
   },
   tellText: {
     ...typography.caption,

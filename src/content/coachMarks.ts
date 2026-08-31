@@ -13,6 +13,10 @@ export type CoachMarkId =
   | 'note-circle'
   | 'note-field-guide';
 
+/** Shared chrome copy for the floating note card. */
+export const COACH_NOTE_OVERLINE = 'First visit';
+export const COACH_NOTE_DISMISS_HINT = 'Tap to dismiss';
+
 /** One gentle line per screen, pointing at what it offers — never a directive. */
 export const COACH_MARKS: Record<CoachMarkId, string> = {
   'note-quilt':

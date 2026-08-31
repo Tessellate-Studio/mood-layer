@@ -2,12 +2,13 @@
 // the OS sheet, and remove-with-confirm. All local: Share and Alert are spied.
 
 import React from 'react';
-import { Alert, Share } from 'react-native';
+import { Alert, Share, StyleSheet } from 'react-native';
 import { act, fireEvent, render, screen } from '@testing-library/react-native';
 
 import { NavigationContainer } from '@react-navigation/native';
 
 import CircleScreen from '@/screens/CircleScreen';
+import { spacing } from '@/constants/theme';
 import { useCircleStore } from '@/store/circleStore';
 import { useCheckInStore } from '@/store/checkInStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -88,6 +89,18 @@ describe('CircleScreen', () => {
     expect(people).toHaveLength(1);
     expect(people[0].name).toBe('Priya');
     expect(people[0].frequency).toBe('weekly');
+  });
+
+  it('gives the sees/frequency chips vertical text breathing room', () => {
+    // Device 2026-08-31: a wrapped chip label showed only the tops of its
+    // descenders — the chip had minHeight 44 and NO vertical padding, so two
+    // wrapped label lines filled the box exactly and Courier Prime's 1.318×
+    // text box clipped at the bottom (regression log row 25).
+    const p = seedPerson();
+    renderScreen();
+    const chip = screen.getByTestId(`circle-sees-${p.id}`);
+    const flat = StyleSheet.flatten(chip.props.style);
+    expect(flat.paddingVertical ?? 0).toBeGreaterThanOrEqual(spacing.sm);
   });
 
   it('cycles what a person sees and how often on tap', () => {

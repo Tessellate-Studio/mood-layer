@@ -1,6 +1,7 @@
-// Section header for the muted-layer treatment: a two-band logo glyph tinted
-// to the section's family hue, an uppercase overline label, and a trailing
-// dashed rule. The glyph is a derived subset of the three-band mark (see
+// Section header for the muted-layer treatment: a two-band logo glyph
+// tinted to the section's family hue, an uppercase overline label, and a
+// trailing solid rule (dashed until 2026-08-31, when the stitch-line
+// language was retired). The glyph is a derived subset of the three-band mark (see
 // LogoDivider) — the logo doing navigational work, not decoration for its
 // own sake.
 
@@ -63,7 +64,6 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 0,
     borderTopWidth: 1.5,
-    borderStyle: 'dashed',
   },
 });
 
