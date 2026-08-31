@@ -1,7 +1,7 @@
 # ADR-003 — Canonical terminology for educative copy
 
-- **Status:** proposed 2026-08-31 — pending user confirmation (ADR review is
-  one round: confirm or amend, then this flips to accepted).
+- **Status:** accepted 2026-08-31 — confirmed by the user asking to implement
+  it as scoped (the one term choice and both no-gos below stand).
 - **Tier:** ADR (tactical, reversible — copy + one test file, no dependency,
   no screen/flow changes). Scored via the sizing guide: files touched sits in
   the Pitch band (5-7), but blast radius (content layer only), reversibility
@@ -163,11 +163,8 @@ no-`!`/no-should/no-must assertions already proven on `CHECK_IN_COPY` and
    (`docs: add decision adr-003-canonical-content-terminology`), then the fix
    as its own commit on a fresh branch off master.
 
-## Open question for the user
+## Open question for the user — resolved
 
-Confirm the one term choice this ADR makes concrete — "underneath" over
-"cover word" — reads right to you, and that leaving the masking-state
-metaphors and the "helper sheet"/"helper notes" naming untouched (per the
-no-gos above) matches what you had in mind when you said the app "sounds
-confusing." If you want those touched too, that widens this past ADR tier and
-this doc's scope should grow with it before any code changes.
+Confirmed 2026-08-31 by the user asking to implement this ADR: "underneath"
+over "cover word" stands, and the no-gos (masking-state metaphors, "Numb"'s
+dual explanation, "helper sheet"/"helper notes") stay untouched.
