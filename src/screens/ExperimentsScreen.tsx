@@ -38,6 +38,7 @@ type Nav = NativeStackNavigationProp<RootStackParamList>;
 // anticipation teal, reflections contempt mauve, field guide surprise tan,
 // Name it sadness blue — no family repeats anywhere on the page. Each
 // section header takes its (first) card's hue.
+const PERSPECTIVE_FAMILY: EmotionFamilyId = 'enjoyment';
 const BREATHING_FAMILY: EmotionFamilyId = 'anticipation';
 const REFLECTIONS_FAMILY: EmotionFamilyId = 'contempt';
 const LEARN_FAMILY: EmotionFamilyId = 'surprise';
@@ -105,10 +106,7 @@ export default function ExperimentsScreen() {
             three ways of standing somewhere else, distinct from the judgment
             excavation above. */}
         <View style={styles.section}>
-          <SectionHeader
-            family={PRACTICE_FAMILY[PRACTICES[0].id]}
-            label="Perspective practices"
-          />
+          <SectionHeader family={PERSPECTIVE_FAMILY} label="Perspective practices" />
           {PRACTICES.map((practice) => (
             <ThreadCard
               key={practice.id}
@@ -218,7 +216,7 @@ export default function ExperimentsScreen() {
 
       {/* First-visit helper note, floating below the title, above the
           practices list. topOffset clears the title at the post-bump scale. */}
-      <CoachNote id="note-experiments" topOffset={48} family="anger" />
+      <CoachNote id="note-experiments" topOffset={48} family={JUDGMENT_FAMILY} />
     </View>
   );
 }

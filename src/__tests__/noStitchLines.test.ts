@@ -20,7 +20,7 @@ function sourceFiles(dir: string): string[] {
   });
 }
 
-const BANNED: Array<{ label: string; pattern: RegExp }> = [
+const BANNED: { label: string; pattern: RegExp }[] = [
   { label: "borderStyle: 'dashed' | 'dotted'", pattern: /borderStyle:\s*['"](dashed|dotted)['"]/ },
   { label: 'SVG strokeDasharray', pattern: /strokeDasharray/ },
   { label: 'stitchDash token', pattern: /stitchDash/ },

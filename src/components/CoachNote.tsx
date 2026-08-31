@@ -20,7 +20,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   borderRadius,
   colors,
-  hitTarget,
   motion,
   mutedPalette,
   shadows,
@@ -101,7 +100,7 @@ function CoachNoteCard({ id, topOffset, family }: Props) {
       >
         <Text style={typography.overline}>{COACH_NOTE_OVERLINE}</Text>
         <Text style={typography.body}>{mark}</Text>
-        <Text style={styles.hint}>{COACH_NOTE_DISMISS_HINT}</Text>
+        <Text style={typography.caption}>{COACH_NOTE_DISMISS_HINT}</Text>
       </Pressable>
     </Animated.View>
   );
@@ -119,15 +118,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: spacing.md,
     gap: spacing.xs,
-    minHeight: hitTarget,
-    justifyContent: 'center',
     ...shadows.floating,
-  },
-  hint: {
-    // inkMuted, not inkFaint — the hint is meaningful text, and inkFaint is
-    // decoration-only (regression #2).
-    ...typography.caption,
-    color: colors.inkMuted,
   },
 });
 

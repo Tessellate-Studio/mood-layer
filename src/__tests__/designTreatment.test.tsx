@@ -102,9 +102,10 @@ describe('mutedPalette tokens', () => {
 });
 
 describe('typography scale', () => {
-  const tokens = Object.entries(typography) as Array<
-    [string, { fontSize: number; lineHeight: number }]
-  >;
+  const tokens = Object.entries(typography) as [
+    string,
+    { fontSize: number; lineHeight: number },
+  ][];
 
   it('holds the 2026-08-31 +1px readability floor', () => {
     // User: "font size needs a 1px bump". Floors, not exact pins, so a later
@@ -119,6 +120,7 @@ describe('typography scale', () => {
       label: 15,
       overline: 12,
     };
+    expect(Object.keys(floor).sort()).toEqual(tokens.map(([name]) => name).sort());
     for (const [name, token] of tokens) {
       expect(token.fontSize).toBeGreaterThanOrEqual(floor[name]);
     }
@@ -132,7 +134,6 @@ describe('typography scale', () => {
       expect(token.lineHeight).toBeGreaterThanOrEqual(Math.ceil(token.fontSize * 1.32));
     }
   });
-
 });
 
 describe('SectionHeader', () => {

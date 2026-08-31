@@ -34,16 +34,19 @@ function QuiltVignette() {
 }
 
 /** A current of feeling: three long cloth bands crossing mid-frame, their
- *  overlaps deepening — feelings moving through rather than held still. */
+ *  overlaps deepening — feelings moving through rather than held still.
+ *  Hoisted like LayeredClusterVignette's PIECES — the slides stay mounted
+ *  and re-render on every page swipe. */
+const FLUIDITY_BANDS: { y: number; family: EmotionFamilyId; transform: string }[] = [
+  { y: 16, family: 'sadness', transform: 'rotate(-6 32 23)' },
+  { y: 26, family: 'anticipation', transform: 'rotate(3 32 33)' },
+  { y: 36, family: 'fear', transform: 'rotate(-4 32 43)' },
+];
+
 function FluidityVignette() {
-  const bands: { y: number; family: EmotionFamilyId; rotate: number }[] = [
-    { y: 16, family: 'sadness', rotate: -6 },
-    { y: 26, family: 'anticipation', rotate: 3 },
-    { y: 36, family: 'fear', rotate: -4 },
-  ];
   return (
     <Svg width={88} height={88} viewBox="0 0 64 64">
-      {bands.map((band) => (
+      {FLUIDITY_BANDS.map((band) => (
         <Rect
           key={band.family}
           x={4}
@@ -53,7 +56,7 @@ function FluidityVignette() {
           rx={7}
           fill={familyPalette[band.family].shades[3]}
           fillOpacity={CLOTH_OPACITY}
-          transform={`rotate(${band.rotate} 32 ${band.y + 7})`}
+          transform={band.transform}
         />
       ))}
     </Svg>
@@ -69,7 +72,7 @@ function PrivacyVignette() {
       <Path
         d="M22 30 v-8 a10 10 0 0 1 20 0 v8"
         fill="none"
-        stroke={familyPalette.fear.shades[4]}
+        stroke={familyPalette[SLIDE_FAMILY.privacy].shades[4]}
         strokeWidth={9}
         strokeOpacity={CLOTH_OPACITY}
         strokeLinecap="round"
@@ -80,7 +83,7 @@ function PrivacyVignette() {
         width={36}
         height={28}
         rx={10}
-        fill={familyPalette.fear.shades[3]}
+        fill={familyPalette[SLIDE_FAMILY.privacy].shades[3]}
         fillOpacity={CLOTH_OPACITY}
       />
       <Rect
@@ -183,7 +186,7 @@ export default function OnboardingScreen() {
                   <Vignette />
                 </View>
               ) : null}
-              <Text style={styles.slideTitle}>{slide.title}</Text>
+              <Text style={typography.display}>{slide.title}</Text>
               <Text style={styles.slideBody}>{slide.body}</Text>
               {index === lastIndex && (
                 <Pressable
@@ -241,12 +244,6 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     borderWidth: 1,
     backgroundColor: colors.paperRaised,
-  },
-  slideTitle: {
-    // Plain display — the old tightened line-height sat under Courier
-    // Prime's 1.318x descender need (the regression-25 clip class), and the
-    // two extra px per line are affordable even on small phones.
-    ...typography.display,
   },
   slideBody: {
     ...typography.bodyLarge,

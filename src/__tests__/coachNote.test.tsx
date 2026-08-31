@@ -9,6 +9,7 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 
 import CoachNote from '@/components/CoachNote';
+import { COACH_NOTE_DISMISS_HINT, COACH_NOTE_OVERLINE } from '@/content/coachMarks';
 import { colors, mutedPalette, shadows } from '@/constants/theme';
 import { useSettingsStore } from '@/store/settingsStore';
 
@@ -63,7 +64,7 @@ describe('CoachNote', () => {
   it('carries the overline and the quiet dismiss hint', async () => {
     render(<CoachNote id="note-quilt" topOffset={0} family="sadness" />);
     await screen.findByTestId('coach-note-quilt');
-    expect(screen.getByText('First visit')).toBeTruthy();
-    expect(screen.getByText('Tap to dismiss')).toBeTruthy();
+    expect(screen.getByText(COACH_NOTE_OVERLINE)).toBeTruthy();
+    expect(screen.getByText(COACH_NOTE_DISMISS_HINT)).toBeTruthy();
   });
 });

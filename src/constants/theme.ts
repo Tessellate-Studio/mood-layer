@@ -121,7 +121,7 @@ export interface MutedFamilyPalette {
   /** Soft-tint card fill — a layer you can tell apart, not a highlight.
    *  Every ink tier holds AA on it (verified in designTreatment.test.tsx). */
   fill: string;
-  /** 1px card border + the section header's dashed rule. */
+  /** 1px card border, the section header's solid rule, CoachNote's border. */
   border: string;
   /** The coloured "thread" spine, section glyph strokes, and arrow rings.
    *  Non-text UI: holds ≥3:1 on its fill and on paper (WCAG 1.4.11). */
@@ -229,6 +229,8 @@ export const hitTarget = 44;
  *  Cards in the page's flow stay flat — paper doesn't cast shadows on
  *  itself; only something lifted off it does. */
 export const shadows = {
+  // shadow* props are iOS-only; elevation is what Android (the shipped
+  // platform) actually renders. Both kept so the token is portable.
   floating: {
     shadowColor: colors.ink,
     shadowOffset: { width: 0, height: 4 },

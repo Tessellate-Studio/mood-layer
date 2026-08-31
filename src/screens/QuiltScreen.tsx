@@ -278,9 +278,9 @@ export default function QuiltScreen() {
       )}
 
       {/* First-visit helper note, floating under the header chrome (present
-          on day zero AND returning layouts). topOffset clears the header row
-          at the post-bump type scale. */}
-      <CoachNote id="note-quilt" topOffset={52} family="sadness" />
+          on day zero AND returning layouts). The header row's height comes
+          from its 44dp icon buttons, not the type scale. */}
+      <CoachNote id="note-quilt" topOffset={48} family="sadness" />
 
       <Modal
         visible={selected !== null}

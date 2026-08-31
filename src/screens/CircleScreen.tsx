@@ -471,7 +471,7 @@ export default function CircleScreen() {
       {/* First-visit helper note, floating below the title + intro, above
           the invite row. topOffset clears the intro at the post-bump scale
           (title +1, two body lines +1 each). */}
-      <CoachNote id="note-circle" topOffset={100} family="disgust" />
+      <CoachNote id="note-circle" topOffset={100} family={PERSON_FAMILY} />
     </View>
   );
 }
