@@ -100,7 +100,7 @@ function MainTabs() {
         tabBarStyle: { backgroundColor: colors.paperRaised },
         // Typewriter face on the tab labels too — device test showed them
         // falling back to system sans without an explicit fontFamily.
-        tabBarLabelStyle: { fontFamily: fonts.body, fontSize: 11, fontWeight: '400' },
+        tabBarLabelStyle: { fontFamily: fonts.body, fontSize: 12, fontWeight: '400' },
       }}
     >
       <Tab.Screen

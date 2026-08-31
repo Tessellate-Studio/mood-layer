@@ -11,9 +11,10 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import LogoDivider from '@/components/LogoDivider';
 import SectionHeader from '@/components/SectionHeader';
 import ThreadCard from '@/components/ThreadCard';
-import { colors, familyPalette, mutedPalette } from '@/constants/theme';
+import { colors, familyPalette, mutedPalette, spacing, typography } from '@/constants/theme';
 import { EMOTION_FAMILIES } from '@/content/emotions';
 import type { EmotionFamilyId } from '@/types/models';
+import { WEEK_LABEL_BLOCK } from '@/utils/quiltLayout';
 
 // --- WCAG relative-luminance contrast (2.1 §1.4.3 / §1.4.11) ---
 
@@ -98,6 +99,45 @@ describe('mutedPalette tokens', () => {
       expect(contrast(thread, colors.paperRaised)).toBeGreaterThanOrEqual(3);
       expect(contrast(thread, shades[1])).toBeGreaterThanOrEqual(3);
     }
+  });
+});
+
+describe('typography scale', () => {
+  const tokens = Object.entries(typography) as Array<
+    [string, { fontSize: number; lineHeight: number }]
+  >;
+
+  it('holds the 2026-08-31 +1px readability floor', () => {
+    // User: "font size needs a 1px bump". Floors, not exact pins, so a later
+    // deliberate bump passes and any silent shrink fails.
+    const floor: Record<string, number> = {
+      display: 31,
+      title: 23,
+      heading: 18,
+      body: 16,
+      bodyLarge: 18,
+      caption: 13,
+      label: 15,
+      overline: 12,
+    };
+    for (const [name, token] of tokens) {
+      expect(token.fontSize).toBeGreaterThanOrEqual(floor[name]);
+    }
+  });
+
+  it('gives every token Courier Prime descender headroom (≥1.32 × size)', () => {
+    // Courier Prime's Android text box is (winAscent 1900 + winDescent 800)
+    // / 2048 upm = 1.318 × fontSize — read from the shipped TTF. A lineHeight
+    // under that clips the last line's descenders inside exact-height boxes.
+    for (const [, token] of tokens) {
+      expect(token.lineHeight).toBeGreaterThanOrEqual(Math.ceil(token.fontSize * 1.32));
+    }
+  });
+
+  it('keeps the quilt scroll math in step with the overline token', () => {
+    // WEEK_LABEL_BLOCK mirrors QuiltWeek's header (overline line-height +
+    // its spacing.sm bottom margin); offsetForCheckIn drifts if they split.
+    expect(WEEK_LABEL_BLOCK).toBe(typography.overline.lineHeight + spacing.sm);
   });
 });
 

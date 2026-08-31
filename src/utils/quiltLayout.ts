@@ -162,7 +162,7 @@ export function clothPieces(emotions: EmotionSelection[], w: number, h: number):
  * Vertical space a week block spends above its first row: the week label
  * (overline line-height) plus its bottom margin. Mirrors QuiltWeek's header.
  */
-export const WEEK_LABEL_BLOCK = 16 + 8;
+export const WEEK_LABEL_BLOCK = 17 + 8;
 
 /**
  * Scroll offset that brings a check-in's cluster into view inside the quilt

@@ -38,8 +38,8 @@ const styles = StyleSheet.create({
   },
   tip: {
     ...typography.body,
-    fontSize: 14,
-    lineHeight: 24,
+    fontSize: 15,
+    lineHeight: 25,
     color: colors.inkSoft,
     textAlign: 'center',
     maxWidth: 280,

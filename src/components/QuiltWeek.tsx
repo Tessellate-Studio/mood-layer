@@ -140,8 +140,8 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     fontFamily: typography.caption.fontFamily,
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 12,
+    lineHeight: 16,
     fontWeight: '400',
     // Weekday labels are meaningful text, so inkMuted (7:1) not inkFaint
     // (~3.3:1, decoration-only) — WCAG 2.1 AA.

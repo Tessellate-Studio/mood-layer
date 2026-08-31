@@ -243,10 +243,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.paperRaised,
   },
   slideTitle: {
-    // typography.display sized down a notch so long titles fit small phones.
+    // typography.display with a tightened line-height so long titles fit
+    // small phones.
     ...typography.display,
-    fontSize: 30,
-    lineHeight: 38,
+    fontSize: 31,
+    lineHeight: 39,
   },
   slideBody: {
     ...typography.bodyLarge,

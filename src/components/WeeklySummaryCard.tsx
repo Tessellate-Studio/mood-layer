@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
   },
   headline: {
     ...typography.heading,
-    fontSize: 20,
+    fontSize: 21,
   },
   body: {
     ...typography.body,
