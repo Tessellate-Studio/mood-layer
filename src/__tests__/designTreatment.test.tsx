@@ -76,14 +76,15 @@ describe('mutedPalette tokens', () => {
 
   it('fills carry visible hue — not grey (the "too dull" regression)', () => {
     // Chroma proxy: the spread between the max and min RGB channel. The old
-    // desaturated fills sat at 2–6 (grey dust); the soothing-register fills
-    // (0.30 mix, user-directed 2026-07-19 "get more lighter") run 7–33. Cool
-    // families (fear/sadness at 7) are inherently near-neutral — guard sits at
-    // 6, cleanly above the old grey range while allowing the lighter tints.
+    // desaturated fills sat at 2–6 (grey dust); the 0.30-mix fills ran 7–33
+    // and still read flat on Experiments (user, 2026-08-31 "a bit jarring…
+    // slightly saturated version of the mockup"), so fills moved to a 0.42
+    // mix (11–44). Guard sits at 10: above both the grey range and the
+    // washed-out 0.30 cool families, below the new cool-family floor of 11.
     for (const id of familyIds) {
       const c = mutedPalette[id].fill.replace('#', '');
       const [r, g, b] = [0, 2, 4].map((i) => parseInt(c.slice(i, i + 2), 16));
-      expect(Math.max(r, g, b) - Math.min(r, g, b)).toBeGreaterThanOrEqual(6);
+      expect(Math.max(r, g, b) - Math.min(r, g, b)).toBeGreaterThanOrEqual(10);
     }
   });
 

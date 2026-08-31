@@ -139,65 +139,66 @@ export interface MutedFamilyPalette {
  * can tell apart"). Chrome text/lines remain ink tiers; these tints are for
  * card fills, thread spines, section glyphs, and same-hue accents only.
  *
- * Re-tuned twice at the user's direction: 2026-07-18 morning the grey fills
- * ("a bit too dull") became the family pastel mixed 62% into cream; by
- * evening that read "a little too saturated", so fills settled at a 45% mix
- * — the soothing register of the liked Insights page, hue still legible.
- * Borders stay at the full pastel. Tiers verified computationally
- * (designTreatment.test.tsx): captions ≥5.1:1 on every fill, accents ≥4.5:1
- * on fill AND raised paper, threads ≥3:1.
+ * Re-tuned at the user's direction three times: 2026-07-18 morning the grey
+ * fills ("a bit too dull") became the family pastel mixed 62% into cream, by
+ * evening "a little too saturated" pulled them down, and 2026-07-19 "get more
+ * lighter" settled them at a 0.30 mix of shades[4] into cream. 2026-08-31 the
+ * 0.30 register read flat on Experiments ("slightly saturated version of the
+ * mockup"), so fills now sit at a 0.42 mix. Borders stay at the full pastel.
+ * Tiers verified computationally (designTreatment.test.tsx): captions ≥5.2:1
+ * on every fill, accents ≥4.5:1 on fill AND raised paper, threads ≥3:1.
  */
 export const mutedPalette: Record<EmotionFamilyId, MutedFamilyPalette> = {
   anger: {
-    fill: '#F4E3DB',
+    fill: '#F2DBD3',
     border: '#EAB6AB',
     thread: '#8F6F68',
     accent: '#6E5650',
   },
   fear: {
-    fill: '#EAE4EB',
+    fill: '#E4DDE9',
     border: '#C9BADF',
     thread: '#7B7188',
     accent: '#5E5769',
   },
   sadness: {
-    fill: '#E4E8EB',
+    fill: '#DBE3E8',
     border: '#B4C8DE',
     thread: '#6E7A87',
     accent: '#555E68',
   },
   disgust: {
-    fill: '#E4EBDE',
+    fill: '#DCE7D7',
     border: '#B5D2B4',
     thread: '#6D7E6C',
     accent: '#556355',
   },
   enjoyment: {
-    fill: '#F4EBD3',
+    fill: '#F3E7C7',
     border: '#ECD28F',
     thread: '#8B7C54',
     accent: '#6D6142',
   },
   surprise: {
-    fill: '#F4E6D6',
+    fill: '#F3DFCB',
     border: '#ECBF99',
     thread: '#8E735C',
     accent: '#6F5A48',
   },
   contempt: {
-    fill: '#ECE3E4',
+    fill: '#E7DCDF',
     border: '#CFB8C7',
     thread: '#80727B',
     accent: '#635860',
   },
   anticipation: {
-    fill: '#E1EAE6',
+    fill: '#D7E6E2',
     border: '#AACFCE',
     thread: '#687E7E',
     accent: '#506161',
   },
   trust: {
-    fill: '#F2E4E4',
+    fill: '#F0DDDF',
     border: '#E4BAC7',
     thread: '#8B7179',
     accent: '#6B575E',
