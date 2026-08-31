@@ -1,8 +1,11 @@
 # Logo handoff — The Mood Layer
 
-The app's logo: **stacked strata** — three bands of translucent feeling-cloth,
-folded and stacked, deepening where they overlap. Built from the app's own tokens
-(the quilt lozenge, `familyPalette` shades, thread outlines) so it matches the UI.
+The app's logo: **stacked strata** — three bands of feeling-cloth, folded and
+stacked. Built from the app's own tokens (the quilt lozenge, `familyPalette`
+vivid tones) so it matches the UI. Redrawn 2026-08-31 in the vivid register at
+full opacity: the pastel-on-cream version disappeared at launcher/share-sheet
+sizes (the mark was within a few percent of the tile's luminance, and the
+adaptive foreground covered only 47% of the canvas before Android's 66% mask).
 
 ## What's in here
 ```
@@ -56,15 +59,20 @@ svg/
   than shipping two files.
 - **Header / about screen**: `appicon_paper.svg` at ~28–40px.
 - Render SVGs with `react-native-svg` (already a dependency) — either inline the paths
-  or load via `react-native-svg-transformer`. The shapes are plain rounded rects with
-  `fillOpacity` + thread strokes; the overlap-deepening uses alpha, **no blend mode
-  required** (safe on `react-native-svg`).
+  or load via `react-native-svg-transformer`. The shapes are plain opaque rounded
+  rects — no opacity, no blend mode (safe on `react-native-svg`).
 
 ## Colours (all already in `src/constants/theme.ts`)
-Bands top→bottom = rose / enjoyment / sadness, each drawn at its `shades[3]` fill,
-`fillOpacity ≈ 0.82`, outline = that family's `.thread` at 0.6 opacity. Tile bg
-`colors.paper #F8F6F0`; reversed tile `colors.ink #141414` with cream outlines.
-The mood variants just swap which three families are stacked — same geometry.
+Bands top→bottom = anger / enjoyment / sadness, each drawn at its family's
+`vivid` tone (`#C4573F` / `#C08A1E` / `#3F72A6`), fully opaque, no outline —
+the three hues separate themselves. Tile bg `colors.paper #F8F6F0`. Geometry
+(240 viewBox): bottom band x20 y130 w200, mid x31 y82 w178, top x45 y34 w150,
+all h78 rx39. The bare mark wraps the same bands in `scale(0.79)` about the
+centre so it spans ~66% of the canvas — sized for Android's adaptive mask.
+`appicon_ink.svg`, `icon_mono.svg` and the `var_*` variants still show the old
+pastel geometry (tracked in BACKLOG).
 
-> Regenerate at other sizes any time from `svg/appicon_paper.svg` (store/tile) and
-> `svg/appicon_bare.svg` (Android foreground, pad to a 66% safe zone).
+> Regenerate any time: `npm install --no-save @resvg/resvg-js`, then rasterize
+> `svg/appicon_paper.svg` → icon/favicon PNGs and `svg/appicon_bare.svg` →
+> adaptive-foreground/splash PNGs (fitTo width 1024/48). Check `git diff
+> package-lock.json` stays empty afterwards (regression log rows 13–14).

@@ -57,9 +57,15 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
   plan in the ADR).*
 
 - ~~**Install the app icons from the logo handoff**~~ — shipped 2026-07-13,
-  PR #14 (`e862632`).
-  **Still open:** never eyeballed on a phone — icons resolve correctly in the
-  Expo config but need an on-device look once a build is available.
+  PR #14 (`e862632`). The on-device look (2026-08-31) failed it: the pastel
+  mark was unrecognizable in the share tray, so the shipped icons were redrawn
+  in the vivid register at full opacity with the adaptive mark scaled to the
+  66% mask (design-feedback PR, 2026-08-31). Verification moves to the
+  device-test queue (needs a fresh APK — no OTA path).
+  **Still open:** `appicon_ink.svg`, `icon_mono.svg` and the `var_*` mood
+  variants in `assets/svg/` still carry the old pastel geometry — redraw them
+  to the vivid geometry if/when anything ships them (nothing in-app imports
+  them today).
 
 - **Clean on-device verification pass of the v0.2.0 redesign** — rubric **7/12**.
   Full walkthrough of Quilt cloth, Insights depth, Circle, judgment
