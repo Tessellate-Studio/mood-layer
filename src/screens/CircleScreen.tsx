@@ -561,6 +561,10 @@ const styles = StyleSheet.create({
     // reads from the toggle + the dormant fade, not a border style.
     borderColor: colors.ink,
     paddingHorizontal: spacing.md,
+    // Vertical padding is load-bearing: a wrapped two-line label used to fill
+    // the 44 minHeight exactly, and Courier Prime's 1.318× text box clipped
+    // the second line to glyph tops on Android (regression log row 25).
+    paddingVertical: spacing.sm,
   },
   optionText: {
     ...typography.label,
