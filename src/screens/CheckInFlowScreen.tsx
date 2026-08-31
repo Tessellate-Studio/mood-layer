@@ -339,7 +339,7 @@ function FeelStep({
                 <EmotionChip
                   id={`more-${family.id}`}
                   label={showAll ? '– fewer words' : '+ more words'}
-                  dashed
+                  quiet
                   selected={false}
                   onPress={() =>
                     setMoreWordsFor((cur) => ({ ...cur, [family.id]: !showAll }))
@@ -359,7 +359,7 @@ function FeelStep({
             key={m.id}
             id={m.id}
             label={m.label}
-            dashed
+            quiet
             selected={state.masking.includes(m.id)}
             onPress={() => toggleMaskingAndReveal(m.id)}
             onLongPress={() => {

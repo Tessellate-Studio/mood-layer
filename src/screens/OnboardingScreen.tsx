@@ -10,7 +10,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Line, Path, Rect } from 'react-native-svg';
 
-import { borderRadius, colors, familyPalette, hitTarget, mutedPalette, spacing, textures, typography } from '@/constants/theme';
+import { borderRadius, colors, familyPalette, hitTarget, mutedPalette, spacing, typography } from '@/constants/theme';
 import LayeredClusterVignette from '@/components/LayeredClusterVignette';
 import PaperTexture from '@/components/PaperTexture';
 import { EMOTION_FAMILIES } from '@/content/emotions';
@@ -55,7 +55,7 @@ function FluidityVignette() {
   );
 }
 
-/** A padlock drawn of stitched dashes. */
+/** A padlock in solid line work (stitch dashes retired 2026-08-31). */
 function PrivacyVignette() {
   return (
     <Svg width={88} height={88} viewBox="0 0 64 64">
@@ -64,7 +64,6 @@ function PrivacyVignette() {
         fill="none"
         stroke={colors.ink}
         strokeWidth={1.5}
-        strokeDasharray={[...textures.stitchDash]}
         strokeLinecap="round"
       />
       <Rect
@@ -76,7 +75,6 @@ function PrivacyVignette() {
         fill="none"
         stroke={colors.ink}
         strokeWidth={1.5}
-        strokeDasharray={[...textures.stitchDash]}
       />
       <Circle cx={32} cy={41} r={2.5} fill={colors.ink} />
     </Svg>
@@ -200,7 +198,6 @@ export default function OnboardingScreen() {
               y2={3}
               stroke={index === page ? colors.ink : colors.inkFaint}
               strokeWidth={2}
-              strokeDasharray={[...textures.stitchDashFine]}
               strokeLinecap="round"
             />
           </Svg>

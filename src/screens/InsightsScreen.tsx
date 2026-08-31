@@ -421,7 +421,6 @@ const styles = StyleSheet.create({
   },
   tellChipOff: {
     borderColor: colors.inkFaint,
-    borderStyle: 'dashed',
   },
   tellText: {
     ...typography.caption,

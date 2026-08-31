@@ -371,7 +371,7 @@ export default function JudgmentFlowScreen() {
                       <EmotionChip
                         id={`judgment-more-${family.id}`}
                         label={showAll ? '– fewer words' : '+ more words'}
-                        dashed
+                        quiet
                         selected={false}
                         onPress={() =>
                           setMoreWordsFor((cur) => ({ ...cur, [family.id]: !showAll }))

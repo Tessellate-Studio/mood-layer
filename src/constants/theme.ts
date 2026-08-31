@@ -32,8 +32,6 @@ export const colors = {
   shade2: '#ABABA6',
   shade3: '#6E6E6A',
   shade4: '#1F1F1D',
-  /** Dashed stitch lines between patch segments. */
-  stitch: '#141414',
   /** Backdrop behind sheets/modals (one of two alpha colours — see paperVeil). */
   scrim: 'rgba(20, 20, 20, 0.35)',
   /** Floating first-visit helper notes — raised paper at 94%, so the screen
@@ -306,12 +304,6 @@ export const typography = {
     textTransform: 'uppercase' as const,
     color: colors.inkMuted,
   },
-} as const;
-
-/** Dash patterns for stitched lines (SVG strokeDasharray). */
-export const textures = {
-  stitchDash: [6, 4] as const,
-  stitchDashFine: [3, 3] as const,
 } as const;
 
 /** Shared motion tokens — every animation uses these so reduce-motion and

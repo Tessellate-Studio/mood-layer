@@ -479,8 +479,10 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   markCardMarked: {
-    borderStyle: 'dashed',
+    // Solid ink, a shade heavier than the resting inkFaint border, so the
+    // marked state stays legible now the dashed treatment is retired.
     borderColor: colors.ink,
+    borderWidth: 1.5,
   },
   markTag: {
     ...typography.caption,

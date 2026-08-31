@@ -1,8 +1,10 @@
 // A selectable pill for an emotion word or masking state. Selected = ink fill,
 // paper label — unless a `fill` colour is given, in which case the selected
 // chip wears that family pastel with ink text (the chip doubling as its own
-// temperature swatch — user-approved 2026-07-17). Dashed variant marks
-// masking states (covers, not feelings).
+// temperature swatch — user-approved 2026-07-17). Quiet variant marks
+// masking states and "+ more words" doorways (tentative, not feelings) with
+// a greyed label on the standard solid border — the stitch-line language is
+// retired (user, 2026-08-31: no dotted lines anywhere).
 
 import React from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
@@ -16,8 +18,9 @@ interface Props {
   label: string;
   selected: boolean;
   onPress(): void;
-  /** Masking states render with a dashed border to read as tentative. */
-  dashed?: boolean;
+  /** Tentative chips (masking states, more/fewer-words doorways) — greyed
+   *  label, same solid border. */
+  quiet?: boolean;
   /** Family-pastel background for the selected state (label stays ink —
    *  every familyPalette shade holds AA under ink text). */
   fill?: string;
@@ -27,7 +30,7 @@ interface Props {
 
 const HIT_SLOP = { top: 6, bottom: 6, left: 4, right: 4 };
 
-export function EmotionChip({ id, label, selected, onPress, dashed, fill, onLongPress }: Props) {
+export function EmotionChip({ id, label, selected, onPress, quiet, fill, onLongPress }: Props) {
   const hapticsEnabled = useSettingsStore((s) => s.hapticsEnabled);
 
   return (
@@ -39,7 +42,6 @@ export function EmotionChip({ id, label, selected, onPress, dashed, fill, onLong
       hitSlop={HIT_SLOP}
       style={[
         styles.chip,
-        dashed && styles.dashed,
         selected && (fill ? { backgroundColor: fill, borderColor: fill } : styles.selected),
       ]}
       onPress={() => {
@@ -48,7 +50,15 @@ export function EmotionChip({ id, label, selected, onPress, dashed, fill, onLong
       }}
       onLongPress={onLongPress}
     >
-      <Text style={[styles.label, selected && !fill && styles.labelSelected]}>{label}</Text>
+      <Text
+        style={[
+          styles.label,
+          quiet && !selected && styles.labelQuiet,
+          selected && !fill && styles.labelSelected,
+        ]}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -62,15 +72,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.inkFaint,
   },
-  dashed: {
-    borderStyle: 'dashed',
-  },
   selected: {
     backgroundColor: colors.ink,
     borderColor: colors.ink,
   },
   label: {
     ...typography.label,
+  },
+  labelQuiet: {
+    color: colors.inkMuted,
   },
   labelSelected: {
     color: colors.paper,

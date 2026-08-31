@@ -446,7 +446,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderStyle: 'dashed',
     borderColor: colors.inkFaint,
     marginTop: spacing.xs,
   },

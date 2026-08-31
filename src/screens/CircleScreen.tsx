@@ -645,7 +645,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderStyle: 'dashed',
     borderColor: colors.inkFaint,
     padding: spacing.md,
   },

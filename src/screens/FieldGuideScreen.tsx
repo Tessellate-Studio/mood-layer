@@ -107,7 +107,7 @@ export default function FieldGuideScreen() {
                 key={state.id}
                 id={`state-${state.id}`}
                 label={state.label}
-                dashed
+                quiet
                 selected={openState === state.id}
                 onPress={() => setOpenState((cur) => (cur === state.id ? null : state.id))}
               />
