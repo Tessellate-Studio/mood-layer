@@ -16,6 +16,7 @@ import { JUDGMENT_EXAMPLES } from '@/content/judgmentExamples';
 import { ONBOARDING_SLIDES } from '@/content/onboarding';
 import { CHECK_IN_COPY } from '@/content/checkInCopy';
 import { COACH_MARKS } from '@/content/coachMarks';
+import { UNDERNEATH_MAP } from '@/content/underneath';
 
 const FAMILY_IDS: EmotionFamilyId[] = [
   'anger',
@@ -35,6 +36,31 @@ const TELL_IDS: ResistanceTellId[] = [
   'binary-stuckness',
   'comparison',
 ];
+
+/**
+ * Recursively pulls every prose string out of a content export (nested
+ * objects, arrays) — skipping `id` fields, which are internal identifiers
+ * (e.g. `ONBOARDING_SLIDES`'s `id: 'quilt'`), not copy a user reads.
+ */
+function collectStrings(value: unknown, seen = new Set<unknown>()): string[] {
+  if (typeof value === 'string') return [value];
+  if (value === null || typeof value !== 'object') return [];
+  if (seen.has(value)) return [];
+  seen.add(value);
+  if (Array.isArray(value)) return value.flatMap((v) => collectStrings(v, seen));
+  return Object.entries(value)
+    .filter(([key]) => key !== 'id')
+    .flatMap(([, v]) => collectStrings(v, seen));
+}
+
+/** Tone rule (CLAUDE.md): gentle, no exclamations, never directive. */
+function expectGentleCopy(strings: string[]): void {
+  for (const text of strings) {
+    expect(text).not.toContain('!');
+    expect(text.toLowerCase()).not.toContain('you should');
+    expect(text.toLowerCase()).not.toContain('you must');
+  }
+}
 
 function emptyStats(overrides: Partial<WeekStats> = {}): WeekStats {
   return {
@@ -239,6 +265,10 @@ describe('emotion helpers', () => {
     expect(EMOTION_HELPERS.anger.whenResisted.becomes.toLowerCase()).toContain('stuck');
     expect(EMOTION_HELPERS.enjoyment.whenResisted.becomes.toLowerCase()).toContain('joy');
   });
+
+  it('copy stays gentle: no exclamations, never directive', () => {
+    expectGentleCopy(collectStrings(EMOTION_HELPERS));
+  });
 });
 
 describe('resistance tells', () => {
@@ -351,17 +381,7 @@ describe('check-in copy', () => {
   });
 
   it('copy stays gentle: no exclamations, never directive', () => {
-    for (const line of values) {
-      expect(line).not.toContain('!');
-      expect(line.toLowerCase()).not.toContain('you should');
-      expect(line.toLowerCase()).not.toContain('you must');
-    }
-  });
-
-  it('speaks in layer language — never stitch/quilt/sew', () => {
-    for (const line of values) {
-      expect(line.toLowerCase()).not.toMatch(/quilt|stitch|sew/);
-    }
+    expectGentleCopy(values);
   });
 
   it('the feel hint invites several words, not just one', () => {
@@ -387,14 +407,12 @@ describe('coach marks', () => {
     }
   });
 
-  it('copy stays gentle and speaks in layers', () => {
-    for (const text of Object.values(COACH_MARKS)) {
+  it('copy stays gentle', () => {
+    const values = Object.values(COACH_MARKS);
+    for (const text of values) {
       expect(text.trim().length).toBeGreaterThan(0);
-      expect(text).not.toContain('!');
-      expect(text.toLowerCase()).not.toContain('you should');
-      expect(text.toLowerCase()).not.toContain('you must');
-      expect(text.toLowerCase()).not.toMatch(/quilt|stitch|sew/);
     }
+    expectGentleCopy(values);
   });
 });
 
@@ -416,5 +434,55 @@ describe('onboarding slides', () => {
     expect(allCopy[1]).toContain('resist');
     expect(allCopy[2]).toContain('phone');
     expect(allCopy[3]).toContain('field guide');
+  });
+
+  it('copy stays gentle: no exclamations, never directive', () => {
+    expectGentleCopy(collectStrings(ONBOARDING_SLIDES));
+  });
+});
+
+describe('content glossary (ADR-003)', () => {
+  // Generalizes the quilt/stitch/sew ban (formerly two separate hardcoded
+  // regexes on check-in copy and coach marks) into one data-driven table
+  // that scans every content source below, per memory/content_glossary.md —
+  // the source of truth for what's listed here.
+  const GLOSSARY: { canonical: string; banned: string[] }[] = [
+    { canonical: 'underneath', banned: ['cover word'] },
+    { canonical: 'layers (never quilt/stitch/sew)', banned: ['quilt', 'stitch', 'sew'] },
+  ];
+
+  const CONTENT_SOURCES: Record<string, unknown> = {
+    EMOTION_FAMILIES,
+    MASKING_STATES,
+    EMOTION_HELPERS,
+    RESISTANCE_TELLS,
+    JUDGMENT_EXAMPLES,
+    ONBOARDING_SLIDES,
+    CHECK_IN_COPY,
+    COACH_MARKS,
+    UNDERNEATH_MAP,
+    INSIGHT_TEMPLATES: INSIGHT_TEMPLATES.map((t) => t.render(maxedStats)),
+  };
+
+  // Each source is walked once, up front — the glossary/synonym loop below
+  // only filters these cached strings, however large GLOSSARY grows.
+  const SOURCE_STRINGS: [string, string[]][] = Object.entries(CONTENT_SOURCES).map(
+    ([sourceName, source]) => [sourceName, collectStrings(source)],
+  );
+
+  it('never uses a banned synonym in place of its glossary term', () => {
+    const offenders: string[] = [];
+    for (const { canonical, banned } of GLOSSARY) {
+      for (const synonym of banned) {
+        for (const [sourceName, strings] of SOURCE_STRINGS) {
+          for (const text of strings) {
+            if (text.toLowerCase().includes(synonym)) {
+              offenders.push(`${sourceName}: found "${synonym}" (use "${canonical}") in "${text}"`);
+            }
+          }
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
   });
 });
