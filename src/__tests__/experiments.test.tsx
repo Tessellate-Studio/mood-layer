@@ -3,6 +3,7 @@
 // expo-notifications surface directly.
 
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 
@@ -24,6 +25,7 @@ jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({ navigate: mockNavigate, goBack: mockGoBack }),
 }));
 
+import { mutedPalette } from '@/constants/theme';
 import * as notifications from '@/services/notifications';
 import ExperimentsScreen from '@/screens/ExperimentsScreen';
 import JudgmentFlowScreen from '@/screens/JudgmentFlowScreen';
@@ -240,6 +242,51 @@ describe('ExperimentsScreen layout', () => {
     expect(screen.queryByText('no time')).toBeNull();
     fireEvent.press(screen.getByTestId('card-reflections'));
     expect(mockNavigate).toHaveBeenCalledWith('Reflections');
+  });
+
+  it('gives every card its own layer hue — the mockup mapping (user, 2026-08-31)', async () => {
+    // Seed one practice session + one judgment entry so all 8 cards mount.
+    const sessions: PracticeSession[] = [
+      {
+        id: 'ps-1',
+        practiceId: 'problem-solution',
+        createdAt: '2026-07-15T20:00:00.000Z',
+        work: { entries: { problem: ['no time'] }, marks: {}, picks: {} },
+      },
+    ];
+    useExperimentStore.setState((s) => ({ ...s, practiceSessions: sessions }));
+
+    renderScreen(<ExperimentsScreen />);
+    await screen.findByTestId('screen-experiments');
+
+    const spine = (id: string) =>
+      StyleSheet.flatten(screen.getByTestId(`${id}-spine`).props.style).backgroundColor;
+
+    // One distinct family hue per card, straight from the endorsed mockup:
+    // judgment anger rose, flashback enjoyment amber, empathic disgust green,
+    // problem fear violet, name-it sadness blue, reflections contempt mauve —
+    // breathing keeps anticipation and the field guide takes surprise so no
+    // hue repeats anywhere on the page.
+    const expected: Record<string, string> = {
+      'card-judgment': mutedPalette.anger.thread,
+      'practice-five-year-flashback': mutedPalette.enjoyment.thread,
+      'practice-empathic-respect': mutedPalette.disgust.thread,
+      'practice-problem-solution': mutedPalette.fear.thread,
+      'card-breathing': mutedPalette.anticipation.thread,
+      'card-reflections': mutedPalette.contempt.thread,
+      'card-field-guide': mutedPalette.surprise.thread,
+      'card-name-it': mutedPalette.sadness.thread,
+    };
+    for (const [card, thread] of Object.entries(expected)) {
+      expect(spine(card)).toBe(thread);
+    }
+    expect(new Set(Object.values(expected)).size).toBe(8);
+  });
+
+  it('splits the perspective practices into their own titled section (mockup)', async () => {
+    renderScreen(<ExperimentsScreen />);
+    await screen.findByTestId('screen-experiments');
+    expect(screen.getByText('Perspective practices')).toBeTruthy();
   });
 
   it('shows the Past reflections doorway only once there is a reflection', async () => {

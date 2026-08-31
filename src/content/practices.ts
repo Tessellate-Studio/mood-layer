@@ -51,12 +51,18 @@ export interface Practice {
 }
 
 /** Layer hue per practice (muted-layer treatment) — shared by the Experiments
- *  cards and the flow screen so the card and its flow read as one layer. */
+ *  cards and the flow screen so the card and its flow read as one layer.
+ *  Remapped 2026-08-31 to the mockup's hue-per-card design: flashback amber,
+ *  empathic green, problem violet — every Experiments card a hue of its own. */
 export const PRACTICE_FAMILY: Record<string, EmotionFamilyId> = {
-  'five-year-flashback': 'anticipation',
-  'empathic-respect': 'trust',
-  'problem-solution': 'surprise',
+  'five-year-flashback': 'enjoyment',
+  'empathic-respect': 'disgust',
+  'problem-solution': 'fear',
 };
+
+/** Layer hue for the judgment sitting — shared by the Experiments card, the
+ *  flow, and the Reflections catalog for the same one-layer reason. */
+export const JUDGMENT_FAMILY: EmotionFamilyId = 'anger';
 
 export const PRACTICES: Practice[] = [
   // Worksheet (guide p.42): per option, ONE question — "How am I and others
