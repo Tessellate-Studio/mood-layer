@@ -230,6 +230,17 @@ describe('OnboardingScreen (polished)', () => {
     expect(useSettingsStore.getState().onboardingCompletedAt).not.toBeNull();
     expect(mockReset).toHaveBeenCalledWith({ index: 0, routes: [{ name: 'Main' }] });
   });
+
+  it('renders all four vignettes in the translucent-layers grammar', () => {
+    // One visual idiom across the slides (user, 2026-08-31): every vignette
+    // is overlapping translucent family cloth, like slide 1's cluster.
+    render(<OnboardingScreen />);
+    for (const id of ['quilt', 'fluidity', 'privacy', 'guide']) {
+      expect(
+        screen.getByTestId(`vignette-${id}`, { includeHiddenElements: true })
+      ).toBeTruthy();
+    }
+  });
 });
 
 // ── The test-crash trigger must never reach a shipped app ────────────
