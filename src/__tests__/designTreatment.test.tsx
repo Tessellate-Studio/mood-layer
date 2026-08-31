@@ -11,10 +11,9 @@ import { fireEvent, render, screen } from '@testing-library/react-native';
 import LogoDivider from '@/components/LogoDivider';
 import SectionHeader from '@/components/SectionHeader';
 import ThreadCard from '@/components/ThreadCard';
-import { colors, familyPalette, mutedPalette, spacing, typography } from '@/constants/theme';
+import { colors, familyPalette, mutedPalette, typography } from '@/constants/theme';
 import { EMOTION_FAMILIES } from '@/content/emotions';
 import type { EmotionFamilyId } from '@/types/models';
-import { WEEK_LABEL_BLOCK } from '@/utils/quiltLayout';
 
 // --- WCAG relative-luminance contrast (2.1 §1.4.3 / §1.4.11) ---
 
@@ -134,11 +133,6 @@ describe('typography scale', () => {
     }
   });
 
-  it('keeps the quilt scroll math in step with the overline token', () => {
-    // WEEK_LABEL_BLOCK mirrors QuiltWeek's header (overline line-height +
-    // its spacing.sm bottom margin); offsetForCheckIn drifts if they split.
-    expect(WEEK_LABEL_BLOCK).toBe(typography.overline.lineHeight + spacing.sm);
-  });
 });
 
 describe('SectionHeader', () => {

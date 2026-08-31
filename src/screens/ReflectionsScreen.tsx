@@ -19,7 +19,7 @@ import { findPractice, JUDGMENT_FAMILY, PRACTICE_FAMILY } from '@/content/practi
 import { findVocabularyWord } from '@/content/vocabulary';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { useExperimentStore, type PracticeSession } from '@/store/experimentStore';
-import type { EmotionFamilyId, JudgmentEntry } from '@/types/models';
+import type { JudgmentEntry } from '@/types/models';
 import { weekKey, weekRangeLabel } from '@/utils/dates';
 import { sessionConclusion, sessionLines } from '@/utils/practiceWork';
 import { groupSittings } from '@/utils/sittings';

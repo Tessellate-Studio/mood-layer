@@ -243,11 +243,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.paperRaised,
   },
   slideTitle: {
-    // typography.display with a tightened line-height so long titles fit
-    // small phones.
+    // Plain display — the old tightened line-height sat under Courier
+    // Prime's 1.318x descender need (the regression-25 clip class), and the
+    // two extra px per line are affordable even on small phones.
     ...typography.display,
-    fontSize: 31,
-    lineHeight: 39,
   },
   slideBody: {
     ...typography.bodyLarge,

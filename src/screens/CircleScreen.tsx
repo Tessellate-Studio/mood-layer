@@ -468,9 +468,10 @@ export default function CircleScreen() {
         <LogoDivider tip="Change or stop sharing any time. Removing someone deletes everything they were ever sent." />
       </ScrollView>
 
-      {/* First-visit helper note, floating below the title + intro and
-          pointing down toward the invite row. */}
-      <CoachNote id="note-circle" topOffset={96} family="disgust" />
+      {/* First-visit helper note, floating below the title + intro, above
+          the invite row. topOffset clears the intro at the post-bump scale
+          (title +1, two body lines +1 each). */}
+      <CoachNote id="note-circle" topOffset={100} family="disgust" />
     </View>
   );
 }

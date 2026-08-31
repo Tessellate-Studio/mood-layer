@@ -277,11 +277,10 @@ export default function QuiltScreen() {
         />
       )}
 
-      {/* First-visit helper note, floating under the header chrome and
-          pointing up at the + (present on day zero AND returning layouts).
-          pointerInset ≈ settings icon (minWidth 36) + header gap, aiming the
-          tip under the second icon from the right. */}
-      <CoachNote id="note-quilt" topOffset={48} family="sadness" />
+      {/* First-visit helper note, floating under the header chrome (present
+          on day zero AND returning layouts). topOffset clears the header row
+          at the post-bump type scale. */}
+      <CoachNote id="note-quilt" topOffset={52} family="sadness" />
 
       <Modal
         visible={selected !== null}

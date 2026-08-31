@@ -175,9 +175,9 @@ export default function FieldGuideScreen() {
         </Text>
       </ScrollView>
 
-      {/* First-visit helper note, floating below the header + intro and
-          pointing down at the family key. */}
-      <CoachNote id="note-field-guide" topOffset={104} family="anticipation" />
+      {/* First-visit helper note, floating below the header + intro, above
+          the family key. topOffset clears the intro at the post-bump scale. */}
+      <CoachNote id="note-field-guide" topOffset={108} family="anticipation" />
     </View>
   );
 }

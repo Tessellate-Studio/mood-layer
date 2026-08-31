@@ -479,10 +479,9 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   markCardMarked: {
-    // Solid ink, a shade heavier than the resting inkFaint border, so the
-    // marked state stays legible now the dashed treatment is retired.
+    // Colour-only (inkFaint -> ink): a width change here would resize the
+    // content box and jump the text 0.5px on every toggle.
     borderColor: colors.ink,
-    borderWidth: 1.5,
   },
   markTag: {
     ...typography.caption,

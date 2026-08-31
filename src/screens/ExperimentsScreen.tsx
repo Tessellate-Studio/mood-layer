@@ -216,9 +216,9 @@ export default function ExperimentsScreen() {
         <LogoDivider tip="Nothing here is a test. Come back to a practice whenever it calls; the rest can wait." />
       </ScrollView>
 
-      {/* First-visit helper note, floating below the title and pointing down
-          at the practices list. */}
-      <CoachNote id="note-experiments" topOffset={44} family="anger" />
+      {/* First-visit helper note, floating below the title, above the
+          practices list. topOffset clears the title at the post-bump scale. */}
+      <CoachNote id="note-experiments" topOffset={48} family="anger" />
     </View>
   );
 }
