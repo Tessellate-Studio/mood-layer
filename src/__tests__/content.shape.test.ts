@@ -3,6 +3,9 @@
 // an insight template stops rendering, this suite catches it before any UI
 // does.
 
+import * as fs from 'fs';
+import * as path from 'path';
+import * as ts from 'typescript';
 import type { EmotionFamilyId, ResistanceTellId, WeekStats } from '@/types/models';
 import {
   EMOTION_FAMILIES,
@@ -35,6 +38,92 @@ const TELL_IDS: ResistanceTellId[] = [
   'binary-stuckness',
   'comparison',
 ];
+
+/**
+ * Recursively pulls every prose string out of a content export (nested
+ * objects, arrays) — skipping `id` fields, which are internal identifiers
+ * (e.g. `ONBOARDING_SLIDES`'s `id: 'quilt'`), not copy a user reads.
+ */
+function collectStrings(value: unknown, seen = new Set<unknown>()): string[] {
+  if (typeof value === 'string') return [value];
+  if (value === null || typeof value !== 'object') return [];
+  if (seen.has(value)) return [];
+  seen.add(value);
+  if (Array.isArray(value)) return value.flatMap((v) => collectStrings(v, seen));
+  return Object.entries(value)
+    .filter(([key]) => key !== 'id')
+    .flatMap(([, v]) => collectStrings(v, seen));
+}
+
+/**
+ * Every literal string/template-literal fragment written in a .ts file's
+ * source — read from the raw text via the TypeScript compiler API, not from
+ * an imported export. Catches copy embedded in generator functions
+ * (`circle.ts`'s `shareSummary`, `monthlyDigest.ts`'s digests) that a
+ * const-only scan would miss, and skips comments by construction (they're
+ * trivia, never AST literal nodes) — so a metaphor mentioned in a code
+ * comment doesn't false-positive against the user-facing-copy ban.
+ *
+ * Also skips string literals that are internal identifiers, not prose a user
+ * reads: type-literal positions (`type X = 'note-quilt' | ...`), object/
+ * interface property KEYS (`'note-quilt': ...`), and the VALUE of a field
+ * literally named `id` (`{ id: 'quilt', ... }`), mirroring collectStrings'
+ * `id`-field skip above.
+ */
+function collectLiteralStrings(sourceText: string, fileName: string): string[] {
+  const sourceFile = ts.createSourceFile(fileName, sourceText, ts.ScriptTarget.Latest, true);
+  const strings: string[] = [];
+
+  const isInternalIdentifier = (node: ts.StringLiteral | ts.NoSubstitutionTemplateLiteral): boolean => {
+    const parent = node.parent;
+    if (!parent) return false;
+    if (ts.isLiteralTypeNode(parent)) return true;
+    if ((ts.isPropertyAssignment(parent) || ts.isPropertySignature(parent)) && parent.name === node) {
+      return true;
+    }
+    if (
+      ts.isPropertyAssignment(parent) &&
+      parent.initializer === node &&
+      ts.isIdentifier(parent.name) &&
+      parent.name.text === 'id'
+    ) {
+      return true;
+    }
+    return false;
+  };
+
+  const visit = (node: ts.Node): void => {
+    if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) {
+      if (!isInternalIdentifier(node)) strings.push(node.text);
+    } else if (ts.isTemplateExpression(node)) {
+      strings.push(node.head.text);
+      for (const span of node.templateSpans) strings.push(span.literal.text);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sourceFile);
+  return strings;
+}
+
+/** Every `.ts` file directly under a content directory, as [fileName, literalStrings]. */
+function collectContentDirStrings(dir: string): [string, string[]][] {
+  return fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith('.ts'))
+    .map((f): [string, string[]] => {
+      const filePath = path.join(dir, f);
+      return [f, collectLiteralStrings(fs.readFileSync(filePath, 'utf8'), filePath)];
+    });
+}
+
+/** Tone rule (CLAUDE.md): gentle, no exclamations, never directive. */
+function expectGentleCopy(strings: string[]): void {
+  for (const text of strings) {
+    expect(text).not.toContain('!');
+    expect(text.toLowerCase()).not.toContain('you should');
+    expect(text.toLowerCase()).not.toContain('you must');
+  }
+}
 
 function emptyStats(overrides: Partial<WeekStats> = {}): WeekStats {
   return {
@@ -239,6 +328,10 @@ describe('emotion helpers', () => {
     expect(EMOTION_HELPERS.anger.whenResisted.becomes.toLowerCase()).toContain('stuck');
     expect(EMOTION_HELPERS.enjoyment.whenResisted.becomes.toLowerCase()).toContain('joy');
   });
+
+  it('copy stays gentle: no exclamations, never directive', () => {
+    expectGentleCopy(collectStrings(EMOTION_HELPERS));
+  });
 });
 
 describe('resistance tells', () => {
@@ -351,17 +444,7 @@ describe('check-in copy', () => {
   });
 
   it('copy stays gentle: no exclamations, never directive', () => {
-    for (const line of values) {
-      expect(line).not.toContain('!');
-      expect(line.toLowerCase()).not.toContain('you should');
-      expect(line.toLowerCase()).not.toContain('you must');
-    }
-  });
-
-  it('speaks in layer language — never stitch/quilt/sew', () => {
-    for (const line of values) {
-      expect(line.toLowerCase()).not.toMatch(/quilt|stitch|sew/);
-    }
+    expectGentleCopy(values);
   });
 
   it('the feel hint invites several words, not just one', () => {
@@ -387,14 +470,12 @@ describe('coach marks', () => {
     }
   });
 
-  it('copy stays gentle and speaks in layers', () => {
-    for (const text of Object.values(COACH_MARKS)) {
+  it('copy stays gentle', () => {
+    const values = Object.values(COACH_MARKS);
+    for (const text of values) {
       expect(text.trim().length).toBeGreaterThan(0);
-      expect(text).not.toContain('!');
-      expect(text.toLowerCase()).not.toContain('you should');
-      expect(text.toLowerCase()).not.toContain('you must');
-      expect(text.toLowerCase()).not.toMatch(/quilt|stitch|sew/);
     }
+    expectGentleCopy(values);
   });
 });
 
@@ -416,5 +497,44 @@ describe('onboarding slides', () => {
     expect(allCopy[1]).toContain('resist');
     expect(allCopy[2]).toContain('phone');
     expect(allCopy[3]).toContain('field guide');
+  });
+
+  it('copy stays gentle: no exclamations, never directive', () => {
+    expectGentleCopy(collectStrings(ONBOARDING_SLIDES));
+  });
+});
+
+describe('content glossary (ADR-003)', () => {
+  // Generalizes the quilt/stitch/sew ban (formerly two separate hardcoded
+  // regexes on check-in copy and coach marks) into one data-driven table
+  // that scans every content source below, per memory/content_glossary.md —
+  // the source of truth for what's listed here.
+  const GLOSSARY: { canonical: string; banned: string[] }[] = [
+    { canonical: 'underneath', banned: ['cover word'] },
+    { canonical: 'layers (never quilt/stitch/sew)', banned: ['quilt', 'stitch', 'sew'] },
+  ];
+
+  // Every literal string in every src/content/*.ts file, parsed from source —
+  // not a hand-picked list of imported exports. That matters here: several
+  // content files (circle.ts, monthlyDigest.ts, noteReflection.ts) build their
+  // copy inside generator functions rather than static consts, so an
+  // import-and-introspect scan silently misses them; a new content file is
+  // covered automatically too, without editing this list.
+  const SOURCE_STRINGS = collectContentDirStrings(path.join(__dirname, '../content'));
+
+  it('never uses a banned synonym in place of its glossary term', () => {
+    const offenders: string[] = [];
+    for (const { canonical, banned } of GLOSSARY) {
+      for (const synonym of banned) {
+        for (const [sourceName, strings] of SOURCE_STRINGS) {
+          for (const text of strings) {
+            if (text.toLowerCase().includes(synonym)) {
+              offenders.push(`${sourceName}: found "${synonym}" (use "${canonical}") in "${text}"`);
+            }
+          }
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
   });
 });

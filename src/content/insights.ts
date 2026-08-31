@@ -78,7 +78,7 @@ export const INSIGHT_TEMPLATES: InsightTemplate[] = [
     render: () => ({
       title: 'A muffled week',
       body:
-        'Several check-ins this week started from a cover word rather than the feeling underneath. You cannot selectively numb, so welcoming the hard feelings is also what lets joy back in. When a cover word comes up again, you could peek at what it is keeping warm.',
+        "Several check-ins this week stayed with what covers a feeling rather than the feeling underneath. You cannot selectively numb, so welcoming the hard feelings is also what lets joy back in. Next time, you could pause and see what's underneath.",
     }),
   },
   {
@@ -89,7 +89,7 @@ export const INSIGHT_TEMPLATES: InsightTemplate[] = [
     render: () => ({
       title: 'Checking in from behind a cover',
       body:
-        'You checked in steadily this week, and a couple of those check-ins began with a cover word rather than a feeling. That is a normal place to start. If it feels right, you could linger a moment longer next time and see what the cover is keeping warm.',
+        'You checked in steadily this week, and a couple of those check-ins began from behind a cover rather than the feeling underneath. That is a normal place to start. If it feels right, you could linger a moment longer next time and see what is underneath.',
     }),
   },
   {
