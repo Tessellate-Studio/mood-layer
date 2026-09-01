@@ -147,6 +147,67 @@ The trust boundary, reviewed before code (BACKLOG P0 entry):
 | 2026-08-03 | `postcss` high (`<=8.5.17`, GHSA-r28c-9q8g-f849) | **fixed** | → 8.5.25. Supersedes the 2026-07-28 "deferred" row above; closes issue #48 |
 | 2026-08-03 | `uuid` moderate (GHSA-w5hq-g745-h8pq) | accepted | Unchanged from 2026-07-28 — build-time only, via `xcode` ← `@expo/config-plugins` and `@expo/ngrok` (dev) |
 
+## Security sweep — 2026-09-01
+
+Safe pass (`npm audit fix`, no `--force`) — lockfile-only, `package.json`
+untouched. Verified: `npm ci` clean, `npx tsc --noEmit` clean,
+`npx jest --no-coverage` **404/404** — identical to the pre-fix baseline.
+
+Distinct vulnerable packages: **5 → 3.** Distinct advisories: **6 → 4.**
+Raw `npm audit` headline: **27 → 24.**
+
+### Fixed — safe pass
+
+| Package | Sev | Was → now | Advisory |
+|---|---|---|---|
+| `js-yaml` | high | → **3.15.2** / **4.3.2** | GHSA-5p4m-2wfm-xmqj (both the `<3.15.1` and `<4.3.1` ranges) — **fully resolved** |
+| `nanoid` | high | → **3.3.18** | GHSA-2v37-7h3g-55p8 (custom generators loop indefinitely at size zero) — **fully resolved** |
+
+Both advisories were published since the 08-03 sweep. Both were reachable
+inside existing pins, so the safe pass simply took them.
+
+### Needs upgrade (tracked) — 1, and it is runtime
+
+| Package | Sev | Advisory | Current → Required | What breaks |
+|---|---|---|---|---|
+| `decode-uri-component` | moderate | GHSA-vcc3-ghjq-m6fr | 0.2.2 → 0.5.0 | **Runtime, not build tooling.** Path: `query-string@7.1.3` (pins `^0.2.2`) ← `@react-navigation/core@7.21.13` ← `@react-navigation/native`, a direct dependency of this app. It ships in the bundle and parses URL query strings on the deep-link path. Patched in 0.5.0, unreachable behind `query-string@7`'s `^0.2.2` pin; `query-string@8` dropped the dependency outright. npm's only offer is a **downgrade** to `@react-navigation/native@3.8.4` — rejected, that is a navigation-stack rewrite. Clears on a `@react-navigation` major. |
+
+Exposure is a denial of service (exponential decoding of malformed
+percent-encoded input) triggered by a crafted deep link — an app hang, not
+data disclosure. **Not dismissed**, because it is runtime-reachable and the
+fix is real but deferred; the alert stays open per the triage standard.
+
+### Accepted residual — 2
+
+| Package | Sev | Advisory | Reason |
+|---|---|---|---|
+| `image-size` 1.2.1 | high ×2 | GHSA-w3rx-r6r6-pgpr (ICNS infinite loop), GHSA-5p2g-fcmc-qvqq (JXL/HEIF infinite loop) | **Build-time only, and genuinely unpatched.** Path: `metro@0.83.7` (pins `^1.0.2`) ← `@react-native/community-cli-plugin` ← `react-native`. Metro is the bundler — it runs on a dev machine or EAS runner, never in the shipped app. Verified against the registry this sweep: advisory range is `<=2.0.2` and **2.0.2 is the latest published version**, so unlike most entries in this log there is no version to upgrade to. This is a real no-patch case, not a capped pin. |
+| `uuid` 7.0.3 / 3.4.0 | moderate | GHSA-w5hq-g745-h8pq | **Unchanged from 2026-08-03 / 2026-07-28.** Build-time only: `xcode@3.0.1` (`^7.0.3`) ← `@expo/config-plugins`, and `@expo/ngrok` (a devDependency). The advisory covers v3/v5/v6 **called with a `buf` argument**; `xcode` calls only `uuid.v4()` with no args. Only fix is an Expo major. |
+
+Both `image-size` advisories are new since 08-03. Note the disposition reason
+differs from most of this log: `image-size` cannot be fixed by anyone right
+now, whereas `uuid` is capped by a pin. The re-check plans differ accordingly —
+see below.
+
+### Privacy posture — unchanged
+
+No dependency moved in this sweep touches the network, storage, or crypto
+path. `tweetnacl`, `expo-secure-store`, the Sentry configuration, and the
+circle-relay code are untouched. The local-only posture, the two sanctioned
+exceptions (circle relay, opt-in crash reports), and the still-undecided
+status of ADR-002 usage analytics all stand exactly as recorded above.
+
+`js-yaml` and `nanoid` are both build/tooling-adjacent transitive packages;
+neither is reached by app code that handles emotion check-ins or journal text.
+
+### Re-check triggers
+
+- **`image-size` publishing anything above 2.0.2** — this one cannot clear on
+  our side at all. Nothing we upgrade fixes it until upstream ships.
+- A `@react-navigation` major (or `query-string` 7 → 8 inside it) — clears
+  `decode-uri-component`, the only runtime finding.
+- An Expo major — clears `uuid`.
+
 ## Security sweep — 2026-08-03
 
 **The 2026-07-28 deferral is resolved.** That sweep discarded the safe pass
