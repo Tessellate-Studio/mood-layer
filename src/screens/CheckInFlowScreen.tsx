@@ -27,7 +27,15 @@ import LearnLink, { CaptionLink } from '@/components/LearnLink';
 import ModalHeader from '@/components/ModalHeader';
 import { PatchPreview } from '@/components/QuiltPatch';
 import WordTemperatureRow from '@/components/WordTemperatureRow';
-import { borderRadius, colors, familyPalette, hitTarget, spacing, typography } from '@/constants/theme';
+import {
+  borderRadius,
+  colors,
+  familyPalette,
+  hitTarget,
+  shadows,
+  spacing,
+  typography,
+} from '@/constants/theme';
 import PaperTexture from '@/components/PaperTexture';
 import { BODY_MAP } from '@/content/bodyMap';
 import { CHECK_IN_COPY } from '@/content/checkInCopy';
@@ -100,6 +108,10 @@ export default function CheckInFlowScreen() {
   const scrollRef = React.useRef<ScrollView>(null);
 
   const [state, setState] = React.useState<FlowState>(() => initialFlowState(source));
+  // Measured, not guessed: the floating hint sits on top of the footer's real
+  // height, and the scroll pads by the hint's real height.
+  const [footerHeight, setFooterHeight] = React.useState(0);
+  const [hintHeight, setHintHeight] = React.useState(0);
 
   const title = source === 'name-it' && state.step === 'feel' ? 'Can you name it?' : STEP_TITLES[state.step];
   const stepIndex = STEP_ORDER.indexOf(state.step);
@@ -152,7 +164,16 @@ export default function CheckInFlowScreen() {
         </Svg>
       </View>
 
-      <ScrollView ref={scrollRef} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={[
+          styles.body,
+          // The hint floats OVER the scroll — pad by its measured height so
+          // the last chips can always be scrolled clear of it.
+          feelHint ? { paddingBottom: spacing.xl + hintHeight } : null,
+        ]}
+        keyboardShouldPersistTaps="handled"
+      >
         {state.step === 'feel' && (
           <FeelStep
             state={state}
@@ -166,13 +187,35 @@ export default function CheckInFlowScreen() {
         {state.step === 'stitch' && <StitchStep state={state} />}
       </ScrollView>
 
+      {/* The hint that explains a greyed-out Continue floats just above the
+          button it is about, as a raised note — in the flow it read as one
+          more paragraph of the page and stole height from the words
+          (device feedback 2026-09-02). pointerEvents none: it must never
+          swallow a tap meant for a chip underneath. Its offset is MEASURED
+          from the footer, never hand-tuned (regression #24). */}
       {feelHint ? (
-        <Text style={styles.continueHint} testID={feelHint.testID}>
-          {feelHint.copy}
-        </Text>
+        <View
+          testID="feel-hint-float"
+          style={[styles.hintFloat, { bottom: footerHeight + spacing.xs }]}
+          pointerEvents="none"
+          onLayout={(e) => setHintHeight(e.nativeEvent.layout.height)}
+        >
+          <View style={styles.hintCard}>
+            <Text
+              style={styles.continueHint}
+              testID={feelHint.testID}
+              accessibilityLiveRegion="polite"
+            >
+              {feelHint.copy}
+            </Text>
+          </View>
+        </View>
       ) : null}
 
-      <View style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}>
+      <View
+        style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}
+        onLayout={(e) => setFooterHeight(e.nativeEvent.layout.height)}
+      >
         {stepIndex > 0 && state.step !== 'stitch' ? (
           <Pressable testID="flow-back" accessibilityRole="button" style={styles.backBtn} onPress={goBack}>
             <Text style={styles.backText}>‹ back</Text>
@@ -654,11 +697,24 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.inkMuted,
   },
+  hintFloat: {
+    position: 'absolute',
+    left: spacing.md,
+    right: spacing.md,
+  },
+  hintCard: {
+    backgroundColor: colors.paperRaised,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.inkFaint,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    ...shadows.floating,
+  },
   continueHint: {
     ...typography.caption,
-    color: colors.inkMuted,
+    color: colors.inkSoft,
     textAlign: 'center',
-    paddingBottom: spacing.xs,
   },
   card: {
     backgroundColor: colors.paperRaised,

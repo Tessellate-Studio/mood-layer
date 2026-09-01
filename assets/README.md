@@ -1,11 +1,18 @@
 # Logo handoff — The Mood Layer
 
-The app's logo: **stacked strata** — three bands of feeling-cloth, folded and
-stacked. Built from the app's own tokens (the quilt lozenge, `familyPalette`
-vivid tones) so it matches the UI. Redrawn 2026-08-31 in the vivid register at
-full opacity: the pastel-on-cream version disappeared at launcher/share-sheet
-sizes (the mark was within a few percent of the tile's luminance, and the
-adaptive foreground covered only 47% of the canvas before Android's 66% mask).
+The app's logo: **stacked strata** — three bands of translucent feeling-cloth,
+folded and stacked, deepening where they overlap. Built from the app's own
+tokens (the quilt lozenge, `familyPalette`) so it matches the UI.
+
+Tuned twice. 2026-08-31 the pastel-on-cream mark was redrawn fully opaque in
+the `vivid` register, because it disappeared at launcher/share-sheet sizes (the
+mark was within a few percent of the tile's luminance, and the adaptive
+foreground covered only 47% of the canvas before Android's 66% mask). That read
+as three solid blocks — "I just wanted it slightly more saturated but still
+opaque. This is solid" (user, 2026-09-02) — so the mark now sits in a **middle
+register**: pastel and vivid mixed 55% of the way to vivid, translucent again
+(0.85 + multiply) with the thread outlines back, so overlaps deepen and the
+mark reads as LAYERS. The 66%-mask geometry from 2026-08-31 is unchanged.
 
 ## What's in here
 ```
@@ -59,16 +66,24 @@ svg/
   than shipping two files.
 - **Header / about screen**: `appicon_paper.svg` at ~28–40px.
 - Render SVGs with `react-native-svg` (already a dependency) — either inline the paths
-  or load via `react-native-svg-transformer`. The shapes are plain opaque rounded
-  rects — no opacity, no blend mode (safe on `react-native-svg`).
+  or load via `react-native-svg-transformer`. The shapes are plain rounded rects with
+  `fillOpacity` + thread strokes; in-app, do the overlap-deepening with alpha alone,
+  **no blend mode** (`mix-blend-mode` is for the rasterized assets only — it is not
+  safe on `react-native-svg`). `LogoMark.tsx` is that in-app mark.
 
-## Colours (all already in `src/constants/theme.ts`)
-Bands top→bottom = anger / enjoyment / sadness, each drawn at its family's
-`vivid` tone (`#C4573F` / `#C08A1E` / `#3F72A6`), fully opaque, no outline —
-the three hues separate themselves. Tile bg `colors.paper #F8F6F0`. Geometry
-(240 viewBox): bottom band x20 y130 w200, mid x31 y82 w178, top x45 y34 w150,
-all h78 rx39. The bare mark wraps the same bands in `scale(0.79)` about the
-centre so it spans ~66% of the canvas — sized for Android's adaptive mask.
+## Colours (derived from `src/constants/theme.ts`)
+Bands top→bottom = anger / enjoyment / sadness, each at the **middle register**
+— its `shades[4]` pastel mixed 55% toward its `vivid` tone: `#D58270` /
+`#D4AA51` / `#7499BF` (1.9–2.8:1 against the cream tile, vs 1.4–1.7:1 for the
+pastel that vanished). Each band is `fill-opacity 0.85` with
+`mix-blend-mode: multiply` inside an `isolation: isolate` group, outlined in
+that family's `.thread` (`#A87264` / `#9B8042` / `#6984A3`) at
+`stroke-opacity 0.7`, width 2.6 — alpha does the layer-deepening, no blend
+mode is required by `react-native-svg`. Tile bg `colors.paper #F8F6F0`.
+Geometry (240 viewBox): bottom band x20 y130 w200, mid x31 y82 w178, top x45
+y34 w150, all h78 rx39. The bare mark wraps the same bands in `scale(0.79)`
+about the centre so it spans ~66% of the canvas — sized for Android's adaptive
+mask.
 `appicon_ink.svg`, `icon_mono.svg` and the `var_*` variants still show the old
 pastel geometry (tracked in BACKLOG).
 
