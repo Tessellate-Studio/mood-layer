@@ -62,7 +62,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Probe the circle relay and alert on failure
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             // Same URL the app ships (src/services/circleRelay.ts). Not a
