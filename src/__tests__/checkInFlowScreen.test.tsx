@@ -3,6 +3,7 @@
 // writes one check-in to the store, and the name-it variant differs.
 
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 
@@ -98,6 +99,21 @@ describe('CheckInFlowScreen', () => {
     expect(screen.getByTestId('temperature-continue-hint')).toBeTruthy();
     fireEvent.press(screen.getByTestId('dial-sad-1'));
     expect(screen.getByTestId('flow-next').props.accessibilityState.disabled).toBe(false);
+    expect(screen.queryByTestId('temperature-continue-hint')).toBeNull();
+  });
+
+  it('floats the why-is-Continue-grey hint over the flow, and never eats a tap', () => {
+    renderScreen();
+    fireEvent.press(screen.getByTestId('family-sadness'));
+    fireEvent.press(screen.getByTestId('chip-sad'));
+
+    const float = screen.getByTestId('feel-hint-float');
+    // In the layout flow it read as one more paragraph and stole height from
+    // the words; as an overlay it must not block the chips underneath.
+    expect(StyleSheet.flatten(float.props.style).position).toBe('absolute');
+    expect(float.props.pointerEvents).toBe('none');
+    // Still tappable underneath: the dial that answers this hint.
+    fireEvent.press(screen.getByTestId('dial-sad-1'));
     expect(screen.queryByTestId('temperature-continue-hint')).toBeNull();
   });
 

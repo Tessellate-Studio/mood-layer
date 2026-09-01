@@ -60,8 +60,13 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
   PR #14 (`e862632`). The on-device look (2026-08-31) failed it: the pastel
   mark was unrecognizable in the share tray, so the shipped icons were redrawn
   in the vivid register at full opacity with the adaptive mark scaled to the
-  66% mask (design-feedback PR, 2026-08-31). Verification moves to the
-  device-test queue (needs a fresh APK — no OTA path).
+  66% mask (design-feedback PR, 2026-08-31). That overshot — "I just wanted it
+  slightly more saturated but still opaque. This is solid" (user, 2026-09-02)
+  — so the mark was retuned to the middle register: pastel mixed 55% toward
+  vivid, translucent (0.85 + multiply) with the thread outlines restored so the
+  overlaps deepen and it reads as layers again; the 66%-mask geometry is
+  untouched. Verification moves to the device-test queue (needs a fresh APK —
+  no OTA path).
   **Still open:** `appicon_ink.svg`, `icon_mono.svg` and the `var_*` mood
   variants in `assets/svg/` still carry the old pastel geometry — redraw them
   to the vivid geometry if/when anything ships them (nothing in-app imports

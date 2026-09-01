@@ -8,8 +8,8 @@
 // just the behaviour, per regressions #16/#22.
 
 import React from 'react';
-import { Text } from 'react-native';
-import { render } from '@testing-library/react-native';
+import { ScrollView, StyleSheet, Text } from 'react-native';
+import { render, screen, within } from '@testing-library/react-native';
 import { runOnJS } from 'react-native-reanimated';
 import * as GestureHandler from 'react-native-gesture-handler';
 
@@ -59,5 +59,30 @@ describe('Sheet pan-to-dismiss', () => {
     pan.handlers.onEnd();
 
     expect(onClose).not.toHaveBeenCalled();
+  });
+});
+
+// A pan that works is useless if there is nothing to grab: the sheet's body is
+// a ScrollView, so a drag started on it scrolls instead of dismissing, and a
+// 4px handle bar is not a target (device feedback 2026-09-02 — "I can't
+// collapse the card by dragging the top area"). The grab area is the fix: a
+// full-width, hit-target-tall strip OUTSIDE the scrolling child.
+describe('Sheet grab area', () => {
+  beforeEach(() => __capturedGestures.clear());
+
+  it('gives the top of the sheet a full touch target to drag, above the scroll', () => {
+    render(
+      <Sheet visible onClose={() => {}} title="Disgust" testID="sheet-under-test">
+        <ScrollView>
+          <Text>body</Text>
+        </ScrollView>
+      </Sheet>
+    );
+
+    const grab = screen.getByTestId('sheet-under-test-grab');
+    expect(StyleSheet.flatten(grab.props.style).minHeight).toBeGreaterThanOrEqual(44);
+    // The title belongs to the grab area, not the scroll — that is what makes
+    // "drag the top of the card" work at all.
+    expect(within(grab).getByText('Disgust')).toBeTruthy();
   });
 });

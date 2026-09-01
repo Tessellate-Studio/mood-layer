@@ -5,7 +5,7 @@
 // for free; Reanimated drives only the slide + backdrop fade.
 
 import React from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   runOnJS,
   useAnimatedStyle,
@@ -16,13 +16,17 @@ import Animated, {
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { borderRadius, colors, motion, spacing } from '@/constants/theme';
+import { borderRadius, colors, hitTarget, motion, spacing, typography } from '@/constants/theme';
 import { useMotion } from '@/hooks/useMotion';
 
 interface Props {
   visible: boolean;
   onClose(): void;
   children: React.ReactNode;
+  /** Static title, rendered in the (non-scrolling) grab area with the handle
+   *  so the whole top of the sheet can be dragged down to dismiss. A title
+   *  inside a scrolling child is NOT draggable — the scroll takes the touch. */
+  title?: string;
   testID?: string;
 }
 
@@ -31,7 +35,7 @@ const DISMISS_THRESHOLD = 80;
 /** Fallback slide distance before the sheet has measured its own height. */
 const FALLBACK_HEIGHT = 480;
 
-export function Sheet({ visible, onClose, children, testID }: Props) {
+export function Sheet({ visible, onClose, children, title, testID }: Props) {
   const insets = useSafeAreaInsets();
   const { reduced: reduceMotion } = useMotion();
 
@@ -109,8 +113,19 @@ export function Sheet({ visible, onClose, children, testID }: Props) {
               if (h > 0) sheetHeight.value = h;
             }}
           >
-            {/* Drag handle — a decorative grab bar. */}
-            <View style={styles.handle} pointerEvents="none" />
+            {/* The grab area: a real 44dp target holding the handle bar and,
+                when given, the sheet's title. Everything here is OUTSIDE any
+                scrolling child, so a drag that starts on it reaches the pan
+                instead of scrolling the body — a 4px handle bar alone left
+                nothing to grab (device feedback 2026-09-02). */}
+            <View style={styles.grabArea} testID={testID ? `${testID}-grab` : undefined}>
+              <View style={styles.handle} pointerEvents="none" />
+              {title ? (
+                <Text style={styles.title} accessibilityRole="header">
+                  {title}
+                </Text>
+              ) : null}
+            </View>
             {/* Render children directly: the sheet sits above the backdrop in
                 the tree, so taps here never reach the backdrop. A wrapping
                 Pressable would collapse the whole sheet into one screen-reader
@@ -142,13 +157,23 @@ const styles = StyleSheet.create({
     borderTopRightRadius: borderRadius.sheet,
     padding: spacing.lg,
   },
+  grabArea: {
+    // One touch target's worth of draggable sheet, minimum — the handle bar
+    // is 4px of ink but the whole zone is what the finger gets.
+    minHeight: hitTarget,
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
   handle: {
     alignSelf: 'center',
     width: 40,
     height: 4,
     borderRadius: borderRadius.sm,
     backgroundColor: colors.inkFaint,
-    marginBottom: spacing.md,
+  },
+  title: {
+    ...typography.title,
   },
 });
 

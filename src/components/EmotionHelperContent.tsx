@@ -22,6 +22,9 @@ import type { EmotionFamilyId } from '@/types/models';
 
 interface Props {
   family: EmotionFamilyId;
+  /** False when the host already shows the family name (the helper sheet puts
+   *  it in its draggable header) — the body must not repeat it. */
+  showTitle?: boolean;
 }
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
@@ -33,7 +36,7 @@ function Section({ label, children }: { label: string; children: React.ReactNode
   );
 }
 
-export function EmotionHelperContent({ family }: Props) {
+export function EmotionHelperContent({ family, showTitle = true }: Props) {
   const helper = EMOTION_HELPERS[family];
   const label = EMOTION_FAMILIES[family].label;
   // The family's Atlas pastel carries through the card: pale tint on the
@@ -69,7 +72,7 @@ export function EmotionHelperContent({ family }: Props) {
 
   return (
     <View style={styles.root}>
-      <Text style={typography.title}>{label}</Text>
+      {showTitle ? <Text style={typography.title}>{label}</Text> : null}
 
       <Section label="What it means">
         <Text style={typography.body}>{helper.whatItMeans}</Text>
