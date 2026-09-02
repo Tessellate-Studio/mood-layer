@@ -10,7 +10,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
-import { borderRadius, colors, spacing, typography } from '@/constants/theme';
+import { borderRadius, colors, motion, spacing, typography } from '@/constants/theme';
 import { useSettingsStore } from '@/store/settingsStore';
 
 interface Props {
@@ -42,6 +42,7 @@ export function EmotionChip({ id, label, selected, onPress, quiet, fill, onLongP
       hitSlop={HIT_SLOP}
       style={[
         styles.chip,
+        quiet && !selected && styles.chipQuiet,
         selected && (fill ? { backgroundColor: fill, borderColor: fill } : styles.selected),
       ]}
       onPress={() => {
@@ -49,6 +50,7 @@ export function EmotionChip({ id, label, selected, onPress, quiet, fill, onLongP
         onPress();
       }}
       onLongPress={onLongPress}
+      delayLongPress={motion.holdMs}
     >
       <Text
         style={[
@@ -71,6 +73,11 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.inkFaint,
+  },
+  chipQuiet: {
+    // A doorway, not a feeling: the border steps back a tier so the
+    // feeling-word chips beside it lead (user, 2026-09-02).
+    borderColor: colors.inkGhost,
   },
   selected: {
     backgroundColor: colors.ink,

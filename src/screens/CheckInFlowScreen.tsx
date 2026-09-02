@@ -23,19 +23,13 @@ import Svg, { Line } from 'react-native-svg';
 
 import EmotionChip from '@/components/EmotionChip';
 import FamilyGroup from '@/components/FamilyGroup';
-import LearnLink, { CaptionLink } from '@/components/LearnLink';
+import FieldGuideDoorway from '@/components/FieldGuideDoorway';
+import LearnLink from '@/components/LearnLink';
 import ModalHeader from '@/components/ModalHeader';
+import NoteCard from '@/components/NoteCard';
 import { PatchPreview } from '@/components/QuiltPatch';
 import WordTemperatureRow from '@/components/WordTemperatureRow';
-import {
-  borderRadius,
-  colors,
-  familyPalette,
-  hitTarget,
-  shadows,
-  spacing,
-  typography,
-} from '@/constants/theme';
+import { borderRadius, colors, familyPalette, hitTarget, spacing, typography } from '@/constants/theme';
 import PaperTexture from '@/components/PaperTexture';
 import { BODY_MAP } from '@/content/bodyMap';
 import { CHECK_IN_COPY } from '@/content/checkInCopy';
@@ -86,7 +80,11 @@ const FEEL_HINTS: Record<FeelHint, { testID: string; copy: string }> = {
     copy: CHECK_IN_COPY.temperatureContinueHint,
   },
   invite: { testID: 'add-another-hint', copy: CHECK_IN_COPY.addAnotherInvitation },
+  explore: { testID: 'explore-note', copy: CHECK_IN_COPY.exploreNote },
 };
+
+/** The note's tint while nothing names a family yet. */
+const NOTE_FAMILY_FALLBACK: EmotionFamilyId = 'anticipation';
 
 const STEP_TITLES: Record<CheckInStep, string> = {
   feel: 'What are you feeling right now?',
@@ -104,10 +102,16 @@ export default function CheckInFlowScreen() {
 
   const hapticsEnabled = useSettingsStore((s) => s.hapticsEnabled);
   const addCheckIn = useCheckInStore((s) => s.addCheckIn);
+  // The teaching notes count logs so far — after a few they've done their job.
+  const checkInCount = useCheckInStore((s) => s.checkIns.length);
   const { reduced } = useMotion();
   const scrollRef = React.useRef<ScrollView>(null);
 
   const [state, setState] = React.useState<FlowState>(() => initialFlowState(source));
+  // Families start folded (one open at a time) so the step reads as a short,
+  // calm list instead of ~50 chips at once. Lives here, not in FeelStep,
+  // because the unfolding IS what raises the 'explore' note below.
+  const [openFamily, setOpenFamily] = React.useState<EmotionFamilyId | null>(null);
   // Measured, not guessed: the floating hint sits on top of the footer's real
   // height, and the scroll pads by the hint's real height.
   const [footerHeight, setFooterHeight] = React.useState(0);
@@ -116,8 +120,11 @@ export default function CheckInFlowScreen() {
   const title = source === 'name-it' && state.step === 'feel' ? 'Can you name it?' : STEP_TITLES[state.step];
   const stepIndex = STEP_ORDER.indexOf(state.step);
   // feelStepHint is priority-ordered, so at most one hint ever renders.
-  const hintKey = feelStepHint(state);
+  const hintKey = feelStepHint(state, { familyOpen: openFamily !== null, checkInCount });
   const feelHint = hintKey ? FEEL_HINTS[hintKey] : null;
+  // The note wears the family in play — the word just chosen, else the family
+  // just unfolded — so it reads as part of what the user is doing.
+  const noteFamily = state.selections[0]?.family ?? openFamily ?? NOTE_FAMILY_FALLBACK;
 
   // Each step is its own page — never inherit the previous step's scroll
   // position (app-wide bug, 2026-07-17).
@@ -178,6 +185,8 @@ export default function CheckInFlowScreen() {
           <FeelStep
             state={state}
             setState={setState}
+            openFamily={openFamily}
+            setOpenFamily={setOpenFamily}
             scrollTo={(y) => scrollRef.current?.scrollTo({ y, animated: !reduced })}
           />
         )}
@@ -187,9 +196,9 @@ export default function CheckInFlowScreen() {
         {state.step === 'stitch' && <StitchStep state={state} />}
       </ScrollView>
 
-      {/* The hint that explains a greyed-out Continue floats just above the
-          button it is about, as a raised note — in the flow it read as one
-          more paragraph of the page and stole height from the words
+      {/* The feel step's one note — why Continue is grey, or what a held word
+          does — floats just above the footer as a tinted NoteCard: in the
+          flow it read as one more paragraph and stole height from the words
           (device feedback 2026-09-02). pointerEvents none: it must never
           swallow a tap meant for a chip underneath. Its offset is MEASURED
           from the footer, never hand-tuned (regression #24). */}
@@ -200,7 +209,7 @@ export default function CheckInFlowScreen() {
           pointerEvents="none"
           onLayout={(e) => setHintHeight(e.nativeEvent.layout.height)}
         >
-          <View style={styles.hintCard}>
+          <NoteCard family={noteFamily}>
             <Text
               style={styles.continueHint}
               testID={feelHint.testID}
@@ -208,7 +217,7 @@ export default function CheckInFlowScreen() {
             >
               {feelHint.copy}
             </Text>
-          </View>
+          </NoteCard>
         </View>
       ) : null}
 
@@ -276,18 +285,21 @@ interface StepProps {
 function FeelStep({
   state,
   setState,
+  openFamily,
+  setOpenFamily,
   scrollTo,
-}: StepProps & { scrollTo(y: number): void }) {
+}: StepProps & {
+  openFamily: EmotionFamilyId | null;
+  setOpenFamily: React.Dispatch<React.SetStateAction<EmotionFamilyId | null>>;
+  scrollTo(y: number): void;
+}) {
   const selectedMasking = MASKING_STATES.filter((m) => state.masking.includes(m.id));
   // Pushing keeps this modal (and the in-progress check-in) mounted
   // underneath — the field guide's back button returns straight here.
   const navigation = useNavigation<Nav>();
-  // Families start folded (one open at a time) so the step reads as a short,
-  // calm list instead of ~50 chips at once. Chosen words stay pinned under
-  // their folded family — each with its temperature dial right there, so
-  // naming and weighing happen in one place (temperature-chip design,
-  // user-approved 2026-07-17).
-  const [openFamily, setOpenFamily] = React.useState<EmotionFamilyId | null>(null);
+  // Chosen words stay pinned under their folded family — each with its
+  // temperature dial right there, so naming and weighing happen in one place
+  // (temperature-chip design, user-approved 2026-07-17).
   // Rebalance (user, 2026-07-17: the flow felt front-loaded): an unfolded
   // family shows its short curated gradient first; "+ more words" unfolds the
   // extended vocabulary for whoever wants the finer shades.
@@ -303,17 +315,15 @@ function FeelStep({
   return (
     <View style={styles.stepGap}>
       <Text style={styles.feelHint}>{CHECK_IN_COPY.feelHint}</Text>
-      <View style={styles.guideRow}>
-        <Text style={styles.feelHint} testID="feel-hold-hint">
-          {CHECK_IN_COPY.holdToLearnHint}
-        </Text>
-        <CaptionLink
-          testID="checkin-field-guide-link"
-          accessibilityLabel="Open the field guide"
-          label={CHECK_IN_COPY.fieldGuideLink}
-          onPress={() => navigation.navigate('FieldGuide')}
-        />
-      </View>
+      {/* "Hold any word…" no longer sits here as a permanent line — it floats
+          up as the 'explore' note when a family unfolds (user, 2026-09-02).
+          The guide's doorway is the same one the empty home screen shows. */}
+      <FieldGuideDoorway
+        testID="checkin-field-guide-link"
+        accessibilityLabel="Open the field guide"
+        label={CHECK_IN_COPY.fieldGuideLink}
+        onPress={() => navigation.navigate('FieldGuide')}
+      />
       {Object.values(EMOTION_FAMILIES).map((family) => {
         // Full vocabulary reachable, gradient shown first: the curated words
         // carry most check-ins; "+ more words" opens the extended list.
@@ -669,12 +679,6 @@ const styles = StyleSheet.create({
   feelHint: {
     ...typography.caption,
   },
-  guideRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-  },
   underneathPanel: {
     backgroundColor: colors.paperRaised,
     borderRadius: borderRadius.lg,
@@ -701,15 +705,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: spacing.md,
     right: spacing.md,
-  },
-  hintCard: {
-    backgroundColor: colors.paperRaised,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.inkFaint,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    ...shadows.floating,
   },
   continueHint: {
     ...typography.caption,

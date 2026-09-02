@@ -26,6 +26,12 @@ export const colors = {
   inkMuted: '#595959',
   /** Decorative only: hairlines, disabled strokes. Never body text. */
   inkFaint: '#8A8A8A',
+  /** Tentative doorways only ("+ more words"): a chip border a step lighter
+   *  than inkFaint so the doorway recedes behind the feeling-word chips
+   *  (user, 2026-09-02: "grey out + more words a bit more"). The LABEL on it
+   *  stays inkMuted — 7:1 is the floor for any text. ~2.0:1 on paper; never
+   *  text, never a line that carries meaning on its own. */
+  inkGhost: '#BDBDB8',
   /** Intensity ramp for quilt patch fills, 1 (light touch) → 4 (pressed hard).
    *  Decorative fills — exempt from text-contrast tiers. */
   shade1: '#D9D9D4',
@@ -325,6 +331,11 @@ export const typography = {
 export const motion = {
   spring: { damping: 18, stiffness: 180 },
   gentleMs: 350,
+  /** Hold-to-learn on a word chip. RN's Pressable default (500ms, plus the
+   *  press-in settle) read as "about a second" on the device (user,
+   *  2026-09-02: "long-press timing should reduce"); 350 is a deliberate
+   *  hold that a slow tap still doesn't trip. */
+  holdMs: 350,
   stitchMs: 900,
   /** Breathing pulse on "feel it" invitations. The pulse dips DOWN to this
    *  scale and back to 1 — the laid-out size is the MAXIMUM, so the swell

@@ -136,7 +136,7 @@ export function EmotionHelperContent({ family, showTitle = true }: Props) {
 
 const styles = StyleSheet.create({
   root: {
-    gap: spacing.lg,
+    gap: spacing.xl,
   },
   section: {
     gap: spacing.sm,
