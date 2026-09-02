@@ -98,8 +98,10 @@ jest.mock('react-native-gesture-handler', () => {
   return {
     __capturedGestures: capturedGestures,
     GestureDetector: captureGesture,
-    GestureHandlerRootView: ({ children, style }) =>
-      React.createElement(View, { style }, children),
+    // testID passes through so a test can prove a root view exists where
+    // one is load-bearing (inside a Modal — regression #28).
+    GestureHandlerRootView: ({ children, style, testID }) =>
+      React.createElement(View, { style, testID }, children),
     Gesture: {
       Pan: chainable,
       Pinch: chainable,

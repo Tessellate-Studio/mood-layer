@@ -67,6 +67,24 @@ describe('Sheet pan-to-dismiss', () => {
 // 4px handle bar is not a target (device feedback 2026-09-02 — "I can't
 // collapse the card by dragging the top area"). The grab area is the fix: a
 // full-width, hit-target-tall strip OUTSIDE the scrolling child.
+// A native Modal is its own window on Android: RNGH's touch interceptor is
+// registered by the GestureHandlerRootView that wraps a view tree, and
+// App.tsx's root view is in a different window. The pan inside was wired,
+// tested (above) — and dead under a real finger (regression #28). The sheet
+// has to carry its own root view, INSIDE the Modal.
+describe('Sheet gesture root', () => {
+  it('wraps the Modal content in its own GestureHandlerRootView', () => {
+    render(
+      <Sheet visible onClose={() => {}} testID="sheet-under-test">
+        <Text>body</Text>
+      </Sheet>
+    );
+    const root = screen.getByTestId('sheet-under-test-gesture-root');
+    // The sheet (and so its GestureDetector) lives inside that root view.
+    expect(within(root).getByTestId('sheet-under-test')).toBeTruthy();
+  });
+});
+
 describe('Sheet grab area', () => {
   beforeEach(() => __capturedGestures.clear());
 

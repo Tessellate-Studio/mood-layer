@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   section: {
-    marginTop: spacing.lg,
+    marginTop: spacing.xl,
     gap: spacing.sm,
   },
   cardTitleRow: {

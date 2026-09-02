@@ -14,6 +14,7 @@ import {
   toggleMasking,
   toggleResistance,
 } from '@/utils/checkInFlow';
+import { FEEL_NOTE_LOG_LIMIT } from '@/content/checkInCopy';
 
 describe('checkInFlow reducer', () => {
   it('starts empty on the feel step', () => {
@@ -100,6 +101,33 @@ describe('checkInFlow reducer', () => {
     expect(feelStepHint(s)).toBeNull();
     // And nothing fires off the feel step.
     expect(feelStepHint(nextStep(s))).toBeNull();
+  });
+
+  it('raises the explore note when a family unfolds, for the first few logs only', () => {
+    const s = initialFlowState('manual');
+    // Nothing unfolded: nothing to teach yet.
+    expect(feelStepHint(s, { familyOpen: false, checkInCount: 0 })).toBeNull();
+    // A family unfolds before any word is chosen: hold-to-learn + more words.
+    expect(feelStepHint(s, { familyOpen: true, checkInCount: 0 })).toBe('explore');
+    expect(feelStepHint(s, { familyOpen: true, checkInCount: FEEL_NOTE_LOG_LIMIT - 1 })).toBe('explore');
+    // Once the lesson has had its chances, the slot stays quiet.
+    expect(feelStepHint(s, { familyOpen: true, checkInCount: FEEL_NOTE_LOG_LIMIT })).toBeNull();
+    // A masking cover still outranks it — that one explains a grey Continue.
+    const covered = toggleMasking(s, 'fine');
+    expect(feelStepHint(covered, { familyOpen: true, checkInCount: 0 })).toBe('masking');
+  });
+
+  it('retires the temperature note after the log limit, but never the masking gate', () => {
+    let s = toggleEmotion(initialFlowState('manual'), 'sad', 'sadness');
+    expect(feelStepHint(s, { familyOpen: true, checkInCount: 0 })).toBe('temperature');
+    // The note has landed by now (user, 2026-09-02: "show it for 3 logs").
+    expect(feelStepHint(s, { familyOpen: true, checkInCount: FEEL_NOTE_LOG_LIMIT })).toBeNull();
+    // The invitation is not a lesson — it still appears once the word is weighed.
+    s = setIntensity(s, 'sad', 2);
+    expect(feelStepHint(s, { familyOpen: true, checkInCount: 99 })).toBe('invite');
+    // Masking is a gate: it explains a grey Continue no matter how many logs.
+    const covered = toggleMasking(initialFlowState('manual'), 'fine');
+    expect(feelStepHint(covered, { familyOpen: false, checkInCount: 99 })).toBe('masking');
   });
 
   it('only allows finish-early for name-it flows mid-stream', () => {

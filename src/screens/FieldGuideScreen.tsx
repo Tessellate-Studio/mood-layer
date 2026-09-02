@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingBottom: spacing.xl,
-    gap: spacing.lg,
+    gap: spacing.xl,
   },
   section: {
     gap: spacing.sm,

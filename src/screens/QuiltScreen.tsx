@@ -33,6 +33,7 @@ import LayeredClusterVignette from '@/components/LayeredClusterVignette';
 import LogoMark from '@/components/LogoMark';
 import PaperTexture from '@/components/PaperTexture';
 import CoachNote from '@/components/CoachNote';
+import FieldGuideDoorway from '@/components/FieldGuideDoorway';
 import { useSettingsStore } from '@/store/settingsStore';
 import WeeklySummaryCard from '@/components/WeeklySummaryCard';
 import { homeWeeklySummary } from '@/content/circle';
@@ -50,8 +51,6 @@ import { computeQuiltLayout, offsetForCheckIn, type WeekBlock } from '@/utils/qu
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
 /** A hint of the palette on the field-guide row — the full key is inside. */
-const GUIDE_SWATCH_FAMILIES: EmotionFamilyId[] = ['anger', 'enjoyment', 'sadness', 'anticipation'];
-
 // Settings glyph: three sliders with knobs. The previous gear — a small
 // circle with eight radiating spokes — read as a brightness/theme control at
 // 22px (device feedback 2026-07-18); sliders are unambiguously settings and
@@ -217,23 +216,12 @@ export default function QuiltScreen() {
           first check-in exists it collapses into the header's layered icon —
           the row was eating half the screen (user, 2026-07-18). */}
       {checkIns.length === 0 ? (
-        <Pressable
+        <FieldGuideDoorway
           testID="home-field-guide"
-          accessibilityRole="button"
           accessibilityLabel="Field guide. Learn the emotion families and find the right word."
-          style={styles.guideRow}
+          label="Field guide — learn the words →"
           onPress={() => navigation.navigate('FieldGuide')}
-        >
-          <View style={styles.guideSwatches}>
-            {GUIDE_SWATCH_FAMILIES.map((family) => (
-              <View
-                key={family}
-                style={[styles.guideSwatch, { backgroundColor: familyPalette[family].shades[3] }]}
-              />
-            ))}
-          </View>
-          <Text style={styles.guideText}>Field guide — learn the words →</Text>
-        </Pressable>
+        />
       ) : null}
 
       {/* First-ever entry doorway — gone for good once anything is layered
@@ -412,26 +400,6 @@ const styles = StyleSheet.create({
     minHeight: hitTarget,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  guideRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    minHeight: hitTarget,
-    paddingVertical: spacing.xs,
-  },
-  guideSwatches: {
-    flexDirection: 'row',
-    gap: 3,
-  },
-  guideSwatch: {
-    width: 10,
-    height: 10,
-    borderRadius: borderRadius.sm,
-  },
-  guideText: {
-    ...typography.caption,
-    color: colors.inkSoft,
   },
   todayRow: {
     minHeight: hitTarget,

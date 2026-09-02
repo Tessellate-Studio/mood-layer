@@ -7,6 +7,8 @@ import { StyleSheet } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 
+import { motion } from '@/constants/theme';
+import { FEEL_NOTE_LOG_LIMIT } from '@/content/checkInCopy';
 import CheckInFlowScreen from '@/screens/CheckInFlowScreen';
 import { useCheckInStore } from '@/store/checkInStore';
 import { useHelperSheetStore } from '@/store/helperSheetStore';
@@ -176,12 +178,55 @@ describe('CheckInFlowScreen', () => {
     expect(screen.getByTestId('underneath-guilty')).toBeTruthy();
   });
 
-  it('tells the user words can be held, and links to the field guide', () => {
+  it('links to the field guide through the same doorway the empty home shows', () => {
     renderScreen();
-    expect(screen.getByTestId('feel-hold-hint')).toBeTruthy();
     fireEvent.press(screen.getByTestId('checkin-field-guide-link'));
     // Pushed above the modal — the in-progress check-in survives underneath.
     expect(mockNavigate).toHaveBeenCalledWith('FieldGuide');
+  });
+
+  it('teaches hold-to-learn and "+ more words" as a note when a family unfolds', () => {
+    renderScreen();
+    // Nothing unfolded: no lesson, no permanent "Hold any word" line either
+    // (it moved into the note — user, 2026-09-02).
+    expect(screen.queryByTestId('explore-note')).toBeNull();
+    expect(screen.queryByTestId('feel-hold-hint')).toBeNull();
+    fireEvent.press(screen.getByTestId('family-sadness'));
+    expect(screen.getByTestId('explore-note')).toBeTruthy();
+    // Choosing a word hands the slot to the temperature note.
+    fireEvent.press(screen.getByTestId('chip-sad'));
+    expect(screen.queryByTestId('explore-note')).toBeNull();
+    expect(screen.getByTestId('temperature-continue-hint')).toBeTruthy();
+  });
+
+  it('retires the teaching notes once enough check-ins exist', () => {
+    // Three logs in the store: the lessons have landed (user, 2026-09-02).
+    for (let i = 0; i < FEEL_NOTE_LOG_LIMIT; i += 1) {
+      useCheckInStore.getState().addCheckIn({
+        emotions: [{ emotionId: 'sad', family: 'sadness', intensity: 2 }],
+        resistanceFlags: [],
+        source: 'manual',
+      });
+    }
+    renderScreen();
+    fireEvent.press(screen.getByTestId('family-sadness'));
+    expect(screen.queryByTestId('explore-note')).toBeNull();
+    fireEvent.press(screen.getByTestId('chip-sad'));
+    expect(screen.queryByTestId('temperature-continue-hint')).toBeNull();
+    // Continue is still gated — only the explanation has retired.
+    expect(screen.getByTestId('flow-next').props.accessibilityState.disabled).toBe(true);
+  });
+
+  it('holds a word for a deliberate beat, not a full second', () => {
+    renderScreen();
+    fireEvent.press(screen.getByTestId('family-sadness'));
+    // The host View doesn't carry Pressable's timing prop — read it off the
+    // Pressable itself. Wiring test: the chip must pass the token through.
+    const pressable = screen
+      .UNSAFE_getAllByProps({ testID: 'chip-sad' })
+      .find((node) => node.props.delayLongPress !== undefined);
+    expect(pressable?.props.delayLongPress).toBe(motion.holdMs);
+    expect(motion.holdMs).toBeLessThanOrEqual(400);
   });
 
   it("offers the 'Guilty' doorway and unpacks it through anger", () => {

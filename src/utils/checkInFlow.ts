@@ -4,6 +4,7 @@
 // tone), and 'name-it' check-ins (from a reminder) may finish early once
 // something is named.
 
+import { FEEL_NOTE_LOG_LIMIT } from '@/content/checkInCopy';
 import type { EmotionFamilyId, EmotionSelection, Intensity, ResistanceTellId } from '@/types/models';
 
 // No 'intensity' step: temperature is set on the word itself in the feel step
@@ -67,7 +68,16 @@ export function canProceed(s: FlowState): boolean {
   return true;
 }
 
-export type FeelHint = 'masking' | 'temperature' | 'invite';
+export type FeelHint = 'masking' | 'temperature' | 'invite' | 'explore';
+
+/** What the feel step knows beyond its own state: whether a family is
+ *  unfolded (screen UI state, not flow state) and how many check-ins exist. */
+export interface FeelHintContext {
+  familyOpen: boolean;
+  checkInCount: number;
+}
+
+const NO_CONTEXT: FeelHintContext = { familyOpen: false, checkInCount: 0 };
 
 /**
  * The one gentle hint allowed above the footer on the feel step —
@@ -76,11 +86,22 @@ export type FeelHint = 'masking' | 'temperature' | 'invite';
  * the no-cap note above) and retires the moment a second word arrives:
  * invitation, not nag. It also stays quiet while a masking panel is open,
  * whose own hint says one is enough.
+ *
+ * Two of these are TEACHING notes and retire once the lesson has had its
+ * chances: 'explore' (a family just unfolded — words can be held, "+ more
+ * words" opens the rest) and 'temperature' (weigh the word to continue) show
+ * only while fewer than FEEL_NOTE_LOG_LIMIT check-ins exist (user,
+ * 2026-09-02). 'masking' is a gate, not a lesson — it always explains why
+ * Continue is grey.
  */
-export function feelStepHint(s: FlowState): FeelHint | null {
+export function feelStepHint(s: FlowState, ctx: FeelHintContext = NO_CONTEXT): FeelHint | null {
   if (s.step !== 'feel') return null;
-  if (s.selections.length === 0) return s.masking.length > 0 ? 'masking' : null;
-  if (s.selections.some((x) => x.intensity === null)) return 'temperature';
+  const teaching = ctx.checkInCount < FEEL_NOTE_LOG_LIMIT;
+  if (s.selections.length === 0) {
+    if (s.masking.length > 0) return 'masking';
+    return teaching && ctx.familyOpen ? 'explore' : null;
+  }
+  if (s.selections.some((x) => x.intensity === null)) return teaching ? 'temperature' : null;
   if (s.selections.length === 1 && s.masking.length === 0) return 'invite';
   return null;
 }

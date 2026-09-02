@@ -13,7 +13,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { borderRadius, colors, hitTarget, motion, spacing, typography } from '@/constants/theme';
@@ -89,7 +89,14 @@ export function Sheet({ visible, onClose, children, title, testID }: Props) {
 
   return (
     <Modal transparent visible={visible} animationType="none" onRequestClose={onClose}>
-      <View style={styles.fill}>
+      {/* A native Modal is its OWN window on Android: touches inside it never
+          pass through App.tsx's GestureHandlerRootView, which is what
+          registers RNGH's touch interceptor for a view tree
+          (RNGestureHandlerRootHelper attaches to the root view it wraps).
+          Without a root view of its own in here, the pan below is wired,
+          tested, and dead on the device — the finger drag did nothing
+          (regression #28). Every Sheet gets its own. */}
+      <GestureHandlerRootView style={styles.fill} testID={testID ? `${testID}-gesture-root` : undefined}>
         {/* Backdrop: fades in, taps through to close. */}
         <Animated.View style={[styles.backdrop, backdropStyle]}>
           <Pressable
@@ -133,7 +140,7 @@ export function Sheet({ visible, onClose, children, title, testID }: Props) {
             {children}
           </Animated.View>
         </GestureDetector>
-      </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }
