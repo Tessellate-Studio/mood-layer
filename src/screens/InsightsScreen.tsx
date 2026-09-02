@@ -23,6 +23,11 @@ import LogoMark from '@/components/LogoMark';
 import PaperTexture from '@/components/PaperTexture';
 import CoachNote from '@/components/CoachNote';
 import ThreadCard from '@/components/ThreadCard';
+import {
+  INSIGHTS_HEADER_TITLE,
+  INSIGHTS_OVERLINE_PATTERN,
+  INSIGHTS_OVERLINE_RESISTANCE,
+} from '@/content/insights';
 import { monthlyMoodDigest, monthlyPracticeReflection } from '@/content/monthlyDigest';
 import { RESISTANCE_TELLS } from '@/content/resistance';
 import { useMotion } from '@/hooks/useMotion';
@@ -37,8 +42,8 @@ import { computeStatsForWeek } from '@/utils/insightEngine';
 const STAGGER_MS = 90;
 
 const OVERLINE: Record<InsightCardState['kind'], string> = {
-  pattern: 'This week · Pattern',
-  resistance: 'Gentle notice · Resistance',
+  pattern: INSIGHTS_OVERLINE_PATTERN,
+  resistance: INSIGHTS_OVERLINE_RESISTANCE,
 };
 
 // Muted-layer treatment: each card kind is its own layer. Patterns wear the
@@ -255,7 +260,7 @@ export default function InsightsScreen() {
       <View style={styles.headerRow}>
         {markFamilies ? <LogoMark families={markFamilies} size={44} /> : null}
         <View style={styles.headerText}>
-          <Text style={typography.title}>This week</Text>
+          <Text style={typography.title}>{INSIGHTS_HEADER_TITLE}</Text>
           {summaryStats ? (
             <Text style={styles.summary} testID="insights-summary">
               {weekRangeLabel(newestWeek!)} · {plural(summaryStats.checkInCount, 'check-in', 'check-ins')}{' '}

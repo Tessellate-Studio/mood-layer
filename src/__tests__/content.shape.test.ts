@@ -420,6 +420,26 @@ describe('insight templates', () => {
     const { body } = fluid!.render(maxedStats);
     expect(body).toContain(String(maxedStats.distinctEmotionIds.length));
   });
+
+  it('describes the completed week accurately — cards render for last week, never claim "this week"', () => {
+    // insightEngine always generates for previousWeekKey (a fully completed
+    // week), so the copy must say "last week", not "this week" — otherwise
+    // the card reads as describing check-ins that haven't happened yet.
+    for (const template of INSIGHT_TEMPLATES) {
+      const { title, body } = template.render(maxedStats);
+      expect(title.toLowerCase()).not.toContain('this week');
+      expect(body.toLowerCase()).not.toContain('this week');
+      expect(body.toLowerCase()).toContain('last week');
+    }
+  });
+
+  it('co-occurrence card names the two families grammatically, not "something <noun>"', () => {
+    const coOccurrence = INSIGHT_TEMPLATES.find((t) => t.id === 'co-occurrence');
+    expect(coOccurrence).toBeDefined();
+    const fixture = TEMPLATE_FIXTURES['co-occurrence'];
+    const { body } = coOccurrence!.render(fixture);
+    expect(body).not.toMatch(/something [a-z]+ and something [a-z]+/i);
+  });
 });
 
 describe('judgment examples', () => {

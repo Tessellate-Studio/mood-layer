@@ -136,8 +136,10 @@ export function monthlyPracticeReflection(
       `Under the judgments you looked at this month, ${label} was waiting ` +
       `${plural(topFeeling[1], 'time', 'times')}. Worth meeting it directly?`;
   } else if (sittings.length > 0) {
+    // A blank line ahead of the invitation, so it reads as its own beat
+    // instead of trailing the count as one run-on sentence (user, 2026-09-02).
     body =
-      `${plural(sittings.length, 'judgment sitting', 'judgment sittings')} this month. ` +
+      `${plural(sittings.length, 'judgment sitting', 'judgment sittings')} this month.\n\n` +
       'Naming what sits underneath is the whole practice — the rest can wait.';
   } else {
     body = 'What these sittings arrived at, kept where you can find it again.';
