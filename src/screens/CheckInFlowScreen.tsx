@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Svg, { Line } from 'react-native-svg';
 
+import CloseGlyph from '@/components/CloseGlyph';
 import EmotionChip from '@/components/EmotionChip';
 import FamilyGroup from '@/components/FamilyGroup';
 import FieldGuideDoorway from '@/components/FieldGuideDoorway';
@@ -29,7 +30,15 @@ import ModalHeader from '@/components/ModalHeader';
 import NoteCard from '@/components/NoteCard';
 import { PatchPreview } from '@/components/QuiltPatch';
 import WordTemperatureRow from '@/components/WordTemperatureRow';
-import { borderRadius, colors, familyPalette, hitTarget, spacing, typography } from '@/constants/theme';
+import {
+  borderRadius,
+  colors,
+  familyPalette,
+  hitTarget,
+  mutedPalette,
+  spacing,
+  typography,
+} from '@/constants/theme';
 import PaperTexture from '@/components/PaperTexture';
 import { BODY_MAP } from '@/content/bodyMap';
 import { CHECK_IN_COPY } from '@/content/checkInCopy';
@@ -53,6 +62,7 @@ import {
   prevStep,
   setIntensity,
   feelStepHint,
+  FEEL_NOTE_TIP_ID,
   setNote,
   STEP_ORDER,
   type FeelHint,
@@ -117,12 +127,29 @@ export default function CheckInFlowScreen() {
   // height, and the scroll pads by the hint's real height.
   const [footerHeight, onFooterLayout] = useMeasuredHeight();
   const [hintHeight, onHintLayout] = useMeasuredHeight();
+  // Notes the ✕ has sent away. Local state is the whole memory for a gate
+  // note (it comes back next check-in, because it explains a grey Continue);
+  // a TEACHING note also lands in dismissedTips and never returns until
+  // Settings → "Show the helper notes again" (user, 2026-09-03).
+  const [silencedHints, setSilencedHints] = React.useState<FeelHint[]>([]);
+  const dismissedTips = useSettingsStore((s) => s.dismissedTips);
+  const dismissTip = useSettingsStore((s) => s.dismissTip);
+  const silenced = React.useMemo(() => {
+    const retired = (Object.entries(FEEL_NOTE_TIP_ID) as [FeelHint, string][])
+      .filter(([, tipId]) => dismissedTips.includes(tipId))
+      .map(([hint]) => hint);
+    return [...silencedHints, ...retired];
+  }, [silencedHints, dismissedTips]);
+  const dismissHint = (hint: FeelHint) => {
+    setSilencedHints((cur) => (cur.includes(hint) ? cur : [...cur, hint]));
+    const tipId = FEEL_NOTE_TIP_ID[hint];
+    if (tipId) dismissTip(tipId);
+  };
 
   const title = source === 'name-it' && state.step === 'feel' ? 'Can you name it?' : STEP_TITLES[state.step];
   const stepIndex = STEP_ORDER.indexOf(state.step);
   // feelStepHint is priority-ordered, so at most one hint ever renders.
-  const hintKey = feelStepHint(state, { familyOpen: openFamily !== null, checkInCount });
-  const feelHint = hintKey ? FEEL_HINTS[hintKey] : null;
+  const hintKey = feelStepHint(state, { familyOpen: openFamily !== null, checkInCount, silenced });
   // The note wears the family in play — the word just chosen, else the family
   // just unfolded — so it reads as part of what the user is doing.
   const noteFamily = state.selections[0]?.family ?? openFamily ?? NOTE_FAMILY_FALLBACK;
@@ -178,7 +205,7 @@ export default function CheckInFlowScreen() {
           styles.body,
           // The hint floats OVER the scroll — pad by its measured height so
           // the last chips can always be scrolled clear of it.
-          feelHint ? { paddingBottom: spacing.xl + hintHeight } : null,
+          hintKey ? { paddingBottom: spacing.xl + hintHeight } : null,
         ]}
         keyboardShouldPersistTaps="handled"
       >
@@ -200,25 +227,43 @@ export default function CheckInFlowScreen() {
       {/* The feel step's one note — why Continue is grey, or what a held word
           does — floats just above the footer as a tinted NoteCard: in the
           flow it read as one more paragraph and stole height from the words
-          (device feedback 2026-09-02). pointerEvents none: it must never
-          swallow a tap meant for a chip underneath. Its offset is MEASURED
-          from the footer, never hand-tuned (regression #24). */}
-      {feelHint ? (
+          (device feedback 2026-09-02). The card never swallows a tap meant
+          for a chip underneath; only its ✕ is a target. Its offset is
+          MEASURED from the footer, never hand-tuned (regression #24). */}
+      {hintKey ? (
         <View
           testID="feel-hint-float"
           style={[styles.hintFloat, { bottom: footerHeight + spacing.xs }]}
-          pointerEvents="none"
+          // box-none, not none: the card itself still lets a tap through to
+          // the chip underneath (it must never swallow one), while the ✕ on
+          // top of it is a real target.
+          pointerEvents="box-none"
           onLayout={onHintLayout}
         >
-          <NoteCard family={noteFamily}>
-            <Text
-              style={styles.continueHint}
-              testID={feelHint.testID}
-              accessibilityLiveRegion="polite"
-            >
-              {feelHint.copy}
-            </Text>
-          </NoteCard>
+          <View pointerEvents="none">
+            <NoteCard family={noteFamily}>
+              <Text
+                style={styles.continueHint}
+                testID={FEEL_HINTS[hintKey].testID}
+                accessibilityLiveRegion="polite"
+              >
+                {FEEL_HINTS[hintKey].copy}
+              </Text>
+            </NoteCard>
+          </View>
+          {/* The note self-clears the moment its condition passes; the ✕ is
+              for sending it away sooner (user, 2026-09-03). Family accent,
+              the one coloured mark allowed on a tinted card. */}
+          <Pressable
+            testID="feel-hint-dismiss"
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss the note"
+            hitSlop={spacing.md}
+            style={styles.hintDismiss}
+            onPress={() => dismissHint(hintKey)}
+          >
+            <CloseGlyph color={mutedPalette[noteFamily].accent} size={16} />
+          </Pressable>
         </View>
       ) : null}
 
@@ -709,6 +754,15 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.inkSoft,
     textAlign: 'center',
+    // Room on both sides for the ✕ sitting in the card's top-right corner,
+    // so a two-line note never runs under it.
+    paddingHorizontal: spacing.lg,
+  },
+  hintDismiss: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    padding: spacing.xs,
   },
   card: {
     backgroundColor: colors.paperRaised,

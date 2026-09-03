@@ -13,6 +13,7 @@ import CheckInFlowScreen from '@/screens/CheckInFlowScreen';
 import { useCheckInStore } from '@/store/checkInStore';
 import { useHelperSheetStore } from '@/store/helperSheetStore';
 import { useSettingsStore } from '@/store/settingsStore';
+import { FEEL_NOTE_TIP_ID } from '@/utils/checkInFlow';
 
 // Mutable route params — flipped per test to exercise manual vs name-it.
 let mockParams: { source: 'manual' | 'name-it' } = { source: 'manual' };
@@ -130,10 +131,58 @@ describe('CheckInFlowScreen', () => {
     // In the layout flow it read as one more paragraph and stole height from
     // the words; as an overlay it must not block the chips underneath.
     expect(StyleSheet.flatten(float.props.style).position).toBe('absolute');
-    expect(float.props.pointerEvents).toBe('none');
+    // box-none, so the card passes taps through while its ✕ stays tappable.
+    expect(float.props.pointerEvents).toBe('box-none');
     // Still tappable underneath: the dial that answers this hint.
     fireEvent.press(screen.getByTestId('dial-sad-1'));
     expect(screen.queryByTestId('temperature-continue-hint')).toBeNull();
+  });
+
+  it('sends a note away with the ✕ — for good, and only that note', () => {
+    // Notes self-clear when their condition passes; the ✕ is for sending one
+    // away sooner, and a TEACHING note that has been sent away never comes
+    // back (user, 2026-09-03).
+    renderScreen();
+    fireEvent.press(screen.getByTestId('family-sadness'));
+    fireEvent.press(screen.getByTestId('chip-sad'));
+    expect(screen.getByTestId('temperature-continue-hint')).toBeTruthy();
+
+    fireEvent.press(screen.getByTestId('feel-hint-dismiss'));
+    expect(screen.queryByTestId('temperature-continue-hint')).toBeNull();
+    expect(screen.queryByTestId('feel-hint-float')).toBeNull();
+    expect(useSettingsStore.getState().dismissedTips).toContain(
+      FEEL_NOTE_TIP_ID.temperature
+    );
+    // Dismissing the lesson never loosens the gate.
+    expect(screen.getByTestId('flow-next').props.accessibilityState.disabled).toBe(true);
+    // And it silenced THAT note only — weighing the word still invites a second.
+    fireEvent.press(screen.getByTestId('dial-sad-2'));
+    expect(screen.getByTestId('add-another-hint')).toBeTruthy();
+  });
+
+  it('never re-asks for a temperature when a second word is named', () => {
+    // "'tap a swatch…' shows up for each emotion selected. Which is too much"
+    // (user, 2026-09-03).
+    renderScreen();
+    fireEvent.press(screen.getByTestId('family-sadness'));
+    fireEvent.press(screen.getByTestId('chip-sad'));
+    fireEvent.press(screen.getByTestId('dial-sad-2'));
+    fireEvent.press(screen.getByTestId('chip-hurt'));
+    expect(screen.queryByTestId('temperature-continue-hint')).toBeNull();
+    expect(screen.queryByTestId('feel-hint-float')).toBeNull();
+  });
+
+  it('keeps a teaching note dismissed on the next check-in, until Settings restores it', () => {
+    useSettingsStore.setState({ dismissedTips: [FEEL_NOTE_TIP_ID.explore as string] });
+    renderScreen();
+    fireEvent.press(screen.getByTestId('family-sadness'));
+    expect(screen.queryByTestId('explore-note')).toBeNull();
+    screen.unmount();
+
+    useSettingsStore.getState().restoreTips();
+    renderScreen();
+    fireEvent.press(screen.getByTestId('family-sadness'));
+    expect(screen.getByTestId('explore-note')).toBeTruthy();
   });
 
   it('walks feel → stitch and writes one check-in with the right emotion', () => {

@@ -3,9 +3,9 @@
 
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Line } from 'react-native-svg';
 
-import { colors, hitTarget, spacing, typography } from '@/constants/theme';
+import CloseGlyph from '@/components/CloseGlyph';
+import { hitTarget, spacing, typography } from '@/constants/theme';
 
 interface Props {
   title: string;
@@ -24,10 +24,7 @@ export function ModalHeader({ title, closeTestID, onClose }: Props) {
         style={styles.close}
         onPress={onClose}
       >
-        <Svg width={20} height={20} viewBox="0 0 20 20" fill="none">
-          <Line x1={4} y1={4} x2={16} y2={16} stroke={colors.ink} strokeWidth={1.5} strokeLinecap="round" />
-          <Line x1={16} y1={4} x2={4} y2={16} stroke={colors.ink} strokeWidth={1.5} strokeLinecap="round" />
-        </Svg>
+        <CloseGlyph />
       </Pressable>
     </View>
   );
