@@ -115,8 +115,6 @@ export default function CheckInFlowScreen() {
   const [openFamily, setOpenFamily] = React.useState<EmotionFamilyId | null>(null);
   // Measured, not guessed: the floating hint sits on top of the footer's real
   // height, and the scroll pads by the hint's real height.
-  // Measured, never typed (anti-pattern #9): the hint floats above the footer
-  // and the scroll pads for the hint, both from real layout.
   const [footerHeight, onFooterLayout] = useMeasuredHeight();
   const [hintHeight, onHintLayout] = useMeasuredHeight();
 
@@ -317,7 +315,7 @@ function FeelStep({
   };
   return (
     <View style={styles.stepGap}>
-      <Text style={styles.feelHint}>{CHECK_IN_COPY.feelHint}</Text>
+      <Text style={typography.body}>{CHECK_IN_COPY.feelHint}</Text>
       {/* "Hold any word…" no longer sits here as a permanent line — it floats
           up as the 'explore' note when a family unfolds (user, 2026-09-02).
           The guide's doorway is the same one the empty home screen shows. */}
@@ -519,7 +517,7 @@ function BodyStep({ state, setState }: StepProps) {
   const custom = state.bodySensations.filter((b) => !mapped.has(b));
   return (
     <View style={styles.stepGap}>
-      <Text style={styles.feelHint}>
+      <Text style={typography.body}>
         Sensations are clues — scan slowly from head to feet and tap what you find.
       </Text>
       {BODY_MAP.map((area) => (
@@ -675,14 +673,10 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.sm,
   },
-  // Reading text never below body (anti-pattern #10); body already reads in
-  // inkSoft, which is all the quietness these need.
+  // Reading text never below body (anti-pattern #10).
   maskingIntro: {
     ...typography.body,
     marginTop: spacing.sm,
-  },
-  feelHint: {
-    ...typography.body,
   },
   underneathPanel: {
     backgroundColor: colors.paperRaised,

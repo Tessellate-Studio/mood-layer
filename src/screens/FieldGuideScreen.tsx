@@ -43,7 +43,7 @@ export default function FieldGuideScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-field-guide">
       <PaperTexture />
-      <View style={styles.headerRow} testID="field-guide-header" onLayout={onHeaderLayout}>
+      <View style={styles.headerRow} onLayout={onHeaderLayout}>
         <Pressable
           testID="field-guide-back"
           accessibilityRole="button"

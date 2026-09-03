@@ -15,7 +15,7 @@ import type {
   ResistanceTellId,
 } from '@/types/models';
 import type { PracticeSession } from '@/store/experimentStore';
-import { monthKey, monthLabel, previousMonthKey } from '@/utils/dates';
+import { monthKey, previousMonthPeriod } from '@/utils/dates';
 import { sessionConclusion } from '@/utils/practiceWork';
 import { groupSittings } from '@/utils/sittings';
 
@@ -51,8 +51,7 @@ export function monthlyMoodDigest(
   checkIns: CheckIn[],
   now: Date = new Date()
 ): MonthlyMoodDigest | null {
-  const mk = previousMonthKey(now);
-  const month = monthLabel(mk);
+  const { key: mk, label: month } = previousMonthPeriod(now);
   const recent = checkIns.filter((c) => inMonth(c.createdAt, mk));
   if (recent.length < MONTHLY_MIN_CHECKINS) return null;
 
@@ -117,8 +116,7 @@ export function monthlyPracticeReflection(
   judgmentEntries: JudgmentEntry[],
   now: Date = new Date()
 ): PracticeReflection | null {
-  const mk = previousMonthKey(now);
-  const month = monthLabel(mk);
+  const { key: mk, label: month } = previousMonthPeriod(now);
   const sittings = groupSittings(judgmentEntries).filter((s) =>
     inMonth(s.entries[0].createdAt, mk)
   );

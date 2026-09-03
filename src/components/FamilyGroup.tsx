@@ -48,7 +48,7 @@ export function FamilyGroup({ family, expanded, onToggle, testID, preview, pinne
               the naming, teaching the family↔hue pairing the quilt uses. */}
           <SectionHeader family={family.id} label={family.label} />
           {!expanded ? (
-            <Text style={styles.preview} numberOfLines={1}>
+            <Text style={typography.body} numberOfLines={1}>
               {previewText}
             </Text>
           ) : null}
@@ -76,11 +76,6 @@ const styles = StyleSheet.create({
   headerText: {
     flex: 1,
     gap: spacing.xs,
-  },
-  // The folded essence is reading text: body size (anti-pattern #10), in the
-  // body token's own inkSoft.
-  preview: {
-    ...typography.body,
   },
   toggle: {
     ...typography.heading,

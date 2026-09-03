@@ -7,7 +7,6 @@
 
 import React from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -23,6 +22,7 @@ import PaperTexture from '@/components/PaperTexture';
 import CoachNote from '@/components/CoachNote';
 import ThreadCard from '@/components/ThreadCard';
 import { useMeasuredHeight } from '@/hooks/useMeasuredHeight';
+import { useNowOnFocus } from '@/hooks/useNowOnFocus';
 import {
   INSIGHTS_EMPTY_CAPTION,
   INSIGHTS_EMPTY_MONTH_BELOW,
@@ -36,7 +36,7 @@ import {
 import { monthlyMoodDigest, monthlyPracticeReflection } from '@/content/monthlyDigest';
 import { RESISTANCE_TELLS } from '@/content/resistance';
 import { useMotion } from '@/hooks/useMotion';
-import { selectMoodFamilies, useCheckInStore } from '@/store/checkInStore';
+import { selectMoodFamilies, selectWeekStats, useCheckInStore } from '@/store/checkInStore';
 import { useExperimentStore } from '@/store/experimentStore';
 import { useInsightStore } from '@/store/insightStore';
 import type { EmotionFamilyId, InsightCardState } from '@/types/models';
@@ -137,29 +137,25 @@ export default function InsightsScreen() {
 
   const { reduced: reduceMotion } = useMotion();
   const [headerHeight, onHeaderLayout] = useMeasuredHeight();
-  // "Now" advances on every focus, so every date-keyed view below — last
-  // week's cards, last month's cards, the mood mark, the empty-state reason —
-  // rolls over on the first open after a Monday or a 1st, even when the app
-  // stayed in memory across the boundary.
-  const [now, setNow] = React.useState(() => new Date());
+  // One clock for every date-keyed view below — last week's cards, last
+  // month's cards, the mood mark, the empty-state reason — advancing on each
+  // focus, so they roll over on the first open after a Monday or a 1st even
+  // when the app stayed in memory across the boundary.
+  const now = useNowOnFocus();
+  const lastWeek = previousWeekKey(now);
 
-  // Generate LAST week's cards the first time the tab is focused after the
-  // week rolls over. getState() reads (not hook subscriptions) keep this
-  // callback stable so useFocusEffect doesn't re-run on every store change.
-  useFocusEffect(
-    React.useCallback(() => {
-      const fresh = new Date();
-      setNow(fresh);
-      const lastWeek = previousWeekKey(fresh);
-      if (useInsightStore.getState().lastGeneratedWeekKey === lastWeek) return;
-      const stats = computeStatsForWeek(
-        useCheckInStore.getState().checkIns,
-        useExperimentStore.getState().judgmentEntries,
-        lastWeek
-      );
-      useInsightStore.getState().generateForWeek(lastWeek, stats);
-    }, [])
-  );
+  // Generate LAST week's cards once per rollover (and on mount) — the store
+  // marks the week, so a repeat is a no-op. getState() reads keep the effect
+  // off the store's re-render path.
+  React.useEffect(() => {
+    if (useInsightStore.getState().lastGeneratedWeekKey === lastWeek) return;
+    const stats = computeStatsForWeek(
+      useCheckInStore.getState().checkIns,
+      useExperimentStore.getState().judgmentEntries,
+      lastWeek
+    );
+    useInsightStore.getState().generateForWeek(lastWeek, stats);
+  }, [lastWeek]);
 
   // Only LAST week's cards show — the header says "Last week", and cards are
   // not dismissable (user, 2026-09-03), so without this bound the list would
@@ -167,7 +163,6 @@ export default function InsightsScreen() {
   // card: after a week too quiet to generate, the newest card is two weeks
   // old and must not sit under that header — the empty state shows instead.
   // Older cards stay in the store, unread here, for a later variety pass.
-  const lastWeek = previousWeekKey(now);
   const visible = cards.filter((card) => card.weekKey === lastWeek);
   const hasCards = visible.length > 0;
 
@@ -242,8 +237,8 @@ export default function InsightsScreen() {
   // old copy claimed "not enough layers" even with a full month behind it
   // (user, 2026-07-18).
   const thisWeekCount = React.useMemo(
-    () => computeStatsForWeek(checkIns, judgmentEntries, weekKey(now.toISOString())).checkInCount,
-    [checkIns, judgmentEntries, now]
+    () => selectWeekStats(checkIns, 0, weekKey(now.toISOString())).checkInCount,
+    [checkIns, now]
   );
   const emptyText = thisWeekCount === 0 ? INSIGHTS_EMPTY_QUIET_WEEK : INSIGHTS_EMPTY_NO_PATTERN;
 

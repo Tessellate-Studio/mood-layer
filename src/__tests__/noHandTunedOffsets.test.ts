@@ -1,21 +1,10 @@
-// Hand-tuned layout offsets are retired (user, 2026-09-03; anti-pattern #9,
-// earned from regression rows #24, #27 and the Insights/Circle coach-note
-// mismatch). A floating element's position comes from a measurement of the
-// thing it sits under — `useMeasuredHeight` + `onLayout` — never from a number
-// typed to match today's type scale. This sweep pins that at the source level
-// for the one prop where it kept recurring.
+// Source-level pin for anti-pattern #9 on the one prop where hand-tuned
+// offsets kept recurring: a CoachNote's topOffset is a measurement.
 
 import * as fs from 'fs';
 import * as path from 'path';
 
 const SCREENS = path.join(__dirname, '..', 'screens');
-
-function screenFiles(): string[] {
-  return fs
-    .readdirSync(SCREENS)
-    .filter((name) => /\.tsx$/.test(name))
-    .map((name) => path.join(SCREENS, name));
-}
 
 describe('no hand-tuned coach-note offsets in screens', () => {
   it('only ever passes a measured *Height value as topOffset', () => {
@@ -24,7 +13,8 @@ describe('no hand-tuned coach-note offsets in screens', () => {
     // same bug wearing a name. Only a value that reads as a measurement —
     // an identifier ending in `Height`, as useMeasuredHeight yields — passes.
     const offenders: string[] = [];
-    for (const file of screenFiles()) {
+    for (const name of fs.readdirSync(SCREENS).filter((n) => /\.tsx$/.test(n))) {
+      const file = path.join(SCREENS, name);
       const text = fs.readFileSync(file, 'utf8');
       for (const match of text.matchAll(/topOffset=\{([^}]*)\}/g)) {
         const value = match[1].trim();

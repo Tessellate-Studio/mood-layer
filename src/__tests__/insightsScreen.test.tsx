@@ -233,7 +233,7 @@ describe('InsightsScreen', () => {
     fireEvent(header, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 320, height: 80 } } });
     // The frame's top = safe-area top (0 under the jest mock) + the screen's
     // own paddingTop + the measured header.
-    const measured = StyleSheet.flatten(screen.getByTestId('coach-frame-note-insights').props.style);
+    const measured = StyleSheet.flatten(frame.props.style);
     expect(measured.top).toBe(spacing.md + 80);
     expect(measured.opacity).toBe(1);
   });

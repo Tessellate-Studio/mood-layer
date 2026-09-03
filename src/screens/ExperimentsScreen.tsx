@@ -80,9 +80,7 @@ export default function ExperimentsScreen() {
         keyboardShouldPersistTaps="handled"
         testID="screen-experiments"
       >
-        <View testID="experiments-header" onLayout={onHeaderLayout}>
-          <Text style={typography.title}>Experiments</Text>
-        </View>
+        <Text style={typography.title} onLayout={onHeaderLayout}>Experiments</Text>
         <Text style={styles.intro}>
           Small practices for meeting what&apos;s here. Take one when it calls — none are homework.
         </Text>

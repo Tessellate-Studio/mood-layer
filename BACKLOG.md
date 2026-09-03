@@ -144,6 +144,15 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
 
 ## P3 — later
 
+- **CoachNote owns its anchor** — today every screen wires
+  `useMeasuredHeight` + `onLayout` on its title row and passes
+  `topOffset={headerHeight}`, with `noHandTunedOffsets.test.ts` guarding the
+  seam by source scan. The deeper form (simplify review, 2026-09-03): the note
+  takes the title row as a render-prop or a `CoachNote.Header` wrapper that
+  reports its height through context, so a screen cannot mount a note without
+  a measured anchor and `topOffset` leaves the public props. Worth it the next
+  time a sixth screen gets a note; not before.
+
 - **A pause after "take a moment" cards — timer, reminder, or reward** —
   user, 2026-09-03: backlog for now. When an insight invites the reader to
   sit with something ("Worth taking a quiet moment to appreciate"), offer a

@@ -42,10 +42,9 @@ export function previousWeekKey(now: Date): string {
   return weekKey(sevenDaysBack.toISOString());
 }
 
-/** Local-time 'YYYY-MM' for an ISO timestamp. */
+/** Local-time 'YYYY-MM' for an ISO timestamp — the day key's month prefix. */
 export function monthKey(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}`;
+  return dayKey(iso).slice(0, 7);
 }
 
 /**
@@ -58,19 +57,21 @@ export function previousMonthKey(now: Date): string {
   return monthKey(lastOfPrevious.toISOString());
 }
 
-const MONTHS_SHORT = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-];
-
 const MONTHS_LONG = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
+const MONTHS_SHORT = MONTHS_LONG.map((name) => name.slice(0, 3));
 
 /** Month name for a 'YYYY-MM' key, e.g. '2026-06' → 'June'. */
 export function monthLabel(mk: string): string {
   return MONTHS_LONG[Number(mk.slice(5)) - 1];
+}
+
+/** The calendar month that just ended: its key, and the name copy uses. */
+export function previousMonthPeriod(now: Date): { key: string; label: string } {
+  const key = previousMonthKey(now);
+  return { key, label: monthLabel(key) };
 }
 
 /** Local midnight of the Monday for an ISO 'GGGG-Www' week key. */

@@ -437,9 +437,7 @@ export default function CircleScreen() {
         keyboardShouldPersistTaps="handled"
         testID="screen-circle"
       >
-        <View testID="circle-header" onLayout={onHeaderLayout}>
-          <Text style={typography.title}>Your circle</Text>
-        </View>
+        <Text style={typography.title} onLayout={onHeaderLayout}>Your circle</Text>
         <Text style={styles.intro}>
           Nothing leaves your phone until you choose it. You control what each person sees and how
           often.

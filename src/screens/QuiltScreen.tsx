@@ -34,6 +34,7 @@ import LogoMark from '@/components/LogoMark';
 import PaperTexture from '@/components/PaperTexture';
 import CoachNote from '@/components/CoachNote';
 import { useMeasuredHeight } from '@/hooks/useMeasuredHeight';
+import { useNowOnFocus } from '@/hooks/useNowOnFocus';
 import FieldGuideDoorway from '@/components/FieldGuideDoorway';
 import { useSettingsStore } from '@/store/settingsStore';
 import WeeklySummaryCard from '@/components/WeeklySummaryCard';
@@ -46,7 +47,7 @@ import { selectMoodFamilies, selectWeekStats, useCheckInStore } from '@/store/ch
 import { useHelperSheetStore } from '@/store/helperSheetStore';
 import type { CheckIn, EmotionFamilyId } from '@/types/models';
 import { useMotion } from '@/hooks/useMotion';
-import { dayKey, weekKey } from '@/utils/dates';
+import { weekKey } from '@/utils/dates';
 import { computeQuiltLayout, offsetForCheckIn, type WeekBlock } from '@/utils/quiltLayout';
 
 type Nav = NativeStackNavigationProp<RootStackParamList>;
@@ -103,21 +104,20 @@ export default function QuiltScreen() {
   // width (it lays out patches from x=0).
   const contentWidth = width - spacing.md * 2;
   const [headerHeight, onHeaderLayout] = useMeasuredHeight();
+  // One clock, advancing on focus, so the week summary and the mood mark roll
+  // over on the first open after a Monday even with the app kept in memory.
+  const now = useNowOnFocus();
   const blocks = React.useMemo(
     () => computeQuiltLayout(checkIns, contentWidth - 34),
     [checkIns, contentWidth]
   );
-  const weeklySummary = React.useMemo(() => {
-    const wk = weekKey(new Date().toISOString());
-    return homeWeeklySummary(selectWeekStats(checkIns, 0, wk));
-  }, [checkIns]);
+  const weeklySummary = React.useMemo(
+    () => homeWeeklySummary(selectWeekStats(checkIns, 0, weekKey(now.toISOString()))),
+    [checkIns, now]
+  );
   // The prominent current mood — the same families every mark wears (user,
   // 2026-09-03), so the header mark and the summary mark agree.
-  const moodFamilies = React.useMemo(() => selectMoodFamilies(checkIns, new Date()), [checkIns]);
-  const todayHasEntry = React.useMemo(
-    () => checkIns.some((c) => c.dayKey === dayKey(new Date().toISOString())),
-    [checkIns]
-  );
+  const moodFamilies = React.useMemo(() => selectMoodFamilies(checkIns, now), [checkIns, now]);
 
   // Stitch-in: when the newest check-in id changes (a fresh stitch, not a
   // rehydrate), flag it for the one-shot arrival animation, then clear.
@@ -152,7 +152,7 @@ export default function QuiltScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-quilt">
       <PaperTexture />
-      <View style={styles.headerRow} testID="quilt-header" onLayout={onHeaderLayout}>
+      <View style={styles.headerRow} onLayout={onHeaderLayout}>
         <Text style={styles.title}>Your mood layers</Text>
         {/* Once check-ins exist, the field guide lives up here as the small
             layered mark — colour among the ink chrome names it, and the colour

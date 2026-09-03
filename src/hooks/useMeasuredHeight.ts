@@ -1,7 +1,5 @@
-// The one way a screen tells a floating element how tall the thing it sits
-// under is: measure it. A typed number that equals the header's height at
-// today's type scale drifts on the next +1px commit, a wrapped title, or a
-// larger system font — and drifts per screen (anti-pattern #9, 2026-09-03).
+// A view's height, measured with onLayout — the one source for anything that
+// positions against it (anti-pattern #9: measured, never typed).
 
 import React from 'react';
 import type { LayoutChangeEvent } from 'react-native';
