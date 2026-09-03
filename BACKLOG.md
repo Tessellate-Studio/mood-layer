@@ -74,10 +74,9 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
   field-guide essences, previews, footer → body, the family key → label).
   (b) became anti-pattern #9 (`useMeasuredHeight` on every screen's title
   row; `noHandTunedOffsets.test.ts`; regression log #31).
-  **Still open — (c):** extend the Settings / Field guide / Layers
-  header-to-footer spacing to every screen, empty and filled states — first
-  extract what those three actually share. Not started; the note rule fixed
-  the one empty-state inconsistency the user named, not the general spacing.
+  **(c) shipped 2026-09-03, PR #102** — the frame those three shared is now
+  `ScreenFrame`, worn by all seven page screens in both states, with
+  anti-pattern #11 and a source sweep to hold it. Nothing left open here.
 
 - **Usage analytics — third sanctioned-exception decision needed** — rubric
   not yet scored (no `evaluateFromContext` run against this entry). User wants
@@ -166,14 +165,27 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
 
 ## P3 — later
 
-- **CoachNote owns its anchor** — today every screen wires
-  `useMeasuredHeight` + `onLayout` on its title row and passes
-  `topOffset={headerHeight}`, with `noHandTunedOffsets.test.ts` guarding the
-  seam by source scan. The deeper form (simplify review, 2026-09-03): the note
-  takes the title row as a render-prop or a `CoachNote.Header` wrapper that
-  reports its height through context, so a screen cannot mount a note without
-  a measured anchor and `topOffset` leaves the public props. Worth it the next
-  time a sixth screen gets a note; not before.
+- **Three more drawings of the mark and its chrome could collapse into one**
+  — deferred from the 2026-09-03 quality pass on PR #102, all shape, no bug.
+  (a) `LogoDivider` hand-draws `LOGO_BANDS` a third time; widening LogoMark's
+  `ink` to accept a per-band array would make it `<LogoMark register="ink"
+  ink={BAND_INK} />`. (b) The field guide, Reflections and Settings each
+  copy-paste the same back-arrow + title row, already drifted (Settings sizes
+  its icon button differently) — a `BackHeader` beside the existing
+  `ModalHeader` would end it, and would tidy the multi-line `header={` JSX the
+  frame conversion left behind. (c) The Insights screen runs two `FlatList`s
+  that differ only in data/renderItem/header/footer, the empty one being a
+  ScrollView in a list's clothes. Worth doing together, next time any of them
+  is opened for another reason.
+
+- ~~**CoachNote owns its anchor**~~ — **done 2026-09-03, PR #102**, by
+  `ScreenFrame`: the frame measures its own title row and passes the offset,
+  so a page screen cannot mount a note against an unmeasured anchor.
+  `topOffset` is still a public prop on CoachNote (the frame is its only
+  caller), and CoachNote still re-derives the frame's `insets.top +
+  spacing.md` for its own absolute position — one duplicated expression,
+  noted in the quality pass and left alone rather than reworking the note's
+  positioning contract in a spacing PR.
 
 - **A pause after "take a moment" cards — timer, reminder, or reward** —
   user, 2026-09-03: backlog for now. When an insight invites the reader to
