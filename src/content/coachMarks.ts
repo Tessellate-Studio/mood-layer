@@ -13,8 +13,12 @@ export type CoachMarkId =
   | 'note-circle'
   | 'note-field-guide';
 
-/** Shared chrome copy for the floating note card. */
-export const COACH_NOTE_OVERLINE = 'First visit';
+/** Shared chrome copy for the floating note card. "First visit" was wrong on
+ *  its face — Settings → "Show the helper notes again" brings these back on
+ *  any visit, and on the page it read as a heading for the SCREEN rather than
+ *  a label for the card (user, 2026-09-03). The overline names what the card
+ *  is, and stays true however often it is shown. */
+export const COACH_NOTE_OVERLINE = 'A note';
 export const COACH_NOTE_DISMISS_HINT = 'Tap to dismiss';
 
 /** One gentle line per screen, pointing at what it offers — never a directive. */

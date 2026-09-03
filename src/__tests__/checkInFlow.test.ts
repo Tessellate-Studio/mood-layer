@@ -7,6 +7,7 @@ import {
   prevStep,
   setIntensity,
   feelStepHint,
+  FEEL_NOTE_TIP_ID,
   setNote,
   toCheckInInput,
   toggleBody,
@@ -94,9 +95,10 @@ describe('checkInFlow reducer', () => {
     // Panel closed, exactly one weighed word: the invitation appears.
     s = toggleMasking(s, 'fine');
     expect(feelStepHint(s)).toBe('invite');
-    // A second word retires it (unweighed → temperature owns the slot again).
+    // A second word retires the invitation — and does NOT re-raise the
+    // temperature lesson, which one word already taught (user, 2026-09-03).
     s = toggleEmotion(s, 'worried', 'fear');
-    expect(feelStepHint(s)).toBe('temperature');
+    expect(feelStepHint(s)).toBeNull();
     s = setIntensity(s, 'worried', 2);
     expect(feelStepHint(s)).toBeNull();
     // And nothing fires off the feel step.
@@ -128,6 +130,36 @@ describe('checkInFlow reducer', () => {
     // Masking is a gate: it explains a grey Continue no matter how many logs.
     const covered = toggleMasking(initialFlowState('manual'), 'fine');
     expect(feelStepHint(covered, { familyOpen: false, checkInCount: 99 })).toBe('masking');
+  });
+
+  it('asks for a temperature ONCE per check-in, however many words are named', () => {
+    // It used to fire for every newly named word: "shows up for each emotion
+    // selected… which is too much" (user, 2026-09-03). One weighing teaches
+    // the gesture; Continue stays grey either way.
+    let s = toggleEmotion(initialFlowState('manual'), 'sad', 'sadness');
+    expect(feelStepHint(s)).toBe('temperature');
+    s = setIntensity(s, 'sad', 2);
+    // Two more unweighed words, added after the lesson landed: silence.
+    s = toggleEmotion(s, 'worried', 'fear');
+    s = toggleEmotion(s, 'glad', 'enjoyment');
+    expect(feelStepHint(s)).toBeNull();
+    // Still gated, though — the note is a courtesy, not the rule.
+    expect(canProceed(s)).toBe(false);
+  });
+
+  it('leaves the slot EMPTY for a note the user sent away, never a substitute', () => {
+    // The ✕ on a note silences that note; the next candidate must not slide
+    // into the gap, or dismissing would just swap one card for another.
+    const s = toggleEmotion(initialFlowState('manual'), 'sad', 'sadness');
+    expect(feelStepHint(s, { familyOpen: true, checkInCount: 0, silenced: ['temperature'] })).toBeNull();
+    const weighed = setIntensity(s, 'sad', 2);
+    expect(feelStepHint(weighed, { familyOpen: true, checkInCount: 0, silenced: ['temperature'] })).toBe('invite');
+    expect(feelStepHint(weighed, { familyOpen: true, checkInCount: 0, silenced: ['invite'] })).toBeNull();
+    // And the teaching notes each have a persisted id to be silenced under.
+    expect(FEEL_NOTE_TIP_ID.temperature).toBeTruthy();
+    expect(FEEL_NOTE_TIP_ID.explore).toBeTruthy();
+    expect(FEEL_NOTE_TIP_ID.masking).toBeUndefined();
+    expect(FEEL_NOTE_TIP_ID.invite).toBeUndefined();
   });
 
   it('only allows finish-early for name-it flows mid-stream', () => {

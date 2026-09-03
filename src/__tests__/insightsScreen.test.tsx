@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { StyleSheet } from 'react-native';
-import { fireEvent, render, screen, within } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, within } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 
 import LogoMark from '@/components/LogoMark';
@@ -170,6 +170,36 @@ describe('InsightsScreen', () => {
 
     const footer = screen.getByTestId('insights-footer');
     expect(within(footer).getByText(INSIGHTS_FOOTER)).toBeTruthy();
+  });
+
+  it('closes the EMPTY page with the same footer as a full one', async () => {
+    // The closing line belongs to the page, not the card list — the empty
+    // state shipped without it (device feedback, 2026-09-03).
+    useCheckInStore.setState({ checkIns: [] });
+    renderScreen();
+    await screen.findByTestId('insights-empty');
+    const footer = screen.getByTestId('insights-footer');
+    expect(within(footer).getByText(INSIGHTS_FOOTER)).toBeTruthy();
+  });
+
+  it('repaints when the sample month clears the marker under an already-mounted tab', async () => {
+    // The bottom tabs keep this screen alive, so "Preview a sample month" has
+    // to reach a mounted Insights: an effect keyed on the week key alone
+    // never re-ran, and the page stayed empty until an app restart (device
+    // feedback, 2026-09-03 — "not showing weekly summary via the sample data
+    // route").
+    useInsightStore.setState({ lastGeneratedWeekKey: previousWeekKey(new Date()), cards: [] });
+    renderScreen();
+    await screen.findByTestId('insights-empty');
+
+    // Exactly what seedMonth does: paint the stores, clear the marker.
+    await act(async () => {
+      useCheckInStore.setState({ checkIns: [1, 2, 3, 4].map((n) => lastWeekCheckIn(n)) });
+      useInsightStore.setState({ cards: [], lastGeneratedWeekKey: null });
+    });
+
+    expect(await screen.findByText('A week of either-or')).toBeTruthy();
+    expect(screen.getByTestId('insights-summary')).toHaveTextContent(/4 check-ins across 1 day/);
   });
 
   it('empty state names the TRUE reason: a quiet week vs no pattern yet', async () => {

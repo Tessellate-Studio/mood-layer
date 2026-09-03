@@ -17,7 +17,7 @@ export const CHECK_IN_COPY = {
    *  a held word does, and where the rest of the family lives. Replaced the
    *  always-on "Hold any word…" line above the list (user, 2026-09-02). */
   exploreNote:
-    'Hold any word to learn what it carries. “+ more words” opens the rest of the family.',
+    'Press and hold any word to learn what it carries. “+ more words” opens the rest of the family.',
   underneathHint: 'Naming even one is enough — or open “learn” to feel your way in.',
 } as const;
 

@@ -70,11 +70,26 @@ export function canProceed(s: FlowState): boolean {
 
 export type FeelHint = 'masking' | 'temperature' | 'invite' | 'explore';
 
+/**
+ * The two hints that TEACH rather than gate, and the persisted id each one
+ * retires under. Only these carry a permanent dismissal: the ✕ on a teaching
+ * note means "I have this" and it never comes back (user, 2026-09-03), while
+ * the ✕ on a gate note only clears it for the check-in in hand. Settings →
+ * "Show the helper notes again" clears these ids like any other tip.
+ */
+export const FEEL_NOTE_TIP_ID: Partial<Record<FeelHint, string>> = {
+  explore: 'note-checkin-explore',
+  temperature: 'note-checkin-temperature',
+};
+
 /** What the feel step knows beyond its own state: whether a family is
- *  unfolded (screen UI state, not flow state) and how many check-ins exist. */
+ *  unfolded (screen UI state, not flow state), how many check-ins exist, and
+ *  which notes the user has already sent away. */
 export interface FeelHintContext {
   familyOpen: boolean;
   checkInCount: number;
+  /** Notes the user dismissed — for this check-in, or for good. */
+  silenced?: readonly FeelHint[];
 }
 
 const NO_CONTEXT: FeelHintContext = { familyOpen: false, checkInCount: 0 };
@@ -95,13 +110,27 @@ const NO_CONTEXT: FeelHintContext = { familyOpen: false, checkInCount: 0 };
  * Continue is grey.
  */
 export function feelStepHint(s: FlowState, ctx: FeelHintContext = NO_CONTEXT): FeelHint | null {
+  const hint = candidateHint(s, ctx);
+  // A note the user has sent away leaves the slot EMPTY rather than handing
+  // it to the next candidate: one quiet slot, never a queue of substitutes.
+  return hint && (ctx.silenced ?? []).includes(hint) ? null : hint;
+}
+
+function candidateHint(s: FlowState, ctx: FeelHintContext): FeelHint | null {
   if (s.step !== 'feel') return null;
   const teaching = ctx.checkInCount < FEEL_NOTE_LOG_LIMIT;
   if (s.selections.length === 0) {
     if (s.masking.length > 0) return 'masking';
     return teaching && ctx.familyOpen ? 'explore' : null;
   }
-  if (s.selections.some((x) => x.intensity === null)) return teaching ? 'temperature' : null;
+  if (s.selections.some((x) => x.intensity === null)) {
+    // Once ONE word has been weighed the lesson has landed — a second, third,
+    // fourth word must not ask again (user, 2026-09-03: "shows up for each
+    // emotion selected… which is too much"). Continue stays grey either way,
+    // and the dial the hint points at sits right under the word.
+    const alreadyWeighed = s.selections.some((x) => x.intensity !== null);
+    return teaching && !alreadyWeighed ? 'temperature' : null;
+  }
   if (s.selections.length === 1 && s.masking.length === 0) return 'invite';
   return null;
 }

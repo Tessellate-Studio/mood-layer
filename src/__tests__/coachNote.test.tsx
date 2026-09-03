@@ -77,4 +77,11 @@ describe('CoachNote', () => {
     expect(screen.getByText(COACH_NOTE_OVERLINE)).toBeTruthy();
     expect(screen.getByText(COACH_NOTE_DISMISS_HINT)).toBeTruthy();
   });
+
+  it('never headlines itself "First visit" — it is not one (user, 2026-09-03)', () => {
+    // Settings → "Show the helper notes again" brings these back on any
+    // visit, so the old overline was false the moment it was restored — and
+    // on the page it read as a heading for the SCREEN, not the card.
+    expect(COACH_NOTE_OVERLINE.toLowerCase()).not.toContain('first visit');
+  });
 });

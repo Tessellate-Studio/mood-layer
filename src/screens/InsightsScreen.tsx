@@ -140,18 +140,22 @@ export default function InsightsScreen() {
   const now = useNowOnFocus();
   const lastWeek = previousWeekKey(now);
 
-  // Generate LAST week's cards once per rollover (and on mount) — the store
-  // marks the week, so a repeat is a no-op. getState() reads keep the effect
-  // off the store's re-render path.
+  // Generate LAST week's cards once per rollover — the store marks the week,
+  // so a repeat is a no-op. Watching the MARKER (not just the week key) is
+  // what makes "Preview a sample month" work while this tab is already
+  // mounted: seeding clears the marker, and the bottom tabs keep this screen
+  // alive, so an effect keyed on the week alone would never re-run and the
+  // page stayed empty until an app restart (device feedback, 2026-09-03).
+  const generatedWeekKey = useInsightStore((s) => s.lastGeneratedWeekKey);
   React.useEffect(() => {
-    if (useInsightStore.getState().lastGeneratedWeekKey === lastWeek) return;
+    if (generatedWeekKey === lastWeek) return;
     const stats = computeStatsForWeek(
       useCheckInStore.getState().checkIns,
       useExperimentStore.getState().judgmentEntries,
       lastWeek
     );
     useInsightStore.getState().generateForWeek(lastWeek, stats);
-  }, [lastWeek]);
+  }, [generatedWeekKey, lastWeek]);
 
   // Only LAST week's cards show — the header says "Last week", and cards are
   // not dismissable (user, 2026-09-03), so without this bound the list would
@@ -238,6 +242,16 @@ export default function InsightsScreen() {
   );
   const emptyText = thisWeekCount === 0 ? INSIGHTS_EMPTY_QUIET_WEEK : INSIGHTS_EMPTY_NO_PATTERN;
 
+  // One footer for both states: the closing line belongs to the PAGE, not to
+  // the card list — the empty state was shipping without it (device feedback,
+  // 2026-09-03).
+  const footer = (
+    <View testID="insights-footer">
+      {monthlyBlock}
+      <LogoDivider tip={INSIGHTS_FOOTER} />
+    </View>
+  );
+
   return (
     <ScreenFrame
       testID="screen-insights"
@@ -273,7 +287,7 @@ export default function InsightsScreen() {
               </Text>
             </View>
           }
-          ListFooterComponent={monthlyBlock}
+          ListFooterComponent={footer}
         />
       ) : (
         <FlatList
@@ -288,12 +302,7 @@ export default function InsightsScreen() {
               reduceMotion={reduceMotion}
             />
           )}
-          ListFooterComponent={
-            <View testID="insights-footer">
-              {monthlyBlock}
-              <LogoDivider tip={INSIGHTS_FOOTER} />
-            </View>
-          }
+          ListFooterComponent={footer}
         />
       )}
     </ScreenFrame>
