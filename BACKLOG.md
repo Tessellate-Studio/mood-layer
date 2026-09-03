@@ -65,12 +65,17 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
   — so the mark was retuned to the middle register: pastel mixed 55% toward
   vivid, translucent (0.85 + multiply) with the thread outlines restored so the
   overlaps deepen and it reads as layers again; the 66%-mask geometry is
-  untouched. Verification moves to the device-test queue (needs a fresh APK —
-  no OTA path).
-  **Still open:** `appicon_ink.svg`, `icon_mono.svg` and the `var_*` mood
-  variants in `assets/svg/` still carry the old pastel geometry — redraw them
-  to the vivid geometry if/when anything ships them (nothing in-app imports
-  them today).
+  untouched. Then, later on 2026-09-02, the user handed over the identity
+  canvas's **four-band** primary mark (amber · rose · mauve · blue, pastel,
+  translucent) and it was installed everywhere the coloured mark is drawn —
+  every icon PNG, the splash, the in-app `LogoMark` (four bands now, same
+  geometry as the icon), `appicon_ink.svg` and the `var_*` variants. The
+  monochrome outline was explicitly NOT installed ("not the black and white
+  one"). Verification moves to the device-test queue (needs a fresh APK — no
+  OTA path).
+  **Still open:** `icon_mono.svg`, `LogoDivider` and the Quilt `TabIcon`'s
+  `MONO_BANDS` still draw the old three-band outline. Decide whether the mono
+  glyph should follow the four-band shape or stay — user's call.
 
 - **Clean on-device verification pass of the v0.2.0 redesign** — rubric **7/12**.
   Full walkthrough of Quilt cloth, Insights depth, Circle, judgment
