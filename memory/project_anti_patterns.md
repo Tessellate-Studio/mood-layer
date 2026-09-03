@@ -61,6 +61,9 @@ numbered entries get added as they're earned.
    through `onLayout` (`useMeasuredHeight`), and the float positions from
    that. `noHandTunedOffsets.test.ts` bans a numeric `topOffset` in any
    screen at the source level, the way `noStitchLines.test.ts` bans dashes.
+   Since 2026-09-03 the seam is structural too: `ScreenFrame` measures its
+   own header and hands the note the offset, so a page screen cannot mount a
+   note against an unmeasured anchor (anti-pattern #11).
 10. **Reading text is never below `body`** (earned 2026-09-03; user: the
     check-in flow "looks too tiny", the field guide "slightly less so").
     The type tokens are a hierarchy, not a size menu: `caption` (13) is for
@@ -73,3 +76,18 @@ numbered entries get added as they're earned.
     body size, not with a smaller face. `checkInFlowScreen.test.tsx` and
     `fieldGuideScreen.test.tsx` pin the sizes on the elements that prompted
     this.
+11. **A page screen wears `ScreenFrame`; it does not roll its own frame**
+    (earned 2026-09-03, from the user's "Settings, field guide and Home page
+    … look perfect. You need to extend this rule to others, in both empty and
+    filled states"). Every page had hand-assembled the same four things —
+    paper ground, side gutters, safe-area top, a title row — and they had
+    drifted: Circle and Experiments put the safe-area top on their scroller's
+    *content*, so their titles scrolled up under the status bar while the
+    approved three kept theirs fixed, and the bottom breathing room arrived
+    in four different tokens across the seven (xl, xxl, a bare md, and
+    `insets.bottom + xxl`). `ScreenFrame` owns the frame and
+    the first-visit note; a screen supplies a title row, a body, and
+    `screenContent` for its scroller's bottom. Hand-assembling the frame is
+    how it drifts again, one screen at a time. Flow screens (check-in,
+    judgment, practice, breathing, name-it, onboarding) are deliberately out:
+    a footer-driven wizard is a different shape, not a page.

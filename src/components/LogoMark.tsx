@@ -37,13 +37,45 @@ interface Props {
    */
   families?: EmotionFamilyId[];
   size?: number;
+  /**
+   * How the bands are painted:
+   *   'cloth' — translucent pastel, the mark on a page (default).
+   *   'vivid' — opaque, saturated thread: the tab bar's FOCUSED mark. At
+   *             24px the cloth register sank below the unfocused icons' ink
+   *             and the selected tab read as the faintest one.
+   *   'ink'   — bare outlines in `ink`, what the tab bar wears at rest, so
+   *             resting and focused are one drawing rather than two.
+   */
+  register?: 'cloth' | 'vivid' | 'ink';
+  /** The line colour for the 'ink' register. */
+  ink?: string;
+  /** Line weight; the default suits the in-page mark, a tab icon needs more. */
+  strokeWidth?: number;
 }
 
-export default function LogoMark({ families, size = 56 }: Props) {
+export default function LogoMark({
+  families,
+  size = 56,
+  register = 'cloth',
+  ink,
+  strokeWidth = 1.6,
+}: Props) {
   const stack = families && families.length > 0 ? families : BRAND_STACK;
+  // Resolved once: the three registers are alternatives, so a band cannot be
+  // painted half one way and half another.
+  const paint = (palette: (typeof familyPalette)[EmotionFamilyId]) => {
+    if (register === 'ink') return { fill: 'none', stroke: ink } as const;
+    if (register === 'vivid') return { fill: palette.shades[3], stroke: palette.vivid } as const;
+    return {
+      fill: palette.shades[4],
+      fillOpacity: 0.82,
+      stroke: palette.thread,
+      strokeOpacity: 0.6,
+    } as const;
+  };
 
   return (
-    <Svg width={size} height={size} viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}>
+    <Svg width={size} height={size} viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`} fill="none">
       {/* Bottom band first so each band overlaps the one beneath it. */}
       {[...LOGO_BANDS].reverse().map((band, i) => {
         const bandIndex = LOGO_BANDS.length - 1 - i;
@@ -56,11 +88,8 @@ export default function LogoMark({ families, size = 56 }: Props) {
             width={band.w}
             height={band.h}
             rx={band.h / 2}
-            fill={palette.shades[4]}
-            fillOpacity={0.82}
-            stroke={palette.thread}
-            strokeOpacity={0.6}
-            strokeWidth={1.6}
+            strokeWidth={strokeWidth}
+            {...paint(palette)}
           />
         );
       })}

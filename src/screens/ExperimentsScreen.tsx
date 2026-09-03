@@ -16,15 +16,12 @@ import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Line } from 'react-native-svg';
 
 import { colors, mutedPalette, spacing, typography } from '@/constants/theme';
 import LogoDivider from '@/components/LogoDivider';
-import PaperTexture from '@/components/PaperTexture';
-import CoachNote from '@/components/CoachNote';
+import ScreenFrame, { screenContent } from '@/components/ScreenFrame';
 import SectionHeader from '@/components/SectionHeader';
-import { useMeasuredHeight } from '@/hooks/useMeasuredHeight';
 import ThreadCard from '@/components/ThreadCard';
 import { JUDGMENT_FAMILY, PRACTICE_FAMILY, PRACTICES } from '@/content/practices';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
@@ -62,25 +59,22 @@ function ArrowRing({ family }: { family: EmotionFamilyId }) {
 }
 
 export default function ExperimentsScreen() {
-  const insets = useSafeAreaInsets();
   const navigation = useNavigation<Nav>();
   const nameIt = useExperimentStore((s) => s.nameIt);
   const judgmentEntries = useExperimentStore((s) => s.judgmentEntries);
   const practiceSessions = useExperimentStore((s) => s.practiceSessions);
   const reflectionCount = groupSittings(judgmentEntries).length + practiceSessions.length;
-  const [headerHeight, onHeaderLayout] = useMeasuredHeight();
 
   return (
-    // ScrollView sits inside a plain container so the paper grain stays fixed
-    // behind the content instead of scrolling with it.
-    <View style={styles.container}>
-      <PaperTexture />
+    <ScreenFrame
+      testID="screen-experiments"
+      header={<Text style={typography.title}>Experiments</Text>}
+      note={{ id: 'note-experiments', family: JUDGMENT_FAMILY }}
+    >
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.md }]}
+        contentContainerStyle={screenContent}
         keyboardShouldPersistTaps="handled"
-        testID="screen-experiments"
       >
-        <Text style={typography.title} onLayout={onHeaderLayout}>Experiments</Text>
         <Text style={styles.intro}>
           Small practices for meeting what&apos;s here. Take one when it calls — none are homework.
         </Text>
@@ -215,25 +209,13 @@ export default function ExperimentsScreen() {
 
         <LogoDivider tip="Nothing here is a test. Come back to a practice whenever it calls; the rest can wait." />
       </ScrollView>
-
-      {/* First-visit helper note, floating under the measured title row. */}
-      <CoachNote id="note-experiments" topOffset={headerHeight} family={JUDGMENT_FAMILY} />
-    </View>
+    </ScreenFrame>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.paper,
-  },
-  content: {
-    paddingHorizontal: spacing.md,
-    paddingBottom: spacing.xl,
-  },
   intro: {
     ...typography.body,
-    marginTop: spacing.xs,
   },
   section: {
     marginTop: spacing.xl,

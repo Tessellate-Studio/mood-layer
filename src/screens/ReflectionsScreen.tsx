@@ -9,11 +9,10 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Line } from 'react-native-svg';
 
 import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
-import PaperTexture from '@/components/PaperTexture';
+import ScreenFrame, { screenContent } from '@/components/ScreenFrame';
 import ThreadCard from '@/components/ThreadCard';
 import { findPractice, JUDGMENT_FAMILY, PRACTICE_FAMILY } from '@/content/practices';
 import { findVocabularyWord } from '@/content/vocabulary';
@@ -35,7 +34,6 @@ type Reflection =
   | { kind: 'practice'; id: string; createdAt: string; session: PracticeSession };
 
 export default function ReflectionsScreen() {
-  const insets = useSafeAreaInsets();
   const navigation = useNavigation<Nav>();
   const judgmentEntries = useExperimentStore((s) => s.judgmentEntries);
   const practiceSessions = useExperimentStore((s) => s.practiceSessions);
@@ -73,8 +71,7 @@ export default function ReflectionsScreen() {
   }, [judgmentEntries, practiceSessions]);
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-reflections">
-      <PaperTexture />
+    <ScreenFrame testID="screen-reflections" header={
       <View style={styles.headerRow}>
         <Pressable
           testID="reflections-back"
@@ -90,8 +87,12 @@ export default function ReflectionsScreen() {
         </Pressable>
         <Text style={typography.title}>Reflections</Text>
       </View>
-
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      }
+    >
+      <ScrollView
+        contentContainerStyle={[styles.content, screenContent]}
+        showsVerticalScrollIndicator={false}
+      >
         {weeks.length === 0 ? (
           <Text style={styles.empty}>
             Nothing set down yet — reflections from the practices will gather
@@ -129,7 +130,7 @@ export default function ReflectionsScreen() {
           ))
         )}
       </ScrollView>
-    </View>
+    </ScreenFrame>
   );
 }
 
@@ -313,16 +314,10 @@ function PracticeSittingCard({
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.paper,
-    paddingHorizontal: spacing.md,
-  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    marginBottom: spacing.md,
   },
   iconButton: {
     width: hitTarget,
@@ -331,7 +326,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
-    paddingBottom: spacing.xl,
     gap: spacing.lg,
   },
   empty: {

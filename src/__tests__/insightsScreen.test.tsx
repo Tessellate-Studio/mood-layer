@@ -202,7 +202,7 @@ describe('InsightsScreen', () => {
   it('header mark wears the prominent current mood — last week’s while this week is empty', async () => {
     useCheckInStore.setState({ checkIns: [1, 2, 3].map((n) => lastWeekCheckIn(n)) }); // fear
     renderScreen();
-    const header = await screen.findByTestId('insights-header');
+    const header = await screen.findByTestId('screen-insights-header');
     expect(within(header).UNSAFE_getByType(LogoMark).props.families).toEqual(['fear']);
   });
 
@@ -218,14 +218,14 @@ describe('InsightsScreen', () => {
     };
     useCheckInStore.setState({ checkIns: [thisWeek, lastWeekCheckIn(1)] });
     renderScreen();
-    const header = await screen.findByTestId('insights-header');
+    const header = await screen.findByTestId('screen-insights-header');
     expect(within(header).UNSAFE_getByType(LogoMark).props.families).toEqual(['enjoyment']);
   });
 
   it('coach note sits directly under the MEASURED header — never a typed offset', async () => {
     useCheckInStore.setState({ checkIns: [1, 2, 3, 4].map((n) => lastWeekCheckIn(n)) });
     renderScreen();
-    const header = await screen.findByTestId('insights-header');
+    const header = await screen.findByTestId('screen-insights-header');
     // Before the measurement lands the note is present but invisible — it
     // must appear once, in place, never draw over the title and jump.
     const frame = screen.getByTestId('coach-frame-note-insights');

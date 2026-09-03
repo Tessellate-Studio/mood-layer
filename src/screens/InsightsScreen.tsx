@@ -13,15 +13,13 @@ import Animated, {
   withDelay,
   withTiming,
 } from 'react-native-reanimated';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { borderRadius, colors, motion, spacing, typography } from '@/constants/theme';
 import LogoDivider from '@/components/LogoDivider';
 import LogoMark from '@/components/LogoMark';
-import PaperTexture from '@/components/PaperTexture';
-import CoachNote from '@/components/CoachNote';
+import ScreenFrame, { screenContent } from '@/components/ScreenFrame';
 import ThreadCard from '@/components/ThreadCard';
-import { useMeasuredHeight } from '@/hooks/useMeasuredHeight';
+import { useMoodFamilies } from '@/hooks/useMoodFamilies';
 import { useNowOnFocus } from '@/hooks/useNowOnFocus';
 import {
   INSIGHTS_EMPTY_CAPTION,
@@ -129,14 +127,12 @@ function InsightCard({
 }
 
 export default function InsightsScreen() {
-  const insets = useSafeAreaInsets();
   const cards = useInsightStore((s) => s.cards);
   const checkIns = useCheckInStore((s) => s.checkIns);
   const judgmentEntries = useExperimentStore((s) => s.judgmentEntries);
   const practiceSessions = useExperimentStore((s) => s.practiceSessions);
 
   const { reduced: reduceMotion } = useMotion();
-  const [headerHeight, onHeaderLayout] = useMeasuredHeight();
   // One clock for every date-keyed view below — last week's cards, last
   // month's cards, the mood mark, the empty-state reason — advancing on each
   // focus, so they roll over on the first open after a Monday or a 1st even
@@ -188,7 +184,7 @@ export default function InsightsScreen() {
   // The prominent CURRENT mood, worn by the same mark the home screen breathes
   // — one rule for every mark (user, 2026-07-17; 2026-09-03). Not last week's,
   // even though the cards are: the mark is the app's mood, the cards a report.
-  const moodFamilies = React.useMemo(() => selectMoodFamilies(checkIns, now), [checkIns, now]);
+  const moodFamilies = useMoodFamilies(now);
 
   // Beyond the week: last calendar month's texture + what the practices
   // surfaced (user, 2026-07-17/18; calendar month, not rolling, 2026-09-03).
@@ -243,9 +239,11 @@ export default function InsightsScreen() {
   const emptyText = thisWeekCount === 0 ? INSIGHTS_EMPTY_QUIET_WEEK : INSIGHTS_EMPTY_NO_PATTERN;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-insights">
-      <PaperTexture />
-      <View style={styles.headerRow} testID="insights-header" onLayout={onHeaderLayout}>
+    <ScreenFrame
+      testID="screen-insights"
+      note={{ id: 'note-insights', family: 'enjoyment' }}
+      header={
+      <View style={styles.headerRow}>
         <LogoMark families={moodFamilies} size={44} />
         <View style={styles.headerText}>
           <Text style={typography.title}>{INSIGHTS_HEADER_TITLE}</Text>
@@ -257,12 +255,13 @@ export default function InsightsScreen() {
           ) : null}
         </View>
       </View>
-
+      }
+    >
       {!hasCards ? (
         <FlatList
           data={[] as InsightCardState[]}
           renderItem={() => null}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, screenContent]}
           ListHeaderComponent={
             <View style={styles.empty}>
               <Text style={styles.emptyText} testID="insights-empty">
@@ -280,7 +279,7 @@ export default function InsightsScreen() {
         <FlatList
           data={visible}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, screenContent]}
           renderItem={({ item, index }) => (
             <InsightCard
               card={item}
@@ -297,20 +296,11 @@ export default function InsightsScreen() {
           }
         />
       )}
-
-      {/* First-visit helper note — there is nothing to do here yet, and the
-          note says exactly that. It sits under the measured header row. */}
-      <CoachNote id="note-insights" topOffset={headerHeight} family="enjoyment" />
-    </View>
+    </ScreenFrame>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.paper,
-    paddingHorizontal: spacing.md,
-  },
   summary: {
     ...typography.caption,
     marginTop: spacing.xs,
@@ -331,7 +321,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   listContent: {
-    paddingVertical: spacing.md,
     gap: spacing.md,
   },
   headerRow: {

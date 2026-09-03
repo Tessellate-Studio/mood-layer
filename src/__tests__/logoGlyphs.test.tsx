@@ -8,7 +8,7 @@ import { render } from '@testing-library/react-native';
 import { Rect } from 'react-native-svg';
 
 import LogoDivider from '@/components/LogoDivider';
-import { BRAND_STACK, LOGO_BANDS } from '@/components/LogoMark';
+import LogoMark, { BRAND_STACK, LOGO_BANDS } from '@/components/LogoMark';
 import { QuiltIcon } from '@/components/TabIcon';
 import { colors, familyPalette } from '@/constants/theme';
 
@@ -19,20 +19,27 @@ describe('mono drawings of the mark', () => {
     const tree = render(<QuiltIcon color={colors.inkFaint} size={24} />);
     const bands = rects(tree);
     expect(bands).toHaveLength(LOGO_BANDS.length);
-    bands.forEach((rect, i) => {
-      expect(rect.props.x).toBe(LOGO_BANDS[i].x);
-      expect(rect.props.width).toBe(LOGO_BANDS[i].w);
+    // Order-agnostic: LogoMark paints bottom-band-first so each band overlaps
+    // the one beneath it. What matters here is that all four bands are drawn,
+    // to the icon's geometry, in the tab bar's ink.
+    const drawn = bands.map((rect) => ({ x: rect.props.x, w: rect.props.width }));
+    expect(drawn).toEqual(
+      expect.arrayContaining(LOGO_BANDS.map((band) => ({ x: band.x, w: band.w })))
+    );
+    bands.forEach((rect) => {
       expect(rect.props.fill).toBe('none');
       expect(rect.props.stroke).toBe(colors.inkFaint);
     });
   });
 
-  it('Quilt tab icon wears the brand stack when focused', () => {
-    const tree = render(<QuiltIcon color={colors.ink} size={24} focused />);
-    rects(tree).forEach((rect, i) => {
-      expect(rect.props.fill).toBe(familyPalette[BRAND_STACK[i]].shades[3]);
-      expect(rect.props.stroke).toBe(familyPalette[BRAND_STACK[i]].vivid);
-    });
+  it('Quilt tab icon is LogoMark itself — the tab and the in-page mark are one drawing', () => {
+    // Which families it wears when focused is the mood rule, covered in
+    // tabIcon.test.tsx; this file is about every drawing being one shape.
+    const tab = rects(render(<QuiltIcon color={colors.ink} size={24} focused />));
+    const mark = rects(render(<LogoMark size={24} />));
+    expect(tab.map((r) => [r.props.x, r.props.y, r.props.width, r.props.height])).toEqual(
+      mark.map((r) => [r.props.x, r.props.y, r.props.width, r.props.height])
+    );
   });
 
   it('LogoDivider draws the same four bands, ink fading down the stack', () => {
