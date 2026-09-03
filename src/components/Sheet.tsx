@@ -107,24 +107,37 @@ export function Sheet({ visible, onClose, children, title, testID }: Props) {
           />
         </Animated.View>
 
-        <GestureDetector gesture={pan}>
-          <Animated.View
-            testID={testID}
-            style={[
-              styles.sheet,
-              { paddingBottom: insets.bottom + spacing.lg },
-              sheetStyle,
-            ]}
-            onLayout={(e) => {
-              const h = e.nativeEvent.layout.height;
-              if (h > 0) sheetHeight.value = h;
-            }}
-          >
-            {/* The grab area: a real 44dp target holding the handle bar and,
-                when given, the sheet's title. Everything here is OUTSIDE any
-                scrolling child, so a drag that starts on it reaches the pan
-                instead of scrolling the body — a 4px handle bar alone left
-                nothing to grab (device feedback 2026-09-02). */}
+        {/* translateY (the slide) applies to the WHOLE sheet — but the
+            GESTURE that drives it is scoped to the grab area alone, below,
+            not this outer view. A GestureDetector wrapping the whole sheet
+            would sit ABOVE the scrolling body in the gesture-arbitration
+            tree; RNGH's Pan has no minimum distance or direction lock here,
+            so it would win every touch on the sheet — including a scroll —
+            before the ScrollView's own native gesture ever saw it. Every
+            family/word card became unscrollable this way (device feedback
+            2026-09-03: "All family cards can't be scrolled"), the same
+            "look up the tree for a gesture-claiming ancestor" lesson
+            regression #9 already paid for once, on a different component. */}
+        <Animated.View
+          testID={testID}
+          style={[
+            styles.sheet,
+            { paddingBottom: insets.bottom + spacing.lg },
+            sheetStyle,
+          ]}
+          onLayout={(e) => {
+            const h = e.nativeEvent.layout.height;
+            if (h > 0) sheetHeight.value = h;
+          }}
+        >
+          {/* The grab area: a real 44dp target holding the handle bar and,
+              when given, the sheet's title. Everything here is OUTSIDE any
+              scrolling child, so a drag that starts on it reaches the pan
+              instead of scrolling the body — a 4px handle bar alone left
+              nothing to grab (device feedback 2026-09-02). The GestureDetector
+              lives HERE, not on the sheet as a whole, so it never competes
+              with the body's own scroll gesture. */}
+          <GestureDetector gesture={pan}>
             <View style={styles.grabArea} testID={testID ? `${testID}-grab` : undefined}>
               <View style={styles.handle} pointerEvents="none" />
               {title ? (
@@ -133,13 +146,13 @@ export function Sheet({ visible, onClose, children, title, testID }: Props) {
                 </Text>
               ) : null}
             </View>
-            {/* Render children directly: the sheet sits above the backdrop in
-                the tree, so taps here never reach the backdrop. A wrapping
-                Pressable would collapse the whole sheet into one screen-reader
-                "button" and swallow inner scrolling. */}
-            {children}
-          </Animated.View>
-        </GestureDetector>
+          </GestureDetector>
+          {/* Render children directly: the sheet sits above the backdrop in
+              the tree, so taps here never reach the backdrop. A wrapping
+              Pressable would collapse the whole sheet into one screen-reader
+              "button" and swallow inner scrolling. */}
+          {children}
+        </Animated.View>
       </GestureHandlerRootView>
     </Modal>
   );
