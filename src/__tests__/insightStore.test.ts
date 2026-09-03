@@ -96,12 +96,8 @@ describe('insightStore.generateForWeek', () => {
   });
 });
 
-describe('insightStore — no dismiss', () => {
-  it('exposes no dismissCard: cards are not dismissable (user, 2026-09-03)', () => {
-    expect('dismissCard' in useInsightStore.getState()).toBe(false);
-  });
-
-  it('v2 migration strips the retired dismissedAt field from persisted cards', () => {
+describe('insightStore.migrateInsights', () => {
+  it('strips the retired dismissedAt field from persisted cards (no dismiss, user 2026-09-03)', () => {
     // A device that dismissed a card before this build rehydrates with the
     // old record; the stored shape must match InsightCardState again.
     const persisted = {
@@ -111,18 +107,19 @@ describe('insightStore — no dismiss', () => {
         { id: 'b', weekKey: '2026-W28', templateId: 'numb-cluster', kind: 'pattern', title: 't', body: 'b' },
       ],
     };
-    const migrated = migrateInsights(persisted, 1);
+    const migrated = migrateInsights(persisted);
     expect(migrated.cards).toHaveLength(2);
     for (const card of migrated.cards) expect('dismissedAt' in card).toBe(false);
+    expect(migrated.cards[1].kind).toBe('pattern');
     expect(migrated.lastGeneratedWeekKey).toBe('2026-W28');
   });
 
-  it('v0 → v2 migration still backfills kind, then strips dismissedAt', () => {
+  it('backfills kind for a pre-v1 record and strips dismissedAt in the same pass', () => {
     const persisted = {
       lastGeneratedWeekKey: '2026-W28',
       cards: [{ id: 'a', weekKey: '2026-W28', templateId: 'looping-week', title: 't', body: 'b', dismissedAt: 'x' }],
     };
-    const migrated = migrateInsights(persisted, 0);
+    const migrated = migrateInsights(persisted);
     expect(migrated.cards[0].kind).toBe('resistance');
     expect('dismissedAt' in migrated.cards[0]).toBe(false);
   });

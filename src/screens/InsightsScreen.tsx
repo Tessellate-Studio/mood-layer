@@ -29,8 +29,6 @@ import {
   INSIGHTS_EMPTY_QUIET_WEEK,
   INSIGHTS_FOOTER,
   INSIGHTS_HEADER_TITLE,
-  INSIGHTS_OVERLINE_MONTH_PRACTICES,
-  INSIGHTS_OVERLINE_MONTH_TEXTURE,
   INSIGHTS_OVERLINE_PATTERN,
   INSIGHTS_OVERLINE_RESISTANCE,
 } from '@/content/insights';
@@ -40,7 +38,7 @@ import { useMotion } from '@/hooks/useMotion';
 import { useCheckInStore } from '@/store/checkInStore';
 import { useExperimentStore } from '@/store/experimentStore';
 import { useInsightStore } from '@/store/insightStore';
-import type { EmotionFamilyId, InsightCardState, WeekStats } from '@/types/models';
+import type { EmotionFamilyId, InsightCardState } from '@/types/models';
 import { previousWeekKey, weekKey, weekRangeLabel } from '@/utils/dates';
 import { computeStatsForWeek } from '@/utils/insightEngine';
 
@@ -88,12 +86,13 @@ function ResistanceTells({ fired }: { fired: Set<string> }) {
 
 function InsightCard({
   card,
-  stats,
+  fired,
   index,
   reduceMotion,
 }: {
   card: InsightCardState;
-  stats: WeekStats | undefined;
+  /** Resistance tells that fired that week — a resistance card emphasises them. */
+  fired: Set<string>;
   index: number;
   reduceMotion: boolean;
 }) {
@@ -116,19 +115,10 @@ function InsightCard({
     transform: [{ translateY: translateY.value }],
   }));
 
-  const fired = React.useMemo(() => {
-    if (!stats) return new Set<string>();
-    return new Set(
-      Object.entries(stats.resistanceCounts)
-        .filter(([, count]) => count > 0)
-        .map(([id]) => id)
-    );
-  }, [stats]);
-
   return (
     <Animated.View style={entryStyle}>
       <ThreadCard family={CARD_FAMILY[card.kind]} style={styles.cardBody}>
-        <Text style={styles.overline}>{OVERLINE[card.kind]}</Text>
+        <Text style={typography.overline}>{OVERLINE[card.kind]}</Text>
         <Text style={styles.cardTitle}>{card.title}</Text>
         {card.kind === 'resistance' ? <ResistanceTells fired={fired} /> : null}
         <Text style={styles.cardText}>{card.body}</Text>
@@ -180,6 +170,17 @@ export default function InsightsScreen() {
     [hasCards, lastWeek, checkIns, judgmentEntries]
   );
 
+  // Which resistance tells fired that week — derived once here, not per card.
+  const firedTells = React.useMemo(
+    () =>
+      new Set(
+        Object.entries(summaryStats?.resistanceCounts ?? {})
+          .filter(([, count]) => count > 0)
+          .map(([id]) => id)
+      ),
+    [summaryStats]
+  );
+
   // The week's mood, worn by the same mark the home screen breathes — the two
   // screens read as one system (user, 2026-07-17).
   const markFamilies = React.useMemo(() => {
@@ -203,7 +204,7 @@ export default function InsightsScreen() {
       <View style={styles.monthly} testID="insights-monthly">
         {moodDigest ? (
           <ThreadCard family="enjoyment" style={styles.cardBody}>
-            <Text style={styles.overline}>{INSIGHTS_OVERLINE_MONTH_TEXTURE}</Text>
+            <Text style={typography.overline}>{moodDigest.overline}</Text>
             <View style={styles.monthlyHeader}>
               <LogoMark families={moodDigest.families} size={40} />
               <Text style={[styles.cardTitle, styles.monthlyTitle]}>{moodDigest.title}</Text>
@@ -213,14 +214,14 @@ export default function InsightsScreen() {
         ) : null}
         {practiceReflection ? (
           <ThreadCard family="contempt" style={styles.cardBody}>
-            <Text style={styles.overline}>{INSIGHTS_OVERLINE_MONTH_PRACTICES}</Text>
+            <Text style={typography.overline}>{practiceReflection.overline}</Text>
             <Text style={styles.cardTitle}>{practiceReflection.title}</Text>
             <Text style={styles.cardText}>{practiceReflection.body}</Text>
             {practiceReflection.kept.length > 0 ? (
               <View style={styles.keptList}>
                 {practiceReflection.kept.map((k, i) => (
                   <View key={i} style={styles.keptRow}>
-                    <Text style={styles.keptPractice}>{k.practice}</Text>
+                    <Text style={typography.overline}>{k.practice}</Text>
                     <Text style={styles.cardText}>{k.conclusion}</Text>
                   </View>
                 ))}
@@ -257,7 +258,7 @@ export default function InsightsScreen() {
         </View>
       </View>
 
-      {visible.length === 0 ? (
+      {!hasCards ? (
         <FlatList
           data={[] as InsightCardState[]}
           renderItem={() => null}
@@ -283,7 +284,7 @@ export default function InsightsScreen() {
           renderItem={({ item, index }) => (
             <InsightCard
               card={item}
-              stats={summaryStats}
+              fired={firedTells}
               index={index}
               reduceMotion={reduceMotion}
             />
@@ -363,14 +364,8 @@ const styles = StyleSheet.create({
   keptRow: {
     gap: 2,
   },
-  keptPractice: {
-    ...typography.overline,
-  },
   cardBody: {
     gap: spacing.sm,
-  },
-  overline: {
-    ...typography.overline,
   },
   cardTitle: {
     ...typography.heading,

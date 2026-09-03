@@ -20,31 +20,25 @@ interface InsightState {
   clearAll(): void;
 }
 
+// Frozen as it stood at v1, on purpose — a migration describes the past.
 const RESISTANCE_IDS = ['stuck-decisions', 'looping-week', 'judgment-heavy'];
 
 /**
- * Persist migrations, exported so they run against real stored records in
- * tests. v1: cards gained a `kind` overline — backfill it from the templateId
- * so a card from before the redesign shows the right shelf. v2: `dismissedAt`
- * retired (cards are not dismissable, user 2026-09-03) — strip it so stored
- * records match InsightCardState again.
+ * Persist migration, exported so it runs against real stored records in
+ * tests. Idempotent, so it ignores the stored version: v1 gave cards a `kind`
+ * overline (backfilled from the templateId); v2 retired `dismissedAt` (cards
+ * are not dismissable, user 2026-09-03) — stripped so stored records match
+ * InsightCardState again.
  */
-export function migrateInsights(persisted: unknown, version: number): InsightState {
+export function migrateInsights(persisted: unknown): InsightState {
   const state = { ...((persisted ?? {}) as Record<string, unknown>) };
   if (Array.isArray(state.cards)) {
-    let cards = state.cards as Record<string, unknown>[];
-    if (version < 1) {
-      cards = cards.map((card) => ({
+    state.cards = (state.cards as Record<string, unknown>[]).map(
+      ({ dismissedAt: _retired, ...card }) => ({
         ...card,
         kind: card.kind ?? (RESISTANCE_IDS.includes(card.templateId as string) ? 'resistance' : 'pattern'),
-      }));
-    }
-    if (version < 2) {
-      cards = cards.map((card) =>
-        Object.fromEntries(Object.entries(card).filter(([key]) => key !== 'dismissedAt'))
-      );
-    }
-    state.cards = cards;
+      })
+    );
   }
   return state as unknown as InsightState;
 }
@@ -73,9 +67,8 @@ export const useInsightStore = create<InsightState>()(
           lastGeneratedWeekKey: weekKey,
         }));
       },
-      // No dismissCard: cards are not dismissable (user, 2026-09-03). The
-      // screen shows only the newest week; older cards stay here for a later
-      // variety pass to read.
+      // No dismissCard (user, 2026-09-03). The store keeps every week's
+      // cards; which weeks show is the screen's call.
       clearAll: () => set({ cards: [], lastGeneratedWeekKey: null }),
     }),
     {

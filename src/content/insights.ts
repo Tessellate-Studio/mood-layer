@@ -20,10 +20,6 @@ export const INSIGHTS_OVERLINE_RESISTANCE = 'Gentle notice · Resistance';
 export const INSIGHTS_FOOTER =
   'Only what the week made clear shows up here. Everything else is in your layers, where you left it.';
 
-// The month cards under the week (a rolling 30-day window, so "this month").
-export const INSIGHTS_OVERLINE_MONTH_TEXTURE = 'This month · Texture';
-export const INSIGHTS_OVERLINE_MONTH_PRACTICES = 'This month · Practices';
-
 // Empty state. Two bodies so it names the TRUE reason (user, 2026-07-18):
 // nothing logged yet this week vs. logged but no pattern surfaced.
 export const INSIGHTS_EMPTY_QUIET_WEEK =

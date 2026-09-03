@@ -14,19 +14,14 @@ import {
 } from '@/content/emotions';
 import { EMOTION_HELPERS } from '@/content/helpers';
 import { RESISTANCE_TELLS } from '@/content/resistance';
+import * as insightsContent from '@/content/insights';
 import {
-  INSIGHTS_EMPTY_CAPTION,
-  INSIGHTS_EMPTY_MONTH_BELOW,
-  INSIGHTS_EMPTY_NO_PATTERN,
-  INSIGHTS_EMPTY_QUIET_WEEK,
   INSIGHTS_FOOTER,
   INSIGHTS_HEADER_TITLE,
-  INSIGHTS_OVERLINE_MONTH_PRACTICES,
-  INSIGHTS_OVERLINE_MONTH_TEXTURE,
   INSIGHTS_OVERLINE_PATTERN,
-  INSIGHTS_OVERLINE_RESISTANCE,
   INSIGHT_TEMPLATES,
 } from '@/content/insights';
+import { MONTHLY_PRACTICES_OVERLINE, MONTHLY_TEXTURE_OVERLINE } from '@/content/monthlyDigest';
 import { JUDGMENT_EXAMPLES } from '@/content/judgmentExamples';
 import { ONBOARDING_SLIDES } from '@/content/onboarding';
 import { CHECK_IN_COPY } from '@/content/checkInCopy';
@@ -464,28 +459,23 @@ describe('insight templates', () => {
   });
 
   it('every Insights screen string is non-empty and stays gentle', () => {
-    // All of the screen's own copy lives here (copy rule, CLAUDE.md), so one
-    // review covers it. Overlines and the header name the window they
-    // describe: cards are last week's, the month cards a rolling 30 days.
-    const strings = [
-      INSIGHTS_HEADER_TITLE,
-      INSIGHTS_OVERLINE_PATTERN,
-      INSIGHTS_OVERLINE_RESISTANCE,
-      INSIGHTS_OVERLINE_MONTH_TEXTURE,
-      INSIGHTS_OVERLINE_MONTH_PRACTICES,
-      INSIGHTS_EMPTY_QUIET_WEEK,
-      INSIGHTS_EMPTY_NO_PATTERN,
-      INSIGHTS_EMPTY_CAPTION,
-      INSIGHTS_EMPTY_MONTH_BELOW,
-      INSIGHTS_FOOTER,
-    ];
+    // All of the screen's own copy lives in content/insights.ts (copy rule,
+    // CLAUDE.md), so one review covers it — picked up by prefix, so a new
+    // string cannot be forgotten here.
+    const strings = Object.entries(insightsContent)
+      .filter(([name, value]) => name.startsWith('INSIGHTS_') && typeof value === 'string')
+      .map(([, value]) => value as string);
+    expect(strings.length).toBeGreaterThanOrEqual(8);
     for (const s of strings) {
       expect(s.length).toBeGreaterThan(0);
       expect(s).not.toContain('!');
     }
+    // The pattern overline names the same window as the header.
     expect(INSIGHTS_OVERLINE_PATTERN).toContain(INSIGHTS_HEADER_TITLE);
-    expect(INSIGHTS_OVERLINE_MONTH_TEXTURE).toMatch(/^This month/);
-    expect(INSIGHTS_OVERLINE_MONTH_PRACTICES).toMatch(/^This month/);
+    // The month cards' overlines live with the titles they label and name
+    // their window too: the rolling 30 days.
+    expect(MONTHLY_TEXTURE_OVERLINE).toMatch(/^This month/);
+    expect(MONTHLY_PRACTICES_OVERLINE).toMatch(/^This month/);
   });
 });
 

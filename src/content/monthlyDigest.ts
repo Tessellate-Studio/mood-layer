@@ -23,7 +23,14 @@ const DAYS_30_MS = 30 * 24 * 60 * 60 * 1000;
 /** Fewer check-ins than this and a month has no texture to read yet. */
 export const MONTHLY_MIN_CHECKINS = 8;
 
+// The overlines the Insights screen wears on the month cards — kept with the
+// titles they label, so the pairing is decided here, not in the screen. "This
+// month" is honest: the window is the rolling 30 days ending today.
+export const MONTHLY_TEXTURE_OVERLINE = 'This month · Texture';
+export const MONTHLY_PRACTICES_OVERLINE = 'This month · Practices';
+
 export interface MonthlyMoodDigest {
+  overline: string;
   title: string;
   body: string;
   /** Top families (most-frequent first, up to 3) — tints the card's mark. */
@@ -76,6 +83,7 @@ export function monthlyMoodDigest(
     labels.length >= 2 ? `${labels[0]} and ${labels[1]}` : labels[0] ?? 'A quiet mix';
 
   return {
+    overline: MONTHLY_TEXTURE_OVERLINE,
     title: 'The month, in layers',
     body:
       `${plural(recent.length, 'check-in', 'check-ins')} across ` +
@@ -86,6 +94,7 @@ export function monthlyMoodDigest(
 }
 
 export interface PracticeReflection {
+  overline: string;
   title: string;
   /** The gentle lead line — what the month's practising pointed at. */
   body: string;
@@ -155,5 +164,5 @@ export function monthlyPracticeReflection(
     if (kept.length === 3) break;
   }
 
-  return { title: 'What the practices surfaced', body, kept };
+  return { overline: MONTHLY_PRACTICES_OVERLINE, title: 'What the practices surfaced', body, kept };
 }

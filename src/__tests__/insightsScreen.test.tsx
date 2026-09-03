@@ -1,5 +1,5 @@
-// InsightsScreen — weekly generation on focus, card rendering (last week
-// only, no dismiss), empty state. Rendered inside a bare NavigationContainer: useNavigation
+// InsightsScreen — weekly generation on focus, last-week-only card
+// rendering (no dismiss), empty state. Rendered inside a bare NavigationContainer: useNavigation
 // falls back to the container ref (isFocused() === true), so useFocusEffect
 // fires on mount.
 
