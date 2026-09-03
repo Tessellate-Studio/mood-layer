@@ -17,7 +17,8 @@ import Svg, { Rect } from 'react-native-svg';
 import { familyPalette } from '@/constants/theme';
 import type { EmotionFamilyId } from '@/types/models';
 
-const BRAND_STACK: EmotionFamilyId[] = ['enjoyment', 'anger', 'contempt', 'sadness'];
+/** The brand stack, top band first — shared with the Quilt tab's focused mark. */
+export const BRAND_STACK: EmotionFamilyId[] = ['enjoyment', 'anger', 'contempt', 'sadness'];
 
 const VIEWBOX_SIZE = 240;
 

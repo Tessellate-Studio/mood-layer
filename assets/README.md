@@ -7,10 +7,9 @@ matches the UI. This is the primary mark from the identity canvas ("Mood Layer
 Logo" — amber · rose · mauve · blue), installed 2026-09-02 at the user's
 direction, replacing the three-band mark that shipped 2026-07-13 and was
 retuned twice (vivid/opaque on 2026-08-31 — "this is solid" — then a middle
-register earlier on 2026-09-02). The monochrome outlined variant
-(`icon_mono.svg`) was deliberately NOT installed — "not the black and white
-one" — so the in-app mono glyphs (`LogoDivider`, the Quilt `TabIcon`) still
-draw the old three-band outline.
+register earlier on 2026-09-02). The monochrome outline followed on
+2026-09-03 ("it needs to be 4 bands too"): `icon_mono.svg`, `LogoDivider` and
+the Quilt `TabIcon` draw the same four bands (`LOGO_BANDS` in `LogoMark.tsx`).
 
 ## What's in here
 ```
@@ -82,8 +81,8 @@ corners. Geometry (240 viewBox): top band x84 y48 w72, then x74 y80 w92, x64
 y112 w112, bottom x54 y144 w132, all h48 rx24 — each overlapping the one
 below by 16. The bare mark wraps the same bands in `scale(1.18)` about the
 centre so it spans ~65% of the canvas, sized for Android's adaptive mask.
-`icon_mono.svg` in this folder is the OLD three-band outline and is unused
-in-app (see the note at the top).
+`icon_mono.svg` is the same four bands outlined in `colors.ink` at
+`stroke-width 8` — the shape the Quilt tab and `LogoDivider` draw inline.
 `appicon_ink.svg`, `icon_mono.svg` and the `var_*` variants still show the old
 pastel geometry (tracked in BACKLOG).
 
