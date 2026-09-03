@@ -17,8 +17,30 @@ interface InsightState {
   cards: InsightCardState[];
   lastGeneratedWeekKey: string | null;
   generateForWeek(weekKey: string, stats: WeekStats): void;
-  dismissCard(id: string): void;
   clearAll(): void;
+}
+
+// Frozen as it stood at v1, on purpose — a migration describes the past.
+const RESISTANCE_IDS = ['stuck-decisions', 'looping-week', 'judgment-heavy'];
+
+/**
+ * Persist migration, exported so it runs against real stored records in
+ * tests. Idempotent, so it ignores the stored version: v1 gave cards a `kind`
+ * overline (backfilled from the templateId); v2 retired `dismissedAt` (cards
+ * are not dismissable, user 2026-09-03) — stripped so stored records match
+ * InsightCardState again.
+ */
+export function migrateInsights(persisted: unknown): InsightState {
+  const state = { ...((persisted ?? {}) as Record<string, unknown>) };
+  if (Array.isArray(state.cards)) {
+    state.cards = (state.cards as Record<string, unknown>[]).map(
+      ({ dismissedAt: _retired, ...card }) => ({
+        ...card,
+        kind: card.kind ?? (RESISTANCE_IDS.includes(card.templateId as string) ? 'resistance' : 'pattern'),
+      })
+    );
+  }
+  return state as unknown as InsightState;
 }
 
 export const useInsightStore = create<InsightState>()(
@@ -45,33 +67,15 @@ export const useInsightStore = create<InsightState>()(
           lastGeneratedWeekKey: weekKey,
         }));
       },
-      dismissCard: (id) =>
-        set((state) => ({
-          cards: state.cards.map((card) =>
-            card.id === id && !card.dismissedAt
-              ? { ...card, dismissedAt: new Date().toISOString() }
-              : card
-          ),
-        })),
+      // No dismissCard (user, 2026-09-03). The store keeps every week's
+      // cards; which weeks show is the screen's call.
       clearAll: () => set({ cards: [], lastGeneratedWeekKey: null }),
     }),
     {
       name: 'tml-insights',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 1,
-      // v1: cards gained a `kind` overline. Backfill from the templateId so a
-      // card generated before the redesign still shows the right shelf.
-      migrate: (persisted, version) => {
-        const state = (persisted ?? {}) as Record<string, unknown>;
-        const RESISTANCE_IDS = ['stuck-decisions', 'looping-week', 'judgment-heavy'];
-        if (version < 1 && Array.isArray(state.cards)) {
-          state.cards = (state.cards as Record<string, unknown>[]).map((card) => ({
-            ...card,
-            kind: card.kind ?? (RESISTANCE_IDS.includes(card.templateId as string) ? 'resistance' : 'pattern'),
-          }));
-        }
-        return state as unknown as InsightState;
-      },
+      version: 2,
+      migrate: migrateInsights,
     }
   )
 );

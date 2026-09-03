@@ -112,6 +112,28 @@ describe('monthlyPracticeDigest', () => {
     expect(reflection!.body).toContain('worried was waiting 2 times');
   });
 
+  it('breaks the sitting count onto its own line, ahead of the reflection invite', () => {
+    // One sitting, one feeling named once — below the topFeeling>=2 threshold,
+    // so this exercises the plain count-line branch.
+    const entries: JudgmentEntry[] = [
+      {
+        id: 'j-only',
+        createdAt: new Date(2026, 6, 12, 20).toISOString(),
+        target: 'myself',
+        judgment: 'being slow',
+        uncoveredFeelings: [{ emotionId: 'worried', family: 'fear', intensity: 2 }],
+        sittingId: 's1',
+      },
+    ];
+    const reflection = monthlyPracticeReflection([], entries, NOW);
+    expect(reflection).not.toBeNull();
+    // The count sentence and the invitation read as two separate lines, not
+    // one run-on paragraph — the invitation is worth a beat on its own.
+    expect(reflection!.body).toBe(
+      '1 judgment sitting this month.\n\nNaming what sits underneath is the whole practice — the rest can wait.'
+    );
+  });
+
   it('keeps the actual CONCLUSIONS of recent sittings, newest first', () => {
     const reflection = monthlyPracticeReflection(
       [

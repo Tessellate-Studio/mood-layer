@@ -316,7 +316,10 @@ export default function QuiltScreen() {
                   contentContainerStyle={styles.sheetScrollContent}
                   showsVerticalScrollIndicator={false}
                 >
-                <Text style={styles.sheetTitle}>{buildTitle(selected)}</Text>
+                <View style={styles.sheetHeader} testID="patch-detail-header">
+                  <Text style={styles.sheetTitle}>{buildTitle(selected)}</Text>
+                  <Text style={styles.stitchedAt}>{layeredTime(selected.createdAt)}</Text>
+                </View>
                 {selected.emotions.map((sel, i) => (
                   <View key={`${sel.emotionId}-${i}`} style={styles.emotionRow}>
                     <View
@@ -339,7 +342,6 @@ export default function QuiltScreen() {
                     ))}
                   </View>
                 ) : null}
-                <Text style={styles.stitchedAt}>{layeredTime(selected.createdAt)}</Text>
                 {uniqueFamilies(selected).map((fam) => (
                   <Pressable
                     key={fam}
@@ -367,16 +369,11 @@ export default function QuiltScreen() {
   );
 }
 
-/** The patch a11y label doubles as the detail title (weekday + parts + words). */
+/** The detail sheet's title. The words themselves are already listed as
+ * rows below (word + swatch + intensity) — repeating them here read as the
+ * same list twice, so the title now names only the day. */
 function buildTitle(checkIn: CheckIn): string {
-  // computeQuiltLayout stamps a11yLabel onto patch layouts, but the detail
-  // sheet reads the raw CheckIn — rebuild the same human sentence here.
-  const d = new Date(checkIn.createdAt);
-  const weekday = d.toLocaleDateString(undefined, { weekday: 'long' });
-  const words = checkIn.emotions
-    .map((s) => `${wordLabel(s.emotionId).toLowerCase()} ${s.intensity}`)
-    .join(', ');
-  return `${weekday}: ${words}`;
+  return new Date(checkIn.createdAt).toLocaleDateString(undefined, { weekday: 'long' });
 }
 
 const styles = StyleSheet.create({
@@ -462,9 +459,15 @@ const styles = StyleSheet.create({
   sheetScrollContent: {
     gap: spacing.sm,
   },
+  sheetHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
   sheetTitle: {
     ...typography.heading,
-    marginBottom: spacing.xs,
   },
   emotionRow: {
     flexDirection: 'row',
@@ -499,7 +502,6 @@ const styles = StyleSheet.create({
   },
   stitchedAt: {
     ...typography.caption,
-    marginTop: spacing.sm,
   },
   aboutLink: {
     minHeight: hitTarget,

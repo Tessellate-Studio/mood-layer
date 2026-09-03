@@ -4,7 +4,7 @@
 // assert the RENDERED contract (testIDs, a11y labels, press behaviour).
 
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import Svg from 'react-native-svg';
 
@@ -200,5 +200,19 @@ describe('QuiltScreen', () => {
     expect(screen.getByText('tight chest')).toBeTruthy();
     // One "about" affordance per unique family in the patch.
     expect(screen.getByTestId('about-anger')).toBeTruthy();
+  });
+
+  it('detail header names the day once and carries the timestamp — no duplicate emotion list', async () => {
+    seedToday();
+    renderScreen();
+    fireEvent.press(await screen.findByTestId('patch-today-2'));
+    const header = await screen.findByTestId('patch-detail-header');
+    // The title used to repeat every emotion + intensity (e.g. "irritated
+    // 2") on top of the per-row breakdown already shown below it.
+    expect(within(header).queryByText(/irritated 2/i)).toBeNull();
+    // The timestamp now lives in the header, same font as before.
+    expect(within(header).getByText(/^layered \d{2}:\d{2}$/)).toBeTruthy();
+    // The per-row breakdown still names the word exactly once.
+    expect(screen.getAllByText('Irritated')).toHaveLength(1);
   });
 });

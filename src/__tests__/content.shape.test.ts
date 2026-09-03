@@ -14,7 +14,14 @@ import {
 } from '@/content/emotions';
 import { EMOTION_HELPERS } from '@/content/helpers';
 import { RESISTANCE_TELLS } from '@/content/resistance';
-import { INSIGHT_TEMPLATES } from '@/content/insights';
+import * as insightsContent from '@/content/insights';
+import {
+  INSIGHTS_FOOTER,
+  INSIGHTS_HEADER_TITLE,
+  INSIGHTS_OVERLINE_PATTERN,
+  INSIGHT_TEMPLATES,
+} from '@/content/insights';
+import { MONTHLY_PRACTICES_OVERLINE, MONTHLY_TEXTURE_OVERLINE } from '@/content/monthlyDigest';
 import { JUDGMENT_EXAMPLES } from '@/content/judgmentExamples';
 import { ONBOARDING_SLIDES } from '@/content/onboarding';
 import { CHECK_IN_COPY } from '@/content/checkInCopy';
@@ -419,6 +426,56 @@ describe('insight templates', () => {
     expect(fluid).toBeDefined();
     const { body } = fluid!.render(maxedStats);
     expect(body).toContain(String(maxedStats.distinctEmotionIds.length));
+  });
+
+  it('describes the completed week accurately — cards render for last week, never claim "this week"', () => {
+    // insightEngine always generates for previousWeekKey (a fully completed
+    // week), so the copy must say "last week", not "this week" — otherwise
+    // the card reads as describing check-ins that haven't happened yet.
+    for (const template of INSIGHT_TEMPLATES) {
+      const { title, body } = template.render(maxedStats);
+      expect(title.toLowerCase()).not.toContain('this week');
+      expect(body.toLowerCase()).not.toContain('this week');
+      expect(body.toLowerCase()).toContain('last week');
+    }
+  });
+
+  it('co-occurrence card names the two families grammatically, not "something <noun>"', () => {
+    const coOccurrence = INSIGHT_TEMPLATES.find((t) => t.id === 'co-occurrence');
+    expect(coOccurrence).toBeDefined();
+    const fixture = TEMPLATE_FIXTURES['co-occurrence'];
+    const { body } = coOccurrence!.render(fixture);
+    expect(body).not.toMatch(/something [a-z]+ and something [a-z]+/i);
+  });
+
+  it('footer explains the sparseness without exposing the mechanics', () => {
+    // "Two a week, at most" was the builder's view of the page, not the
+    // reader's (user, 2026-09-02) — the footer says why the page is sparse
+    // and points back to the layers, in layer language, no numbers.
+    expect(INSIGHTS_FOOTER.length).toBeGreaterThan(0);
+    expect(INSIGHTS_FOOTER).not.toContain('!');
+    expect(INSIGHTS_FOOTER.toLowerCase()).not.toMatch(/two a week|at most|\d/);
+    expect(INSIGHTS_FOOTER.toLowerCase()).toContain('layers');
+  });
+
+  it('every Insights screen string is non-empty and stays gentle', () => {
+    // All of the screen's own copy lives in content/insights.ts (copy rule,
+    // CLAUDE.md), so one review covers it — picked up by prefix, so a new
+    // string cannot be forgotten here.
+    const strings = Object.entries(insightsContent)
+      .filter(([name, value]) => name.startsWith('INSIGHTS_') && typeof value === 'string')
+      .map(([, value]) => value as string);
+    expect(strings.length).toBeGreaterThanOrEqual(8);
+    for (const s of strings) {
+      expect(s.length).toBeGreaterThan(0);
+      expect(s).not.toContain('!');
+    }
+    // The pattern overline names the same window as the header.
+    expect(INSIGHTS_OVERLINE_PATTERN).toContain(INSIGHTS_HEADER_TITLE);
+    // The month cards' overlines live with the titles they label and name
+    // their window too: the rolling 30 days.
+    expect(MONTHLY_TEXTURE_OVERLINE).toMatch(/^This month/);
+    expect(MONTHLY_PRACTICES_OVERLINE).toMatch(/^This month/);
   });
 });
 

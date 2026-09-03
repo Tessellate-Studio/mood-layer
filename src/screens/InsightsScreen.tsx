@@ -6,7 +6,7 @@
 // emphasised. Capped at two a week — an invitation, never a diagnosis.
 
 import React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import Animated, {
   useAnimatedStyle,
@@ -15,21 +15,30 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Line } from 'react-native-svg';
 
-import { borderRadius, colors, hitTarget, motion, spacing, typography } from '@/constants/theme';
+import { borderRadius, colors, motion, spacing, typography } from '@/constants/theme';
 import LogoDivider from '@/components/LogoDivider';
 import LogoMark from '@/components/LogoMark';
 import PaperTexture from '@/components/PaperTexture';
 import CoachNote from '@/components/CoachNote';
 import ThreadCard from '@/components/ThreadCard';
+import {
+  INSIGHTS_EMPTY_CAPTION,
+  INSIGHTS_EMPTY_MONTH_BELOW,
+  INSIGHTS_EMPTY_NO_PATTERN,
+  INSIGHTS_EMPTY_QUIET_WEEK,
+  INSIGHTS_FOOTER,
+  INSIGHTS_HEADER_TITLE,
+  INSIGHTS_OVERLINE_PATTERN,
+  INSIGHTS_OVERLINE_RESISTANCE,
+} from '@/content/insights';
 import { monthlyMoodDigest, monthlyPracticeReflection } from '@/content/monthlyDigest';
 import { RESISTANCE_TELLS } from '@/content/resistance';
 import { useMotion } from '@/hooks/useMotion';
 import { useCheckInStore } from '@/store/checkInStore';
 import { useExperimentStore } from '@/store/experimentStore';
 import { useInsightStore } from '@/store/insightStore';
-import type { EmotionFamilyId, InsightCardState, WeekStats } from '@/types/models';
+import type { EmotionFamilyId, InsightCardState } from '@/types/models';
 import { previousWeekKey, weekKey, weekRangeLabel } from '@/utils/dates';
 import { computeStatsForWeek } from '@/utils/insightEngine';
 
@@ -37,8 +46,8 @@ import { computeStatsForWeek } from '@/utils/insightEngine';
 const STAGGER_MS = 90;
 
 const OVERLINE: Record<InsightCardState['kind'], string> = {
-  pattern: 'This week · Pattern',
-  resistance: 'Gentle notice · Resistance',
+  pattern: INSIGHTS_OVERLINE_PATTERN,
+  resistance: INSIGHTS_OVERLINE_RESISTANCE,
 };
 
 // Muted-layer treatment: each card kind is its own layer. Patterns wear the
@@ -77,16 +86,15 @@ function ResistanceTells({ fired }: { fired: Set<string> }) {
 
 function InsightCard({
   card,
-  stats,
+  fired,
   index,
   reduceMotion,
-  onDismiss,
 }: {
   card: InsightCardState;
-  stats: WeekStats | undefined;
+  /** Resistance tells that fired that week — a resistance card emphasises them. */
+  fired: Set<string>;
   index: number;
   reduceMotion: boolean;
-  onDismiss: () => void;
 }) {
   const opacity = useSharedValue(reduceMotion ? 1 : 0);
   const translateY = useSharedValue(reduceMotion ? 0 : 10);
@@ -107,33 +115,10 @@ function InsightCard({
     transform: [{ translateY: translateY.value }],
   }));
 
-  const fired = React.useMemo(() => {
-    if (!stats) return new Set<string>();
-    return new Set(
-      Object.entries(stats.resistanceCounts)
-        .filter(([, count]) => count > 0)
-        .map(([id]) => id)
-    );
-  }, [stats]);
-
   return (
     <Animated.View style={entryStyle}>
       <ThreadCard family={CARD_FAMILY[card.kind]} style={styles.cardBody}>
-        <View style={styles.cardHeader}>
-          <Text style={styles.overline}>{OVERLINE[card.kind]}</Text>
-          <Pressable
-            testID={`insight-dismiss-${card.id}`}
-            accessibilityRole="button"
-            accessibilityLabel="Dismiss insight"
-            style={styles.dismiss}
-            onPress={onDismiss}
-          >
-            <Svg width={14} height={14} viewBox="0 0 14 14">
-              <Line x1={2} y1={2} x2={12} y2={12} stroke={colors.inkMuted} strokeWidth={1.5} strokeLinecap="round" />
-              <Line x1={12} y1={2} x2={2} y2={12} stroke={colors.inkMuted} strokeWidth={1.5} strokeLinecap="round" />
-            </Svg>
-          </Pressable>
-        </View>
+        <Text style={typography.overline}>{OVERLINE[card.kind]}</Text>
         <Text style={styles.cardTitle}>{card.title}</Text>
         {card.kind === 'resistance' ? <ResistanceTells fired={fired} /> : null}
         <Text style={styles.cardText}>{card.body}</Text>
@@ -145,7 +130,6 @@ function InsightCard({
 export default function InsightsScreen() {
   const insets = useSafeAreaInsets();
   const cards = useInsightStore((s) => s.cards);
-  const dismissCard = useInsightStore((s) => s.dismissCard);
   const checkIns = useCheckInStore((s) => s.checkIns);
   const judgmentEntries = useExperimentStore((s) => s.judgmentEntries);
   const practiceSessions = useExperimentStore((s) => s.practiceSessions);
@@ -168,22 +152,34 @@ export default function InsightsScreen() {
     }, [])
   );
 
-  // Newest week first; ISO 'GGGG-Www' keys sort correctly as strings.
-  const visible = cards
-    .filter((card) => !card.dismissedAt)
-    .sort((a, b) => b.weekKey.localeCompare(a.weekKey));
+  // Only LAST week's cards show — the header says "Last week", and cards are
+  // not dismissable (user, 2026-09-03), so without this bound the list would
+  // grow by two every week. Gate on the calendar, not on the newest stored
+  // card: after a week too quiet to generate, the newest card is two weeks
+  // old and must not sit under that header — the empty state shows instead.
+  // Older cards stay in the store, unread here, for a later variety pass.
+  const lastWeek = previousWeekKey(new Date());
+  const visible = cards.filter((card) => card.weekKey === lastWeek);
+  const hasCards = visible.length > 0;
 
-  // Stats for each week that has a visible card — the header summary reads the
-  // newest, and resistance cards read theirs for the fired-tell emphasis.
-  const statsByWeek = React.useMemo(() => {
-    const weeks = new Set(visible.map((c) => c.weekKey));
-    const map: Record<string, WeekStats> = {};
-    for (const wk of weeks) map[wk] = computeStatsForWeek(checkIns, judgmentEntries, wk);
-    return map;
-  }, [visible, checkIns, judgmentEntries]);
+  // Last week's stats: the header summary reads them, and a resistance card
+  // reads them for the fired-tell emphasis. Undefined while nothing shows, so
+  // the header stays bare in the empty state.
+  const summaryStats = React.useMemo(
+    () => (hasCards ? computeStatsForWeek(checkIns, judgmentEntries, lastWeek) : undefined),
+    [hasCards, lastWeek, checkIns, judgmentEntries]
+  );
 
-  const newestWeek = visible[0]?.weekKey;
-  const summaryStats = newestWeek ? statsByWeek[newestWeek] : undefined;
+  // Which resistance tells fired that week — derived once here, not per card.
+  const firedTells = React.useMemo(
+    () =>
+      new Set(
+        Object.entries(summaryStats?.resistanceCounts ?? {})
+          .filter(([, count]) => count > 0)
+          .map(([id]) => id)
+      ),
+    [summaryStats]
+  );
 
   // The week's mood, worn by the same mark the home screen breathes — the two
   // screens read as one system (user, 2026-07-17).
@@ -208,7 +204,7 @@ export default function InsightsScreen() {
       <View style={styles.monthly} testID="insights-monthly">
         {moodDigest ? (
           <ThreadCard family="enjoyment" style={styles.cardBody}>
-            <Text style={styles.overline}>This month · Texture</Text>
+            <Text style={typography.overline}>{moodDigest.overline}</Text>
             <View style={styles.monthlyHeader}>
               <LogoMark families={moodDigest.families} size={40} />
               <Text style={[styles.cardTitle, styles.monthlyTitle]}>{moodDigest.title}</Text>
@@ -218,14 +214,14 @@ export default function InsightsScreen() {
         ) : null}
         {practiceReflection ? (
           <ThreadCard family="contempt" style={styles.cardBody}>
-            <Text style={styles.overline}>This month · Practices</Text>
+            <Text style={typography.overline}>{practiceReflection.overline}</Text>
             <Text style={styles.cardTitle}>{practiceReflection.title}</Text>
             <Text style={styles.cardText}>{practiceReflection.body}</Text>
             {practiceReflection.kept.length > 0 ? (
               <View style={styles.keptList}>
                 {practiceReflection.kept.map((k, i) => (
                   <View key={i} style={styles.keptRow}>
-                    <Text style={styles.keptPractice}>{k.practice}</Text>
+                    <Text style={typography.overline}>{k.practice}</Text>
                     <Text style={styles.cardText}>{k.conclusion}</Text>
                   </View>
                 ))}
@@ -244,10 +240,7 @@ export default function InsightsScreen() {
     () => computeStatsForWeek(checkIns, judgmentEntries, weekKey(new Date().toISOString())).checkInCount,
     [checkIns, judgmentEntries]
   );
-  const emptyText =
-    thisWeekCount === 0
-      ? 'A quiet week so far — your first check-in starts this week’s layers.'
-      : 'Checked in, but no clear pattern has surfaced yet — insights stay quiet until one does.';
+  const emptyText = thisWeekCount === 0 ? INSIGHTS_EMPTY_QUIET_WEEK : INSIGHTS_EMPTY_NO_PATTERN;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-insights">
@@ -255,17 +248,17 @@ export default function InsightsScreen() {
       <View style={styles.headerRow}>
         {markFamilies ? <LogoMark families={markFamilies} size={44} /> : null}
         <View style={styles.headerText}>
-          <Text style={typography.title}>This week</Text>
+          <Text style={typography.title}>{INSIGHTS_HEADER_TITLE}</Text>
           {summaryStats ? (
             <Text style={styles.summary} testID="insights-summary">
-              {weekRangeLabel(newestWeek!)} · {plural(summaryStats.checkInCount, 'check-in', 'check-ins')}{' '}
+              {weekRangeLabel(lastWeek)} · {plural(summaryStats.checkInCount, 'check-in', 'check-ins')}{' '}
               across {plural(summaryStats.activeDayCount, 'day', 'days')}
             </Text>
           ) : null}
         </View>
       </View>
 
-      {visible.length === 0 ? (
+      {!hasCards ? (
         <FlatList
           data={[] as InsightCardState[]}
           renderItem={() => null}
@@ -276,8 +269,8 @@ export default function InsightsScreen() {
                 {emptyText}
               </Text>
               <Text style={styles.emptyCaption}>
-                Patterns appear here once a week, when there are enough layers to read.
-                {monthlyBlock ? ' Your month is below.' : ''}
+                {INSIGHTS_EMPTY_CAPTION}
+                {monthlyBlock ? ` ${INSIGHTS_EMPTY_MONTH_BELOW}` : ''}
               </Text>
             </View>
           }
@@ -291,16 +284,15 @@ export default function InsightsScreen() {
           renderItem={({ item, index }) => (
             <InsightCard
               card={item}
-              stats={statsByWeek[item.weekKey]}
+              fired={firedTells}
               index={index}
               reduceMotion={reduceMotion}
-              onDismiss={() => dismissCard(item.id)}
             />
           )}
           ListFooterComponent={
             <View testID="insights-footer">
               {monthlyBlock}
-              <LogoDivider tip="Insights stay gentle. Two a week, at most — the rest is just your layers, quietly building." />
+              <LogoDivider tip={INSIGHTS_FOOTER} />
             </View>
           }
         />
@@ -372,34 +364,11 @@ const styles = StyleSheet.create({
   keptRow: {
     gap: 2,
   },
-  keptPractice: {
-    ...typography.overline,
-  },
   cardBody: {
     gap: spacing.sm,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    // Top-aligned, not centred: the overline wraps next to a fixed control
-    // (elastic-layout rule, forge AP#22).
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-  },
-  overline: {
-    ...typography.overline,
-    flex: 1,
-  },
   cardTitle: {
     ...typography.heading,
-  },
-  dismiss: {
-    minWidth: hitTarget,
-    minHeight: hitTarget,
-    alignItems: 'center',
-    justifyContent: 'center',
-    // Pull the 44px target into the card's corner without inflating layout.
-    marginTop: -spacing.sm,
-    marginRight: -spacing.sm,
   },
   cardText: {
     ...typography.body,
