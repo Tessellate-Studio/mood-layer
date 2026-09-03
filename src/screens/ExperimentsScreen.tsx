@@ -24,6 +24,7 @@ import LogoDivider from '@/components/LogoDivider';
 import PaperTexture from '@/components/PaperTexture';
 import CoachNote from '@/components/CoachNote';
 import SectionHeader from '@/components/SectionHeader';
+import { useMeasuredHeight } from '@/hooks/useMeasuredHeight';
 import ThreadCard from '@/components/ThreadCard';
 import { JUDGMENT_FAMILY, PRACTICE_FAMILY, PRACTICES } from '@/content/practices';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
@@ -67,6 +68,7 @@ export default function ExperimentsScreen() {
   const judgmentEntries = useExperimentStore((s) => s.judgmentEntries);
   const practiceSessions = useExperimentStore((s) => s.practiceSessions);
   const reflectionCount = groupSittings(judgmentEntries).length + practiceSessions.length;
+  const [headerHeight, onHeaderLayout] = useMeasuredHeight();
 
   return (
     // ScrollView sits inside a plain container so the paper grain stays fixed
@@ -78,7 +80,7 @@ export default function ExperimentsScreen() {
         keyboardShouldPersistTaps="handled"
         testID="screen-experiments"
       >
-        <Text style={typography.title}>Experiments</Text>
+        <Text style={typography.title} onLayout={onHeaderLayout}>Experiments</Text>
         <Text style={styles.intro}>
           Small practices for meeting what&apos;s here. Take one when it calls — none are homework.
         </Text>
@@ -214,9 +216,8 @@ export default function ExperimentsScreen() {
         <LogoDivider tip="Nothing here is a test. Come back to a practice whenever it calls; the rest can wait." />
       </ScrollView>
 
-      {/* First-visit helper note, floating below the title, above the
-          practices list. topOffset clears the title at the post-bump scale. */}
-      <CoachNote id="note-experiments" topOffset={48} family={JUDGMENT_FAMILY} />
+      {/* First-visit helper note, floating under the measured title row. */}
+      <CoachNote id="note-experiments" topOffset={headerHeight} family={JUDGMENT_FAMILY} />
     </View>
   );
 }

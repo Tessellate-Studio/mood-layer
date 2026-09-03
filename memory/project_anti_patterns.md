@@ -51,3 +51,25 @@ numbered entries get added as they're earned.
    `onLongPress` to opening the family helper sheet — so every new surface
    that reuses the component is correct by default instead of by someone
    remembering.
+9. **A floating element's position is measured, never typed** (earned
+   2026-09-03; third row on one theme — regression #24, #27, and the
+   Insights/Circle coach-note mismatch). A number that happens to equal the
+   header's height at today's type scale is a drift waiting for the next +1px
+   commit, a wrapped title, or a bigger system font — and it drifts per
+   screen, which is how the same note sat above the header on one tab and
+   below it on another. The thing a float sits under reports its own height
+   through `onLayout` (`useMeasuredHeight`), and the float positions from
+   that. `noHandTunedOffsets.test.ts` bans a numeric `topOffset` in any
+   screen at the source level, the way `noStitchLines.test.ts` bans dashes.
+10. **Reading text is never below `body`** (earned 2026-09-03; user: the
+    check-in flow "looks too tiny", the field guide "slightly less so").
+    The type tokens are a hierarchy, not a size menu: `caption` (13) is for
+    metadata — timestamps, counts, a colophon — `label` (15) for controls and
+    legends the eye scans, `body` (16) and up for anything the reader has to
+    read to understand or proceed. A hint that gates Continue, a family's
+    essence, a folded preview line are reading text; setting them in
+    `caption` because they are "secondary" makes the page's most-used words
+    its smallest. Quietness is expressed with `inkSoft`/`inkMuted` colour at
+    body size, not with a smaller face. `checkInFlowScreen.test.tsx` and
+    `fieldGuideScreen.test.tsx` pin the sizes on the elements that prompted
+    this.

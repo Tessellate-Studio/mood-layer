@@ -33,6 +33,7 @@ import { borderRadius, colors, familyPalette, hitTarget, spacing, typography } f
 import PaperTexture from '@/components/PaperTexture';
 import { BODY_MAP } from '@/content/bodyMap';
 import { CHECK_IN_COPY } from '@/content/checkInCopy';
+import { useMeasuredHeight } from '@/hooks/useMeasuredHeight';
 import { EMOTION_FAMILIES, MASKING_STATES, type EmotionWord } from '@/content/emotions';
 import { noteReflection } from '@/content/noteReflection';
 import { allWordsForFamily, findVocabularyWord } from '@/content/vocabulary';
@@ -114,8 +115,8 @@ export default function CheckInFlowScreen() {
   const [openFamily, setOpenFamily] = React.useState<EmotionFamilyId | null>(null);
   // Measured, not guessed: the floating hint sits on top of the footer's real
   // height, and the scroll pads by the hint's real height.
-  const [footerHeight, setFooterHeight] = React.useState(0);
-  const [hintHeight, setHintHeight] = React.useState(0);
+  const [footerHeight, onFooterLayout] = useMeasuredHeight();
+  const [hintHeight, onHintLayout] = useMeasuredHeight();
 
   const title = source === 'name-it' && state.step === 'feel' ? 'Can you name it?' : STEP_TITLES[state.step];
   const stepIndex = STEP_ORDER.indexOf(state.step);
@@ -207,7 +208,7 @@ export default function CheckInFlowScreen() {
           testID="feel-hint-float"
           style={[styles.hintFloat, { bottom: footerHeight + spacing.xs }]}
           pointerEvents="none"
-          onLayout={(e) => setHintHeight(e.nativeEvent.layout.height)}
+          onLayout={onHintLayout}
         >
           <NoteCard family={noteFamily}>
             <Text
@@ -223,7 +224,7 @@ export default function CheckInFlowScreen() {
 
       <View
         style={[styles.footer, { paddingBottom: insets.bottom + spacing.md }]}
-        onLayout={(e) => setFooterHeight(e.nativeEvent.layout.height)}
+        onLayout={onFooterLayout}
       >
         {stepIndex > 0 && state.step !== 'stitch' ? (
           <Pressable testID="flow-back" accessibilityRole="button" style={styles.backBtn} onPress={goBack}>
@@ -314,7 +315,7 @@ function FeelStep({
   };
   return (
     <View style={styles.stepGap}>
-      <Text style={styles.feelHint}>{CHECK_IN_COPY.feelHint}</Text>
+      <Text style={typography.body}>{CHECK_IN_COPY.feelHint}</Text>
       {/* "Hold any word…" no longer sits here as a permanent line — it floats
           up as the 'explore' note when a family unfolds (user, 2026-09-02).
           The guide's doorway is the same one the empty home screen shows. */}
@@ -516,7 +517,7 @@ function BodyStep({ state, setState }: StepProps) {
   const custom = state.bodySensations.filter((b) => !mapped.has(b));
   return (
     <View style={styles.stepGap}>
-      <Text style={styles.feelHint}>
+      <Text style={typography.body}>
         Sensations are clues — scan slowly from head to feet and tap what you find.
       </Text>
       {BODY_MAP.map((area) => (
@@ -672,12 +673,10 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: spacing.sm,
   },
+  // Reading text never below body (anti-pattern #10).
   maskingIntro: {
-    ...typography.caption,
+    ...typography.body,
     marginTop: spacing.sm,
-  },
-  feelHint: {
-    ...typography.caption,
   },
   underneathPanel: {
     backgroundColor: colors.paperRaised,
@@ -698,7 +697,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   underneathHint: {
-    ...typography.caption,
+    ...typography.body,
     color: colors.inkMuted,
   },
   hintFloat: {
@@ -707,7 +706,7 @@ const styles = StyleSheet.create({
     right: spacing.md,
   },
   continueHint: {
-    ...typography.caption,
+    ...typography.body,
     color: colors.inkSoft,
     textAlign: 'center',
   },
@@ -765,7 +764,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
   },
   stitchWords: {
-    ...typography.caption,
+    ...typography.body,
     textAlign: 'center',
   },
   footer: {

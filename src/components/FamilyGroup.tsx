@@ -2,8 +2,10 @@
 // quiet preview line) that unfolds its word chips on tap. Born from user
 // feedback (2026-07-13): nine fully-open families read as a wall of ~50
 // chips — exactly wrong for someone already overwhelmed. Folded is the calm
-// default; the preview hints at the range without asking to be read. The
-// preview stays inkMuted (7:1), never a sub-AA fade — contrast is a hard rule.
+// default; the preview hints at the range without asking to be read. It is
+// still reading text, so it sits at body size in the body token's inkSoft
+// (anti-pattern #10) — quiet by colour, never by a smaller face, and never a
+// sub-AA fade; contrast is a hard rule.
 
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -46,7 +48,7 @@ export function FamilyGroup({ family, expanded, onToggle, testID, preview, pinne
               the naming, teaching the family↔hue pairing the quilt uses. */}
           <SectionHeader family={family.id} label={family.label} />
           {!expanded ? (
-            <Text style={styles.preview} numberOfLines={1}>
+            <Text style={typography.body} numberOfLines={1}>
               {previewText}
             </Text>
           ) : null}
@@ -74,9 +76,6 @@ const styles = StyleSheet.create({
   headerText: {
     flex: 1,
     gap: spacing.xs,
-  },
-  preview: {
-    ...typography.caption,
   },
   toggle: {
     ...typography.heading,

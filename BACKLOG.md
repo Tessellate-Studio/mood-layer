@@ -55,18 +55,17 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
   under CLAUDE.md sizing → `/forge:plan` first; the forge skills were not
   loaded in the 2026-09-03 session, so no pitch doc exists yet.
 
-- **Insights-report follow-ups (2026-09-03)** — three items from the same
-  report, one PR after #97. (a) The check-in flow's type reads too small: it
-  leans on the small tokens (11 caption/label/overline uses vs 5 body/heading;
-  the field guide is 6 vs 10) — decide which get promoted to body. (b)
-  `CoachNote`'s `topOffset` is five hand-tuned numbers (Insights 68, Circle
-  100, Layers 48, Experiments 48, Field guide 108; `CoachNote.tsx:80`) — the
-  reason the note sits above the header on one screen and below it on
-  another. Measure the header with `onLayout` as regression #27 did for the
-  check-in hint; that makes hand-tuned offsets a three-row theme (#24, #27,
-  this) → promote to `memory/project_anti_patterns.md`. (c) Extend the
-  Settings / Field guide / Layers header-to-footer spacing to every screen,
-  empty and filled states — first extract what those three actually share.
+- ~~**Insights-report follow-ups (2026-09-03)**~~ — **(a) and (b) shipped
+  2026-09-03, PR #99**, with the month card on the weekly pattern and every
+  mark tinted by the current mood from the same review. (a) became
+  anti-pattern #10 (reading text never below `body`; check-in flow hints and
+  field-guide essences, previews, footer → body, the family key → label).
+  (b) became anti-pattern #9 (`useMeasuredHeight` on every screen's title
+  row; `noHandTunedOffsets.test.ts`; regression log #31).
+  **Still open — (c):** extend the Settings / Field guide / Layers
+  header-to-footer spacing to every screen, empty and filled states — first
+  extract what those three actually share. Not started; the note rule fixed
+  the one empty-state inconsistency the user named, not the general spacing.
 
 - **Usage analytics — third sanctioned-exception decision needed** — rubric
   not yet scored (no `evaluateFromContext` run against this entry). User wants
@@ -148,6 +147,15 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
   post-launch is reasonable. *Owner: user. How-to: `docs/manual-runbook.md`.*
 
 ## P3 — later
+
+- **CoachNote owns its anchor** — today every screen wires
+  `useMeasuredHeight` + `onLayout` on its title row and passes
+  `topOffset={headerHeight}`, with `noHandTunedOffsets.test.ts` guarding the
+  seam by source scan. The deeper form (simplify review, 2026-09-03): the note
+  takes the title row as a render-prop or a `CoachNote.Header` wrapper that
+  reports its height through context, so a screen cannot mount a note without
+  a measured anchor and `topOffset` leaves the public props. Worth it the next
+  time a sixth screen gets a note; not before.
 
 - **A pause after "take a moment" cards — timer, reminder, or reward** —
   user, 2026-09-03: backlog for now. When an insight invites the reader to

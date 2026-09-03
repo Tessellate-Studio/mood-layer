@@ -8,6 +8,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react-native
 import { NavigationContainer } from '@react-navigation/native';
 import Svg from 'react-native-svg';
 
+import LogoMark from '@/components/LogoMark';
 import QuiltPatch, { PatchPreview } from '@/components/QuiltPatch';
 import QuiltWeek from '@/components/QuiltWeek';
 import QuiltScreen from '@/screens/QuiltScreen';
@@ -179,6 +180,15 @@ describe('QuiltScreen', () => {
     renderScreen();
     expect(await screen.findByTestId('patch-today-1')).toBeTruthy();
     expect(screen.getByTestId('patch-today-2')).toBeTruthy();
+  });
+
+  it('tints the header field-guide mark by this week’s prominent mood', async () => {
+    seedToday();
+    renderScreen();
+    const button = await screen.findByTestId('header-field-guide');
+    // sadness (today-1) and anger (today-2), one each — anger first on the tie.
+    // Same families the weekly-summary mark wears: one mood, every mark.
+    expect(within(button).UNSAFE_getByType(LogoMark).props.families).toEqual(['anger', 'sadness']);
   });
 
   it('shows the weekly summary once check-ins exist this week', async () => {

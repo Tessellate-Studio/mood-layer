@@ -36,7 +36,14 @@ import type { EmotionFamilyId } from '@/types/models';
 
 interface Props {
   id: CoachMarkId;
-  /** Height of the screen's own chrome above the note (header, title…). */
+  /**
+   * Height of the screen's title row above the note — MEASURED with
+   * `useMeasuredHeight` + `onLayout`, never typed (anti-pattern #9;
+   * `noHandTunedOffsets.test.ts` bans anything but a `…Height` value here).
+   * 0 means "not measured yet": the note stays invisible for that first
+   * frame so it appears once, in its final place, instead of drawing over the
+   * title and jumping down.
+   */
   topOffset: number;
   /** The screen's layer hue — tints the card; text stays ink. */
   family: EmotionFamilyId;
@@ -77,7 +84,13 @@ function CoachNoteCard({ id, topOffset, family }: Props) {
           onPress={dismiss}
         />
       </Animated.View>
-      <View style={[styles.frame, { top: insets.top + spacing.md + topOffset }]}>
+      <View
+        style={[
+          styles.frame,
+          { top: insets.top + spacing.md + topOffset, opacity: topOffset > 0 ? 1 : 0 },
+        ]}
+        testID={`coach-frame-${id}`}
+      >
         <Pressable
           testID={`coach-dismiss-${id}`}
           accessibilityRole="button"

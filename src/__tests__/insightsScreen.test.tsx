@@ -4,9 +4,12 @@
 // fires on mount.
 
 import React from 'react';
-import { render, screen, within } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
+import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 
+import LogoMark from '@/components/LogoMark';
+import { spacing } from '@/constants/theme';
 import { INSIGHTS_FOOTER } from '@/content/insights';
 import InsightsScreen from '@/screens/InsightsScreen';
 import { useCheckInStore } from '@/store/checkInStore';
@@ -194,5 +197,44 @@ describe('InsightsScreen', () => {
     renderScreen();
     expect(await screen.findByText(/no clear pattern has surfaced yet/)).toBeTruthy();
     expect(screen.queryByText(/Not enough layers/)).toBeNull();
+  });
+
+  it('header mark wears the prominent current mood — last week’s while this week is empty', async () => {
+    useCheckInStore.setState({ checkIns: [1, 2, 3].map((n) => lastWeekCheckIn(n)) }); // fear
+    renderScreen();
+    const header = await screen.findByTestId('insights-header');
+    expect(within(header).UNSAFE_getByType(LogoMark).props.families).toEqual(['fear']);
+  });
+
+  it('header mark switches to this week as soon as something is layered in', async () => {
+    const now = new Date();
+    const thisWeek: CheckIn = {
+      id: 'tw-mood',
+      createdAt: now.toISOString(),
+      dayKey: now.toISOString().slice(0, 10),
+      emotions: [{ emotionId: 'glad', family: 'enjoyment', intensity: 2 }],
+      resistanceFlags: [],
+      source: 'manual',
+    };
+    useCheckInStore.setState({ checkIns: [thisWeek, lastWeekCheckIn(1)] });
+    renderScreen();
+    const header = await screen.findByTestId('insights-header');
+    expect(within(header).UNSAFE_getByType(LogoMark).props.families).toEqual(['enjoyment']);
+  });
+
+  it('coach note sits directly under the MEASURED header — never a typed offset', async () => {
+    useCheckInStore.setState({ checkIns: [1, 2, 3, 4].map((n) => lastWeekCheckIn(n)) });
+    renderScreen();
+    const header = await screen.findByTestId('insights-header');
+    // Before the measurement lands the note is present but invisible — it
+    // must appear once, in place, never draw over the title and jump.
+    const frame = screen.getByTestId('coach-frame-note-insights');
+    expect(StyleSheet.flatten(frame.props.style).opacity).toBe(0);
+    fireEvent(header, 'layout', { nativeEvent: { layout: { x: 0, y: 0, width: 320, height: 80 } } });
+    // The frame's top = safe-area top (0 under the jest mock) + the screen's
+    // own paddingTop + the measured header.
+    const measured = StyleSheet.flatten(frame.props.style);
+    expect(measured.top).toBe(spacing.md + 80);
+    expect(measured.opacity).toBe(1);
   });
 });

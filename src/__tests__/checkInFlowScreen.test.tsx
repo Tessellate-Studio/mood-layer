@@ -7,8 +7,8 @@ import { StyleSheet } from 'react-native';
 import { fireEvent, render, screen } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 
-import { motion } from '@/constants/theme';
-import { FEEL_NOTE_LOG_LIMIT } from '@/content/checkInCopy';
+import { motion, typography } from '@/constants/theme';
+import { CHECK_IN_COPY, FEEL_NOTE_LOG_LIMIT } from '@/content/checkInCopy';
 import CheckInFlowScreen from '@/screens/CheckInFlowScreen';
 import { useCheckInStore } from '@/store/checkInStore';
 import { useHelperSheetStore } from '@/store/helperSheetStore';
@@ -45,6 +45,23 @@ const renderScreen = () =>
   );
 
 describe('CheckInFlowScreen', () => {
+  it('sets the hints the reader has to read in body size, never caption (user, 2026-09-03: "too tiny")', () => {
+    // Rule: reading text is never below `body`; `caption` is for metadata
+    // (timestamps, counts, legends). The feel-step hint and the "set a
+    // temperature to continue" hint are read to proceed, so they are body.
+    renderScreen();
+    const feelHint = screen.getByText(CHECK_IN_COPY.feelHint);
+    expect(StyleSheet.flatten(feelHint.props.style).fontSize).toBeGreaterThanOrEqual(
+      typography.body.fontSize
+    );
+    fireEvent.press(screen.getByTestId('family-sadness'));
+    fireEvent.press(screen.getByTestId('chip-sad'));
+    const continueHint = screen.getByTestId('temperature-continue-hint');
+    expect(StyleSheet.flatten(continueHint.props.style).fontSize).toBeGreaterThanOrEqual(
+      typography.body.fontSize
+    );
+  });
+
   it('starts with families folded and unfolds one at a time', () => {
     renderScreen();
     // No word chips visible until a family is opened — the folded list is the
