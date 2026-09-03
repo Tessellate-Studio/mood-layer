@@ -255,6 +255,21 @@ two things trip up every session.
 The PC's LAN IP changes between sessions (DHCP), and this Wi-Fi ("ElectricSheep")
 sits on the **Public** firewall profile.
 
+**Either phone, the same Metro — and it is the ONLY way a change reaches an
+iPhone quickly.** This app has no over-the-air update path on either platform:
+`expo-updates` is not installed (verified in `package.json`, 2026-09-03), so a
+*built* app only changes when a new binary is installed — an APK on Android,
+TestFlight on iOS, and TestFlight is blocked below. Every screen here is plain
+JS, so Expo Go shows a JS change on an iPhone the moment Metro serves it: point
+the iOS **Camera** app at the QR in the Metro terminal, or type
+`exp://<current-ip>:8081` into Expo Go. Expo Go from the App Store only ever
+runs the CURRENT SDK, which is what this repo is on (SDK 55) — an older Expo Go
+refuses the bundle rather than showing a stale one.
+
+What Expo Go cannot show, on either phone: anything native — notifications
+(removed from Expo Go in SDK 53+, regression #4), the launcher icon, the
+splash, and the release fidelity of the shipped binary.
+
 **Steps:**
 
 1. Start Metro (`npx expo start`), then read the **current** PC IP — never reuse
