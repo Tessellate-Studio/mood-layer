@@ -40,6 +40,18 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
 
 ## P1 — do next
 
+- **Hold-to-learn opens the FAMILY's helper, not the WORD's** — not started,
+  design not decided; the user is thinking through the right shape. User,
+  2026-09-03: holding a word chip (say "wistful") shows the sadness family's
+  card — "What it means", body signature, etc. all describe sadness, not the
+  specific word held. "Which kinda is not the point. I need to think of how
+  to change this." Current architecture (`src/content/helpers.ts`,
+  `EMOTION_HELPERS: Record<EmotionFamilyId, …>`) has content ONLY at the
+  family level — there is no per-word content to show instead. Any fix is a
+  content-model decision (per-word copy for ~50+ words vs. a lighter
+  word-specific overlay on the family card vs. something else), not a
+  wiring fix — do not build ahead of the user's decision here.
+
 - **Insights: many more templates, with the words you actually logged woven
   in (Pitch)** — rubric not yet scored (no `evaluateFromContext` run against
   this entry). User, 2026-09-03: "a lot more variety, so it doesn't feel like
@@ -100,9 +112,15 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
   monochrome outline was first held back ("not the black and white one"),
   then brought to four bands too on 2026-09-03 ("it needs to be 4 bands
   too"): `icon_mono.svg`, `LogoDivider` and the Quilt `TabIcon` all draw
-  `LogoMark`'s `LOGO_BANDS`, so every drawing of the mark is one shape.
-  Verification moves to the device-test queue (the icons need a fresh APK —
-  no OTA path; the in-app drawings show in Expo Go).
+  `LogoMark`'s `LOGO_BANDS`, so every drawing of the mark is one shape. Then,
+  same day, the installed launcher icon read "too large and is being cut off
+  top and bottom" — the adaptive-foreground SVG had an erroneous
+  `scale(1.18)` (carried over by habit from the old three-band mark's
+  `scale(0.79)` shrink, never recomputed for the new geometry) that pushed
+  the mark past Android's ~66% adaptive-icon safe zone. Dropped — the bare
+  mark is the designer's bands unscaled, already 55%×60% of the canvas
+  (regression log #32). Verification moves to the device-test queue (the
+  icons need a fresh APK — no OTA path; the in-app drawings show in Expo Go).
 
 - **Clean on-device verification pass of the v0.2.0 redesign** — rubric **7/12**.
   Full walkthrough of Quilt cloth, Insights depth, Circle, judgment
