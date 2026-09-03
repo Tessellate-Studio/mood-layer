@@ -13,6 +13,7 @@ import ExperimentsScreen from '@/screens/ExperimentsScreen';
 import FieldGuideScreen from '@/screens/FieldGuideScreen';
 import { EMOTION_FAMILIES } from '@/content/emotions';
 import { UNDERNEATH_MAP } from '@/content/underneath';
+import { WORD_DEFINITIONS } from '@/content/wordDefinitions';
 import { useHelperSheetStore } from '@/store/helperSheetStore';
 import { useSettingsStore } from '@/store/settingsStore';
 
@@ -83,7 +84,7 @@ describe('FieldGuideScreen', () => {
     renderScreen(<FieldGuideScreen />);
     fireEvent.press(await screen.findByTestId('chip-state-anxious'));
     fireEvent.press(await screen.findByTestId('guide-learn-fear'));
-    expect(useHelperSheetStore.getState().family).toBe('fear');
+    expect(useHelperSheetStore.getState().target).toEqual({ kind: 'family', family: 'fear' });
   });
 
   it('tapping a second state swaps the open panel', async () => {
@@ -114,15 +115,20 @@ describe('FieldGuideScreen', () => {
     expect(screen.getByTestId('chip-word-timid')).toBeTruthy();
   });
 
-  it('tapping a word shows its family and intensity, with a learn link', async () => {
+  it('tapping a word shows ITS OWN situational definition and actions, not a strength phrase', async () => {
     renderScreen(<FieldGuideScreen />);
     // 'serene' is an extended enjoyment word from the wheel; unfold its family first.
     fireEvent.press(await screen.findByTestId('word-family-toggle-enjoyment'));
     fireEvent.press(screen.getByTestId('chip-word-serene'));
     const detail = await screen.findByTestId('word-detail-enjoyment');
     expect(detail).toBeTruthy();
-    fireEvent.press(screen.getByTestId('word-learn-enjoyment'));
-    expect(useHelperSheetStore.getState().family).toBe('enjoyment');
+    // "Enjoyment" also names the FamilyGroup's own section header above —
+    // assert at least one match, the family tag inside the detail panel.
+    expect(within(detail).getByText('Enjoyment')).toBeTruthy();
+    expect(screen.getByText(WORD_DEFINITIONS.serene.definition)).toBeTruthy();
+    expect(screen.getByText(WORD_DEFINITIONS.serene.actions.constructive)).toBeTruthy();
+    expect(screen.getByText(WORD_DEFINITIONS.serene.actions.ambiguous)).toBeTruthy();
+    expect(screen.getByText(WORD_DEFINITIONS.serene.actions.destructive)).toBeTruthy();
   });
 });
 

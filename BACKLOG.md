@@ -40,35 +40,54 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
 
 ## P1 — do next
 
-- **Hold-to-learn opens the FAMILY's helper, not the WORD's** — not started,
-  design not decided; the user is thinking through the right shape. User,
-  2026-09-03: holding a word chip (say "wistful") shows the sadness family's
-  card — "What it means", body signature, etc. all describe sadness, not the
-  specific word held. "Which kinda is not the point. I need to think of how
-  to change this." Current architecture (`src/content/helpers.ts`,
-  `EMOTION_HELPERS: Record<EmotionFamilyId, …>`) has content ONLY at the
-  family level — there is no per-word content to show instead. Any fix is a
-  content-model decision (per-word copy for ~50+ words vs. a lighter
-  word-specific overlay on the family card vs. something else), not a
-  wiring fix — do not build ahead of the user's decision here.
-  A first four-option mockup used a generic per-tier strength phrase ("a
-  light touch" / "pressed hard") — user, same day: "isn't really doing much,"
-  and pointed at atlasofemotions.org for the right model. Researched: the
-  Atlas doesn't grade one emotion by strength adjective — every named state
-  (Annoyance, Frustration, Fury… for anger; Grief, Despair… for sadness) gets
-  its own short, SITUATIONAL definition (Frustration: "a response to failure
-  to overcome an obstacle despite repeated attempts"). The word itself
-  carries the intensity; the definition says what's specifically true in
-  that state. Mockup redrawn to that model — [artifact:
-  Word Overlay Options](https://claude.ai/code/artifact/250f2385-fe1c-4e1c-9122-7b37ff0e1b4c)
-  — still four rungs by writing cost (a computed "where it sits among its
-  family's words" baseline through to one Atlas-style drafted line per
-  word), not a decision. This app's own words don't map onto the Atlas's
-  exact taxonomy (our gradient is deliberately 6 words/family, not the
-  Atlas's variable count), so any real content pass writes NEW definitions
-  in this app's own voice, inspired by the Atlas's method — not a port of
-  its text. **Still blocking on the user:** which rung, and whether to also
-  scope authoring all ~50+ words vs. a smaller first slice.
+- ~~**Hold-to-learn opens the FAMILY's helper, not the WORD's**~~ — shipped
+  2026-09-03. User, same day, closing the decision: "Situational definition
+  is exactly what we need," "add the constructive, ambiguous and destructive
+  bit," "Only show the definition, the whole family card is unnecessary,"
+  "I'd like it implemented for all the emotions we have on the app."
+  `src/content/wordDefinitions.ts` is new: a situational definition per word
+  (Atlas-of-Emotions style — what the state actually IS, never a strength
+  label) plus a `constructive`/`ambiguous`/`destructive` action set — a real
+  third bucket confirmed from the Atlas itself ("the atlas… directs you
+  towards possible responses and an assessment of whether each response is
+  constructive, destructive or ambiguous"), not a euphemism for good/bad.
+  Written fresh for this app's own ~121-word vocabulary (gradient + extended,
+  every family), not ported from the Atlas's text.
+  `useHelperSheetStore`'s `family` field became a `target` discriminated
+  union (`{kind:'family', family}` vs `{kind:'word', wordId}` — the word
+  variant deliberately carries no `family`: an adversarial review caught that
+  a passed-in family can go stale against an old check-in selection —
+  `embarrassed` moved from sadness to fear on 2026-08-30, but a check-in
+  written before that still stores `family:'sadness'` on the selection — so
+  every consumer derives the family fresh from the word id instead).
+  Holding a specific word chip (check-in, judgment flow, a picked
+  temperature row) now opens WORD mode — `WordDefinitionContent`, just the
+  tag + intensity dots + definition + three action rows, no family essay.
+  The deliberate "learn about this family" entry points (Field Guide's nine
+  families, a masking doorway's "learn about X", the day-detail sheet's
+  "about X") are unchanged, still FAMILY mode with the full card. The Field
+  Guide's own per-word detail panel got the same content inline, replacing
+  the old `INTENSITY_PHRASES` generic sentence (deleted — dead once its one
+  call site was rewritten). Tests: `wordDefinitions.test.ts` pins
+  completeness (every word in the app has a definition + all three actions),
+  no duplicate definitions, no duplicate actions within a word, and the
+  house gentle-copy rule.
+  **Still open:** on-device verification (queued); no design review yet on
+  whether the action-bucket LABELS ("Constructive"/"Ambiguous"/"Destructive")
+  read as clinical against the app's gentle voice — worth a look once it's
+  seen on a phone. An 8-angle adversarial review (2026-09-03) found and fixed
+  the family-staleness issue above plus four conventions cleanups (hardcoded
+  literals → theme tokens in `WordDefinitionContent`'s intensity dots, the
+  action labels moved into `wordDefinitions.ts`, a stale comment, a
+  duplicated one-line wrapper). Deliberately deferred, not blocking:
+  `WORD_DEFINITIONS`'s flat `Record<string, …>` shape gets no compile-time
+  completeness check the way `EMOTION_HELPERS`/`EXTENDED_VOCABULARY`'s
+  `Record<EmotionFamilyId, …>` shape does (only `wordDefinitions.test.ts`'s
+  runtime check guards it) — worth a family-keyed restructure if the
+  vocabulary keeps growing; and `WordDefinitionContent`'s read-only intensity
+  dots + action rows duplicate `IntensityDial`'s swatch logic and
+  `EmotionHelperContent`'s `Section` pattern respectively — worth extracting
+  a shared piece if a third caller of either shows up.
 
 - **Insights: many more templates, with the words you actually logged woven
   in (Pitch)** — rubric not yet scored (no `evaluateFromContext` run against

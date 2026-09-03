@@ -21,7 +21,7 @@ interface Props {
   /** Tap the chip to let the word go. */
   onToggle(): void;
   onChangeIntensity(intensity: Intensity): void;
-  /** Long-press doorway. Defaults to the family helper sheet, so every
+  /** Long-press doorway. Defaults to this word's own helper sheet, so every
    *  surface that shows a weighed word teaches on hold without wiring. */
   onLongPress?(): void;
   /** Chip id (testID `chip-${chipId}`). Defaults to `picked-${wordId}` so the
@@ -48,7 +48,7 @@ export function WordTemperatureRow({
           selected
           fill={intensity !== null ? familyPalette[family].shades[intensity] : undefined}
           onPress={onToggle}
-          onLongPress={onLongPress ?? (() => useHelperSheetStore.getState().open(family))}
+          onLongPress={onLongPress ?? (() => useHelperSheetStore.getState().openWord(wordId))}
         />
       </View>
       <IntensityDial

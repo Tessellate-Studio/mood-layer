@@ -48,12 +48,6 @@ interface JudgmentItem {
 
 const blankItem = (): JudgmentItem => ({ target: '', judgment: '', feelings: [] });
 
-// The check-in flow teaches "Hold any word to learn what it carries" — these
-// chips are visually identical, so the learned gesture must work here too
-// (the helper-sheet host lives once in App.tsx).
-const openFamilyHelper = (family: EmotionFamilyId) =>
-  useHelperSheetStore.getState().open(family);
-
 const isComplete = (item: JudgmentItem) =>
   item.target.trim().length > 0 && item.judgment.trim().length > 0;
 
@@ -363,7 +357,7 @@ export default function JudgmentFlowScreen() {
                               : undefined
                           }
                           onPress={() => toggleFeeling(itemIndex, word.id, family.id)}
-                          onLongPress={() => openFamilyHelper(family.id)}
+                          onLongPress={() => useHelperSheetStore.getState().openWord(word.id)}
                         />
                       );
                     })}

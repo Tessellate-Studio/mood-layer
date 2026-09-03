@@ -6,12 +6,7 @@
 import type { EmotionFamilyId } from '@/types/models';
 import { EMOTION_FAMILIES, MASKING_STATES } from '@/content/emotions';
 import { UNDERNEATH_MAP } from '@/content/underneath';
-import {
-  allWordsForFamily,
-  EXTENDED_VOCABULARY,
-  findVocabularyWord,
-  INTENSITY_PHRASES,
-} from '@/content/vocabulary';
+import { allWordsForFamily, EXTENDED_VOCABULARY, findVocabularyWord } from '@/content/vocabulary';
 
 // Derived from the data so a new family can never silently skip these checks
 // (the canonical family-set assertion lives in content.shape.test.ts).
@@ -162,11 +157,5 @@ describe('extended vocabulary (word finder)', () => {
       expect(hit?.family.id).toBe(family);
     }
     expect(findVocabularyWord('not-a-word')).toBeUndefined();
-  });
-
-  it('has a phrase for each intensity level', () => {
-    for (const level of [1, 2, 3, 4] as const) {
-      expect(INTENSITY_PHRASES[level].length).toBeGreaterThan(0);
-    }
   });
 });

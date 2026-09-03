@@ -41,7 +41,7 @@ const initialSettings = useSettingsStore.getState();
 beforeEach(() => {
   jest.clearAllMocks();
   useExperimentStore.setState(initialExperiments, true);
-  useHelperSheetStore.setState({ family: null });
+  useHelperSheetStore.setState({ target: null });
   useSettingsStore.setState(initialSettings, true);
 });
 
@@ -160,10 +160,10 @@ describe('JudgmentFlowScreen', () => {
 
     fireEvent.press(await screen.findByTestId('judgment-family-fear'));
     fireEvent(screen.getByTestId('chip-judgment-feeling-worried'), 'longPress');
-    expect(useHelperSheetStore.getState().family).toBe('fear');
+    expect(useHelperSheetStore.getState().target).toEqual({ kind: 'word', wordId: 'worried' });
   });
 
-  it('long-pressing a picked chip (temperature row) opens the helper too', async () => {
+  it('long-pressing a picked chip (temperature row) opens that word helper too', async () => {
     renderScreen(<JudgmentFlowScreen />);
     fireEvent.changeText(await screen.findByTestId('judgment-target-0'), 'myself');
     fireEvent.changeText(screen.getByTestId('judgment-for-0'), 'being slow');
@@ -172,7 +172,7 @@ describe('JudgmentFlowScreen', () => {
     fireEvent.press(await screen.findByTestId('judgment-family-sadness'));
     fireEvent.press(screen.getByTestId('chip-judgment-feeling-hurt'));
     fireEvent(screen.getByTestId('chip-judgment-picked-hurt'), 'longPress');
-    expect(useHelperSheetStore.getState().family).toBe('sadness');
+    expect(useHelperSheetStore.getState().target).toEqual({ kind: 'word', wordId: 'hurt' });
   });
 
   it('cannot advance with no complete judgment', async () => {

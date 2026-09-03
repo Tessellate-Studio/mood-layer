@@ -32,7 +32,7 @@ export default function App() {
 
   // Helper sheet host: one instance for the whole app so any screen can open
   // an emotion's explainer through useHelperSheetStore, no prop drilling.
-  const helperFamily = useHelperSheetStore((s) => s.family);
+  const helperTarget = useHelperSheetStore((s) => s.target);
   const closeHelper = useHelperSheetStore((s) => s.close);
 
   // "Name it" notifications: install the foreground handler once and deep-link
@@ -95,7 +95,7 @@ export default function App() {
       <GestureHandlerRootView style={styles.root}>
         <SafeAreaProvider>
           <AppNavigator />
-          <EmotionHelperSheet family={helperFamily} onClose={closeHelper} />
+          <EmotionHelperSheet target={helperTarget} onClose={closeHelper} />
           <StatusBar style="dark" backgroundColor={colors.paper} />
         </SafeAreaProvider>
       </GestureHandlerRootView>
