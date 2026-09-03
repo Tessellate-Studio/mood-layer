@@ -14,6 +14,25 @@ import type { WeekStats } from '@/types/models';
 export const INSIGHTS_HEADER_TITLE = 'Last week';
 export const INSIGHTS_OVERLINE_PATTERN = `${INSIGHTS_HEADER_TITLE} · Pattern`;
 export const INSIGHTS_OVERLINE_RESISTANCE = 'Gentle notice · Resistance';
+// Closing line under the cards. Says why the page is sparse and points back
+// to the layers — no mechanics ("two a week, at most" was the builder's view
+// of the page, not the reader's; user, 2026-09-02).
+export const INSIGHTS_FOOTER =
+  'Only what the week made clear shows up here. Everything else is in your layers, where you left it.';
+
+// The month cards under the week (a rolling 30-day window, so "this month").
+export const INSIGHTS_OVERLINE_MONTH_TEXTURE = 'This month · Texture';
+export const INSIGHTS_OVERLINE_MONTH_PRACTICES = 'This month · Practices';
+
+// Empty state. Two bodies so it names the TRUE reason (user, 2026-07-18):
+// nothing logged yet this week vs. logged but no pattern surfaced.
+export const INSIGHTS_EMPTY_QUIET_WEEK =
+  'A quiet week so far — your first check-in starts this week’s layers.';
+export const INSIGHTS_EMPTY_NO_PATTERN =
+  'Checked in, but no clear pattern has surfaced yet — insights stay quiet until one does.';
+export const INSIGHTS_EMPTY_CAPTION =
+  'Patterns appear here once a week, when there are enough layers to read.';
+export const INSIGHTS_EMPTY_MONTH_BELOW = 'Your month is below.';
 
 export interface InsightTemplate {
   id: string;

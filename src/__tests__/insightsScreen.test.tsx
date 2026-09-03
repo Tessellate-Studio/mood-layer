@@ -1,12 +1,13 @@
-// InsightsScreen — weekly generation on focus, card rendering, dismissal,
-// empty state. Rendered inside a bare NavigationContainer: useNavigation
+// InsightsScreen — weekly generation on focus, card rendering (last week
+// only, no dismiss), empty state. Rendered inside a bare NavigationContainer: useNavigation
 // falls back to the container ref (isFocused() === true), so useFocusEffect
 // fires on mount.
 
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { render, screen, within } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 
+import { INSIGHTS_FOOTER } from '@/content/insights';
 import InsightsScreen from '@/screens/InsightsScreen';
 import { useCheckInStore } from '@/store/checkInStore';
 import { useExperimentStore } from '@/store/experimentStore';
@@ -96,7 +97,7 @@ describe('InsightsScreen', () => {
     expect(useInsightStore.getState().cards).toHaveLength(0);
   });
 
-  it('dismisses a card via its ✕ and persists the dismissal in the store', async () => {
+  it('has no dismiss control — cards are not dismissable (user, 2026-09-03)', async () => {
     useCheckInStore.setState({
       checkIns: [1, 2, 3, 4].map((n) => lastWeekCheckIn(n)),
     });
@@ -104,16 +105,44 @@ describe('InsightsScreen', () => {
     renderScreen();
 
     await screen.findByText('A week of either-or');
-    const card = useInsightStore
-      .getState()
-      .cards.find((c) => c.templateId === 'stuck-decisions');
-    expect(card).toBeDefined();
+    expect(screen.queryAllByLabelText('Dismiss insight')).toHaveLength(0);
+  });
 
-    fireEvent.press(screen.getByTestId(`insight-dismiss-${card!.id}`));
+  it('shows last week’s cards only — older weeks stay in the store, off the page', async () => {
+    // Without dismiss, the list would otherwise grow by two every week under
+    // a header that says "Last week". Older cards are kept (the variety
+    // pitch reads them to avoid repeats) but never rendered.
+    const lastWeek = previousWeekKey(new Date());
+    useInsightStore.setState({
+      lastGeneratedWeekKey: lastWeek,
+      cards: [
+        { id: 'old', weekKey: '2026-W20', templateId: 'looping-week', kind: 'resistance', title: 'Old week card', body: 'old' },
+        { id: 'new', weekKey: lastWeek, templateId: 'fluid-week', kind: 'pattern', title: 'Last week card', body: 'new' },
+      ],
+    });
 
-    expect(screen.queryByText('A week of either-or')).toBeNull();
-    const after = useInsightStore.getState().cards.find((c) => c.id === card!.id);
-    expect(after?.dismissedAt).toBeDefined();
+    renderScreen();
+
+    expect(await screen.findByText('Last week card')).toBeTruthy();
+    expect(screen.queryByText('Old week card')).toBeNull();
+  });
+
+  it('never shows a stale week under the "Last week" header — the empty state returns instead', async () => {
+    // W-2 produced cards, last week was too quiet to (still marked, nothing
+    // stored). Gating on the store's newest card would put the W-2 cards under
+    // "Last week"; gating on previousWeekKey shows the honest empty state.
+    useInsightStore.setState({
+      lastGeneratedWeekKey: previousWeekKey(new Date()),
+      cards: [
+        { id: 'old', weekKey: '2026-W20', templateId: 'looping-week', kind: 'resistance', title: 'Old week card', body: 'old' },
+      ],
+    });
+    useCheckInStore.setState({ checkIns: [] });
+
+    renderScreen();
+
+    expect(await screen.findByTestId('insights-empty')).toBeTruthy();
+    expect(screen.queryByText('Old week card')).toBeNull();
   });
 
   it('shows a week summary, the resistance overline, its tells, and the gentle footer', async () => {
@@ -136,7 +165,8 @@ describe('InsightsScreen', () => {
     const quiet = screen.getByTestId('insight-tell-comparison');
     expect(quiet.props.accessibilityState.selected).toBe(false);
 
-    expect(screen.getByTestId('insights-footer')).toBeTruthy();
+    const footer = screen.getByTestId('insights-footer');
+    expect(within(footer).getByText(INSIGHTS_FOOTER)).toBeTruthy();
   });
 
   it('empty state names the TRUE reason: a quiet week vs no pattern yet', async () => {

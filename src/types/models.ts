@@ -126,7 +126,6 @@ export interface InsightCardState {
   kind: 'pattern' | 'resistance';
   title: string;
   body: string;
-  dismissedAt?: string;
 }
 
 /** Aggregated stats for one ISO week — the input insight templates match on. */

@@ -40,6 +40,34 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
 
 ## P1 — do next
 
+- **Insights: many more templates, with the words you actually logged woven
+  in (Pitch)** — rubric not yet scored (no `evaluateFromContext` run against
+  this entry). User, 2026-09-03: "a lot more variety, so it doesn't feel like
+  'I've read this last week or last month'." Today there are seven fixed
+  sentence skeletons (`src/content/insights.ts`) and two show a week, so
+  repeats are structural. Direction: templates that quote the reader's own
+  logged words and families across check-ins AND the practices (a judgment
+  sitting's uncovered feelings, a practice's kept conclusion), not counts.
+  Constraints unchanged: gentle, ends in an invitation, ≤2 cards/week,
+  local-only. Enabler already in place: `insightStore` keeps every past
+  week's cards (PR #97 renders only the newest week), so a template-recency
+  memory can avoid re-showing a shape someone saw last month. Pitch-tier
+  under CLAUDE.md sizing → `/forge:plan` first; the forge skills were not
+  loaded in the 2026-09-03 session, so no pitch doc exists yet.
+
+- **Insights-report follow-ups (2026-09-03)** — three items from the same
+  report, one PR after #97. (a) The check-in flow's type reads too small: it
+  leans on the small tokens (11 caption/label/overline uses vs 5 body/heading;
+  the field guide is 6 vs 10) — decide which get promoted to body. (b)
+  `CoachNote`'s `topOffset` is five hand-tuned numbers (Insights 68, Circle
+  100, Layers 48, Experiments 48, Field guide 108; `CoachNote.tsx:80`) — the
+  reason the note sits above the header on one screen and below it on
+  another. Measure the header with `onLayout` as regression #27 did for the
+  check-in hint; that makes hand-tuned offsets a three-row theme (#24, #27,
+  this) → promote to `memory/project_anti_patterns.md`. (c) Extend the
+  Settings / Field guide / Layers header-to-footer spacing to every screen,
+  empty and filled states — first extract what those three actually share.
+
 - **Usage analytics — third sanctioned-exception decision needed** — rubric
   not yet scored (no `evaluateFromContext` run against this entry). User wants
   to know within the next few weeks which features/moods are most used and
@@ -115,6 +143,18 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
   post-launch is reasonable. *Owner: user. How-to: `docs/manual-runbook.md`.*
 
 ## P3 — later
+
+- **A pause after "take a moment" cards — timer, reminder, or reward** —
+  user, 2026-09-03: backlog for now. When an insight invites the reader to
+  sit with something ("Worth taking a quiet moment to appreciate"), offer a
+  way to actually stay — a short undisturbed timer or a gentle reminder — and
+  some real benefit for having done so. Two written rules push back and the
+  pitch has to answer them before anything is built: "never directive"
+  (CLAUDE.md tone rule) and "a count is scoreboard-shaped"
+  (`monthlyDigest.ts:97`, anti-pattern #3: no guilt copy). A reward system is
+  the exact shape those rules exclude, so the benefit has to be the moment
+  itself (dim the page, the breathing animation, nothing counted), not a
+  score or a streak.
 
 - **Further de-overwhelm interactions for word pickers** — folded-by-default
   family groups shipped 2026-07-13, PR #12 (`f7cb894`) (user feedback: nine

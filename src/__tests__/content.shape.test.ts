@@ -14,7 +14,19 @@ import {
 } from '@/content/emotions';
 import { EMOTION_HELPERS } from '@/content/helpers';
 import { RESISTANCE_TELLS } from '@/content/resistance';
-import { INSIGHT_TEMPLATES } from '@/content/insights';
+import {
+  INSIGHTS_EMPTY_CAPTION,
+  INSIGHTS_EMPTY_MONTH_BELOW,
+  INSIGHTS_EMPTY_NO_PATTERN,
+  INSIGHTS_EMPTY_QUIET_WEEK,
+  INSIGHTS_FOOTER,
+  INSIGHTS_HEADER_TITLE,
+  INSIGHTS_OVERLINE_MONTH_PRACTICES,
+  INSIGHTS_OVERLINE_MONTH_TEXTURE,
+  INSIGHTS_OVERLINE_PATTERN,
+  INSIGHTS_OVERLINE_RESISTANCE,
+  INSIGHT_TEMPLATES,
+} from '@/content/insights';
 import { JUDGMENT_EXAMPLES } from '@/content/judgmentExamples';
 import { ONBOARDING_SLIDES } from '@/content/onboarding';
 import { CHECK_IN_COPY } from '@/content/checkInCopy';
@@ -439,6 +451,41 @@ describe('insight templates', () => {
     const fixture = TEMPLATE_FIXTURES['co-occurrence'];
     const { body } = coOccurrence!.render(fixture);
     expect(body).not.toMatch(/something [a-z]+ and something [a-z]+/i);
+  });
+
+  it('footer explains the sparseness without exposing the mechanics', () => {
+    // "Two a week, at most" was the builder's view of the page, not the
+    // reader's (user, 2026-09-02) — the footer says why the page is sparse
+    // and points back to the layers, in layer language, no numbers.
+    expect(INSIGHTS_FOOTER.length).toBeGreaterThan(0);
+    expect(INSIGHTS_FOOTER).not.toContain('!');
+    expect(INSIGHTS_FOOTER.toLowerCase()).not.toMatch(/two a week|at most|\d/);
+    expect(INSIGHTS_FOOTER.toLowerCase()).toContain('layers');
+  });
+
+  it('every Insights screen string is non-empty and stays gentle', () => {
+    // All of the screen's own copy lives here (copy rule, CLAUDE.md), so one
+    // review covers it. Overlines and the header name the window they
+    // describe: cards are last week's, the month cards a rolling 30 days.
+    const strings = [
+      INSIGHTS_HEADER_TITLE,
+      INSIGHTS_OVERLINE_PATTERN,
+      INSIGHTS_OVERLINE_RESISTANCE,
+      INSIGHTS_OVERLINE_MONTH_TEXTURE,
+      INSIGHTS_OVERLINE_MONTH_PRACTICES,
+      INSIGHTS_EMPTY_QUIET_WEEK,
+      INSIGHTS_EMPTY_NO_PATTERN,
+      INSIGHTS_EMPTY_CAPTION,
+      INSIGHTS_EMPTY_MONTH_BELOW,
+      INSIGHTS_FOOTER,
+    ];
+    for (const s of strings) {
+      expect(s.length).toBeGreaterThan(0);
+      expect(s).not.toContain('!');
+    }
+    expect(INSIGHTS_OVERLINE_PATTERN).toContain(INSIGHTS_HEADER_TITLE);
+    expect(INSIGHTS_OVERLINE_MONTH_TEXTURE).toMatch(/^This month/);
+    expect(INSIGHTS_OVERLINE_MONTH_PRACTICES).toMatch(/^This month/);
   });
 });
 
