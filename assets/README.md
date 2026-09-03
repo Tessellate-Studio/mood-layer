@@ -79,12 +79,14 @@ alone for the overlap-deepening (no blend mode on `react-native-svg`). Tile bg
 `colors.paper #F8F6F0`, full-bleed — launchers and Play mask their own
 corners. Geometry (240 viewBox): top band x84 y48 w72, then x74 y80 w92, x64
 y112 w112, bottom x54 y144 w132, all h48 rx24 — each overlapping the one
-below by 16. The bare mark wraps the same bands in `scale(1.18)` about the
-centre so it spans ~65% of the canvas, sized for Android's adaptive mask.
-`icon_mono.svg` is the same four bands outlined in `colors.ink` at
+below by 16. The bare mark is the SAME bands, unscaled — the bounding box is
+already 132×144 (55% × 60% of the 240 canvas), comfortably inside Android's
+~66% adaptive-icon safe zone with no extra scaling needed. (2026-09-03: a
+`scale(1.18)` was mistakenly added here on the mistaken assumption the mark
+needed shrinking like the old three-band one did — it pushed the vertical
+extent to 71% and got clipped top and bottom on-device. Removed; regression
+log #32.) `icon_mono.svg` is the same four bands outlined in `colors.ink` at
 `stroke-width 8` — the shape the Quilt tab and `LogoDivider` draw inline.
-`appicon_ink.svg`, `icon_mono.svg` and the `var_*` variants still show the old
-pastel geometry (tracked in BACKLOG).
 
 > Regenerate any time: `npm install --no-save @resvg/resvg-js`, then rasterize
 > `svg/appicon_paper.svg` → icon/favicon PNGs and `svg/appicon_bare.svg` →
