@@ -74,7 +74,7 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
   field-guide essences, previews, footer → body, the family key → label).
   (b) became anti-pattern #9 (`useMeasuredHeight` on every screen's title
   row; `noHandTunedOffsets.test.ts`; regression log #31).
-  **(c) shipped 2026-09-03, PR #102** — the frame those three shared is now
+  **(c) shipped 2026-09-03, PR #103** — the frame those three shared is now
   `ScreenFrame`, worn by all seven page screens in both states, with
   anti-pattern #11 and a source sweep to hold it. Nothing left open here.
 
@@ -166,7 +166,7 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
 ## P3 — later
 
 - **Three more drawings of the mark and its chrome could collapse into one**
-  — deferred from the 2026-09-03 quality pass on PR #102, all shape, no bug.
+  — deferred from the 2026-09-03 quality pass on PR #103, all shape, no bug.
   (a) `LogoDivider` hand-draws `LOGO_BANDS` a third time; widening LogoMark's
   `ink` to accept a per-band array would make it `<LogoMark register="ink"
   ink={BAND_INK} />`. (b) The field guide, Reflections and Settings each
@@ -178,7 +178,7 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
   ScrollView in a list's clothes. Worth doing together, next time any of them
   is opened for another reason.
 
-- ~~**CoachNote owns its anchor**~~ — **done 2026-09-03, PR #102**, by
+- ~~**CoachNote owns its anchor**~~ — **done 2026-09-03, PR #103**, by
   `ScreenFrame`: the frame measures its own title row and passes the offset,
   so a page screen cannot mount a note against an unmeasured anchor.
   `topOffset` is still a public prop on CoachNote (the frame is its only
