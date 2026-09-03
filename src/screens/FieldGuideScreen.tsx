@@ -14,10 +14,11 @@ import ScreenFrame, { screenContent } from '@/components/ScreenFrame';
 import EmotionChip from '@/components/EmotionChip';
 import FamilyGroup from '@/components/FamilyGroup';
 import LearnLink from '@/components/LearnLink';
+import WordDefinitionContent from '@/components/WordDefinitionContent';
 import { borderRadius, colors, familyPalette, hitTarget, spacing, typography } from '@/constants/theme';
 import { EMOTION_FAMILIES } from '@/content/emotions';
 import { UNDERNEATH_MAP } from '@/content/underneath';
-import { allWordsForFamily, findVocabularyWord, INTENSITY_PHRASES } from '@/content/vocabulary';
+import { allWordsForFamily, findVocabularyWord } from '@/content/vocabulary';
 import { useHelperSheetStore } from '@/store/helperSheetStore';
 import type { EmotionFamilyId } from '@/types/models';
 
@@ -83,7 +84,7 @@ export default function FieldGuideScreen() {
                 accessibilityRole="button"
                 accessibilityLabel={`About ${family.label}. ${family.essence}`}
                 style={styles.keyItem}
-                onPress={() => useHelperSheetStore.getState().open(family.id)}
+                onPress={() => useHelperSheetStore.getState().openFamily(family.id)}
               >
                 <View
                   style={[
@@ -161,11 +162,7 @@ export default function FieldGuideScreen() {
               </FamilyGroup>
               {openFamily === family.id && openWord && openWord.family.id === family.id ? (
                 <View style={styles.panel} testID={`word-detail-${family.id}`}>
-                  <Text style={typography.body}>
-                    {openWord.word.label} — {openWord.family.label.toLowerCase()},{' '}
-                    {INTENSITY_PHRASES[openWord.word.intensityHint]}.
-                  </Text>
-                  <LearnLink family={family.id} testID={`word-learn-${family.id}`} />
+                  <WordDefinitionContent wordId={openWord.word.id} />
                 </View>
               ) : null}
             </View>

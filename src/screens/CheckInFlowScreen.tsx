@@ -78,11 +78,6 @@ import {
 type CheckInRoute = RouteProp<RootStackParamList, 'CheckInFlow'>;
 type Nav = NativeStackNavigationProp<RootStackParamList>;
 
-// One home for the hold-to-learn gesture: the feel hint promises holding ANY
-// word teaches you about it, so every chip on the step routes through here.
-const openFamilyHelper = (family: EmotionFamilyId) =>
-  useHelperSheetStore.getState().open(family);
-
 /** The feel step's single hint slot — which testID + copy each state renders. */
 const FEEL_HINTS: Record<FeelHint, { testID: string; copy: string }> = {
   masking: { testID: 'masking-continue-hint', copy: CHECK_IN_COPY.maskingContinueHint },
@@ -428,7 +423,7 @@ function FeelStep({
                         : undefined
                     }
                     onPress={() => setState((s) => toggleEmotion(s, word.id, family.id))}
-                    onLongPress={() => openFamilyHelper(family.id)}
+                    onLongPress={() => useHelperSheetStore.getState().openWord(word.id)}
                   />
                 );
               })}
@@ -516,7 +511,7 @@ function FeelStep({
                             : undefined
                         }
                         onPress={() => setState((s) => toggleEmotion(s, word.id, familyId))}
-                        onLongPress={() => openFamilyHelper(familyId)}
+                        onLongPress={() => useHelperSheetStore.getState().openWord(word.id)}
                       />
                     );
                   })}

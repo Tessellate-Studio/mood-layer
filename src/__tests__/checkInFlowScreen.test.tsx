@@ -35,7 +35,7 @@ beforeEach(() => {
   mockNavigate.mockClear();
   useCheckInStore.setState(initialCheckIns, true);
   useSettingsStore.setState(initialSettings, true);
-  useHelperSheetStore.setState({ family: null });
+  useHelperSheetStore.setState({ target: null });
 });
 
 const renderScreen = () =>
@@ -218,18 +218,18 @@ describe('CheckInFlowScreen', () => {
     expect(screen.queryByTestId('add-another-hint')).toBeNull();
   });
 
-  it('long-pressing any word chip opens its family helper sheet', () => {
+  it('long-pressing any word chip opens THAT word helper — not its family', () => {
     renderScreen();
     fireEvent.press(screen.getByTestId('family-sadness'));
     fireEvent(screen.getByTestId('chip-sad'), 'longPress');
-    expect(useHelperSheetStore.getState().family).toBe('sadness');
+    expect(useHelperSheetStore.getState().target).toEqual({ kind: 'word', wordId: 'sad' });
   });
 
-  it('long-pressing an underneath-panel chip opens that family helper too', () => {
+  it('long-pressing an underneath-panel chip opens that word helper too', () => {
     renderScreen();
     fireEvent.press(screen.getByTestId('chip-stressed')); // masking → panel
     fireEvent(screen.getByTestId('chip-under-uneasy'), 'longPress');
-    expect(useHelperSheetStore.getState().family).toBe('fear');
+    expect(useHelperSheetStore.getState().target).toEqual({ kind: 'word', wordId: 'uneasy' });
   });
 
   it("long-pressing a masking chip reveals its underneath panel — 'any word' means any", () => {

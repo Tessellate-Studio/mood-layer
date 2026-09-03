@@ -12,20 +12,12 @@
 // here are load-bearing: renaming or removing one orphans stored entries.
 // Ids stay unique across gradients AND this list.
 
-import type { EmotionFamilyId, Intensity } from '@/types/models';
+import type { EmotionFamilyId } from '@/types/models';
 import {
   EMOTION_FAMILIES,
   type EmotionFamily,
   type EmotionWord,
 } from '@/content/emotions';
-
-/** Plain-words phrase for each intensity level (models.ts: 1 light → 4 hard). */
-export const INTENSITY_PHRASES: Record<Intensity, string> = {
-  1: 'a light touch',
-  2: 'clearly present',
-  3: 'strong',
-  4: 'pressed hard',
-};
 
 /** Wheel words beyond each family's check-in gradient, mild → intense. */
 export const EXTENDED_VOCABULARY: Record<EmotionFamilyId, EmotionWord[]> = {

@@ -1,5 +1,8 @@
 // P9 — emotion-helper sheet: content sections, sheet visibility, and the tiny
-// UI store that lets any screen open the helper without prop drilling.
+// UI store that lets any screen open the helper without prop drilling. Two
+// modes since 2026-09-03: a FAMILY on its own (the full card) or a WORD
+// (just its definition + actions, no family essay — user: "Only show the
+// definition, the whole family card is unnecessary").
 
 import React from 'react';
 import { render, screen } from '@testing-library/react-native';
@@ -8,6 +11,7 @@ import EmotionHelperContent from '@/components/EmotionHelperContent';
 import EmotionHelperSheet from '@/components/EmotionHelperSheet';
 import { EMOTION_FAMILIES } from '@/content/emotions';
 import { EMOTION_HELPERS } from '@/content/helpers';
+import { WORD_DEFINITIONS } from '@/content/wordDefinitions';
 import { useHelperSheetStore } from '@/store/helperSheetStore';
 
 const initialHelper = useHelperSheetStore.getState();
@@ -48,28 +52,60 @@ describe('EmotionHelperContent', () => {
 });
 
 describe('EmotionHelperSheet', () => {
-  it('is hidden when family is null (no content rendered)', () => {
-    render(<EmotionHelperSheet family={null} onClose={() => {}} />);
+  it('is hidden when the target is null (no content rendered)', () => {
+    render(<EmotionHelperSheet target={null} onClose={() => {}} />);
     expect(screen.queryByText('What it means')).toBeNull();
   });
 
-  it('shows the family label + sections when a family is set', async () => {
-    render(<EmotionHelperSheet family="anger" onClose={() => {}} />);
+  it('family mode: shows the family label + the full card', async () => {
+    render(
+      <EmotionHelperSheet target={{ kind: 'family', family: 'anger' }} onClose={() => {}} />
+    );
     // Label appears in the title AND the resisted row — assert at least one.
     expect((await screen.findAllByText(EMOTION_FAMILIES.anger.label)).length).toBeGreaterThan(0);
     expect(screen.getByText('What it means')).toBeTruthy();
+  });
+
+  it('word mode: shows the WORD as the title, its definition and actions — no family essay', async () => {
+    render(<EmotionHelperSheet target={{ kind: 'word', wordId: 'wistful' }} onClose={() => {}} />);
+    expect(await screen.findByText('Wistful')).toBeTruthy();
+    expect(screen.getByText(WORD_DEFINITIONS.wistful.definition)).toBeTruthy();
+    expect(screen.getByText(WORD_DEFINITIONS.wistful.actions.constructive)).toBeTruthy();
+    expect(screen.getByText(WORD_DEFINITIONS.wistful.actions.ambiguous)).toBeTruthy();
+    expect(screen.getByText(WORD_DEFINITIONS.wistful.actions.destructive)).toBeTruthy();
+    // The family card's own sections must NOT render in word mode.
+    expect(screen.queryByText('What it means')).toBeNull();
+    expect(screen.queryByText('In the body')).toBeNull();
+    expect(screen.queryByText('An invitation')).toBeNull();
+  });
+
+  it('word mode still names the family, as a small tag, not the sheet title', async () => {
+    render(<EmotionHelperSheet target={{ kind: 'word', wordId: 'furious' }} onClose={() => {}} />);
+    expect(await screen.findByText('Furious')).toBeTruthy();
+    expect(screen.getByText('Anger')).toBeTruthy();
   });
 });
 
 describe('helperSheetStore', () => {
   it('starts closed', () => {
-    expect(useHelperSheetStore.getState().family).toBeNull();
+    expect(useHelperSheetStore.getState().target).toBeNull();
   });
 
-  it('open(family) sets the family and close() clears it', () => {
-    useHelperSheetStore.getState().open('disgust');
-    expect(useHelperSheetStore.getState().family).toBe('disgust');
+  it('openFamily sets a family target and close() clears it', () => {
+    useHelperSheetStore.getState().openFamily('disgust');
+    expect(useHelperSheetStore.getState().target).toEqual({ kind: 'family', family: 'disgust' });
     useHelperSheetStore.getState().close();
-    expect(useHelperSheetStore.getState().family).toBeNull();
+    expect(useHelperSheetStore.getState().target).toBeNull();
+  });
+
+  it('openWord sets a word target — no family, derived fresh from the word (adversarial review, 2026-09-03)', () => {
+    useHelperSheetStore.getState().openWord('heartbroken');
+    expect(useHelperSheetStore.getState().target).toEqual({ kind: 'word', wordId: 'heartbroken' });
+  });
+
+  it('opening a word after a family replaces it — one target at a time', () => {
+    useHelperSheetStore.getState().openFamily('anger');
+    useHelperSheetStore.getState().openWord('afraid');
+    expect(useHelperSheetStore.getState().target).toEqual({ kind: 'word', wordId: 'afraid' });
   });
 });

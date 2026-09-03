@@ -356,7 +356,7 @@ export default function QuiltScreen() {
                     // helper — two stacked modals fight for the backdrop.
                     onPress={() => {
                       setSelectedId(null);
-                      useHelperSheetStore.getState().open(fam);
+                      useHelperSheetStore.getState().openFamily(fam);
                     }}
                   >
                     <Text style={styles.aboutText}>about {EMOTION_FAMILIES[fam].label} →</Text>

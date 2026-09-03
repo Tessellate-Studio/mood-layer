@@ -46,7 +46,7 @@ export function LearnLink({ family, testID }: Props) {
       testID={testID}
       accessibilityLabel={`Learn about ${label}`}
       label="learn →"
-      onPress={() => useHelperSheetStore.getState().open(family)}
+      onPress={() => useHelperSheetStore.getState().openFamily(family)}
     />
   );
 }
