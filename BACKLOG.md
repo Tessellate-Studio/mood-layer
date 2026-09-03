@@ -51,6 +51,24 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
   content-model decision (per-word copy for ~50+ words vs. a lighter
   word-specific overlay on the family card vs. something else), not a
   wiring fix — do not build ahead of the user's decision here.
+  A first four-option mockup used a generic per-tier strength phrase ("a
+  light touch" / "pressed hard") — user, same day: "isn't really doing much,"
+  and pointed at atlasofemotions.org for the right model. Researched: the
+  Atlas doesn't grade one emotion by strength adjective — every named state
+  (Annoyance, Frustration, Fury… for anger; Grief, Despair… for sadness) gets
+  its own short, SITUATIONAL definition (Frustration: "a response to failure
+  to overcome an obstacle despite repeated attempts"). The word itself
+  carries the intensity; the definition says what's specifically true in
+  that state. Mockup redrawn to that model — [artifact:
+  Word Overlay Options](https://claude.ai/code/artifact/250f2385-fe1c-4e1c-9122-7b37ff0e1b4c)
+  — still four rungs by writing cost (a computed "where it sits among its
+  family's words" baseline through to one Atlas-style drafted line per
+  word), not a decision. This app's own words don't map onto the Atlas's
+  exact taxonomy (our gradient is deliberately 6 words/family, not the
+  Atlas's variable count), so any real content pass writes NEW definitions
+  in this app's own voice, inspired by the Atlas's method — not a port of
+  its text. **Still blocking on the user:** which rung, and whether to also
+  scope authoring all ~50+ words vs. a smaller first slice.
 
 - **Insights: many more templates, with the words you actually logged woven
   in (Pitch)** — rubric not yet scored (no `evaluateFromContext` run against
