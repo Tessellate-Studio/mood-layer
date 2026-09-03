@@ -1,16 +1,19 @@
 // Tab bar icons — line art drawn inline with react-native-svg. Unfocused they
-// stay monochrome (the tab bar's inactive tint). FOCUSED, each icon's three
-// elements wear the brand stack's three family hues (anger rose / enjoyment
-// amber / sadness blue — the same trio as the launcher mark), so the active
-// tab is unmistakable at a glance (user, 2026-07-18: the highlight alone was
-// too quiet). The label keeps the ink active tint, so colour is never the
-// only signal (WCAG 1.4.1).
+// stay monochrome (the tab bar's inactive tint). FOCUSED they take colour, so
+// the active tab is unmistakable at a glance (user, 2026-07-18: the highlight
+// alone was too quiet): the three line-art icons wear the brand trio, and the
+// Layers mark — which IS the app mark, drawn by LogoMark — wears the
+// prominent current mood, the same families every other mark takes (user,
+// 2026-09-03). All of it in the VIVID register: at 24px the page mark's
+// translucent pastel sinks below the unfocused icons' ink. The label keeps
+// the ink active tint, so colour is never the only signal (WCAG 1.4.1).
 
 import React from 'react';
-import Svg, { Circle, Line, Rect } from 'react-native-svg';
+import Svg, { Circle, Line } from 'react-native-svg';
 
-import { BRAND_STACK, LOGO_BANDS } from '@/components/LogoMark';
+import LogoMark from '@/components/LogoMark';
 import { familyPalette } from '@/constants/theme';
+import { useMoodFamilies } from '@/hooks/useMoodFamilies';
 import type { EmotionFamilyId } from '@/types/models';
 
 export interface TabIconProps {
@@ -31,30 +34,22 @@ const trioStroke = (i: number) => familyPalette[BRAND_TRIO[i]].vivid;
 /** Focused line-work is drawn a touch heavier so the colour has body. */
 const FOCUS_STROKE_WIDTH = 2.1;
 
-/** The app mark itself: the four bands of LogoMark, outlined in ink at
- *  rest and wearing the brand stack's own hues when focused (four bands
- *  since 2026-09-02 — "it needs to be 4 bands too"). Same geometry as the
- *  launcher icon, so the tab and the icon are one shape. */
+/** The app mark itself — LogoMark's own drawing, so the tab, the in-page
+ *  mark and the launcher icon are one shape. Outlined in the tab bar's ink
+ *  at rest; FOCUSED it wears the prominent current mood, the same families
+ *  every other mark takes (user, 2026-09-03), falling back to the brand
+ *  stack before anything is logged. */
 export function QuiltIcon({ color, size, focused }: TabIconProps) {
+  const moodFamilies = useMoodFamilies();
+
   return (
-    <Svg width={size} height={size} viewBox="0 0 240 240" fill="none">
-      {LOGO_BANDS.map((band, i) => {
-        const palette = familyPalette[BRAND_STACK[i]];
-        return (
-          <Rect
-            key={i}
-            x={band.x}
-            y={band.y}
-            width={band.w}
-            height={band.h}
-            rx={band.h / 2}
-            fill={focused ? palette.shades[3] : 'none'}
-            stroke={focused ? palette.vivid : color}
-            strokeWidth={8}
-          />
-        );
-      })}
-    </Svg>
+    <LogoMark
+      families={focused ? moodFamilies : undefined}
+      size={size}
+      register={focused ? 'vivid' : 'ink'}
+      ink={color}
+      strokeWidth={8}
+    />
   );
 }
 

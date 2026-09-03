@@ -16,13 +16,12 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Line } from 'react-native-svg';
 
 import { borderRadius, colors, hitTarget, spacing, typography } from '@/constants/theme';
 import { CRASH_TEST_ENABLED } from '@/constants/devFlags';
 import LogoDivider from '@/components/LogoDivider';
-import PaperTexture from '@/components/PaperTexture';
+import ScreenFrame, { screenContent } from '@/components/ScreenFrame';
 import SectionHeader from '@/components/SectionHeader';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import { rescheduleNameIt } from '@/services/notifications';
@@ -52,7 +51,6 @@ const ABOUT_TEXT =
   'a practice companion, not therapy or diagnosis.';
 
 export default function SettingsScreen() {
-  const insets = useSafeAreaInsets();
   const navigation = useNavigation<Nav>();
   const nameIt = useExperimentStore((s) => s.nameIt);
   const hapticsEnabled = useSettingsStore((s) => s.hapticsEnabled);
@@ -128,8 +126,7 @@ export default function SettingsScreen() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-settings">
-      <PaperTexture />
+    <ScreenFrame testID="screen-settings" header={
       <View style={styles.headerRow}>
         <Pressable
           testID="settings-back"
@@ -145,8 +142,9 @@ export default function SettingsScreen() {
         </Pressable>
         <Text style={styles.title}>Settings</Text>
       </View>
-
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      }
+    >
+      <ScrollView contentContainerStyle={screenContent} showsVerticalScrollIndicator={false}>
         {/* Muted-layer treatment: each settings section is its own layer —
             reminders wear Name it's blue, feel the warm amber, the ideas the
             violet, your data the mauve of past reflections. */}
@@ -326,16 +324,11 @@ export default function SettingsScreen() {
         <LogoDivider />
         <Text style={styles.version}>{APP_VERSION}</Text>
       </ScrollView>
-    </View>
+    </ScreenFrame>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.paper,
-    paddingHorizontal: spacing.md,
-  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -351,9 +344,6 @@ const styles = StyleSheet.create({
     ...typography.title,
     flex: 1,
     flexWrap: 'wrap',
-  },
-  content: {
-    paddingBottom: spacing.xl,
   },
   sectionHeader: {
     marginTop: spacing.xl,

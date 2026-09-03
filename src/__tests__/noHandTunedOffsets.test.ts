@@ -4,7 +4,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-const SCREENS = path.join(__dirname, '..', 'screens');
+// Screens AND components: the only `topOffset` call site now lives in
+// ScreenFrame, so a screens-only sweep would pass while matching nothing.
+const ROOTS = ['screens', 'components'].map((dir) => path.join(__dirname, '..', dir));
 
 describe('no hand-tuned coach-note offsets in screens', () => {
   it('only ever passes a measured *Height value as topOffset', () => {
@@ -13,10 +15,14 @@ describe('no hand-tuned coach-note offsets in screens', () => {
     // same bug wearing a name. Only a value that reads as a measurement —
     // an identifier ending in `Height`, as useMeasuredHeight yields — passes.
     const offenders: string[] = [];
-    for (const name of fs.readdirSync(SCREENS).filter((n) => /\.tsx$/.test(n))) {
-      const file = path.join(SCREENS, name);
+    const files = ROOTS.flatMap((root) =>
+      fs.readdirSync(root).filter((n) => /\.tsx$/.test(n)).map((n) => path.join(root, n))
+    );
+    let seen = 0;
+    for (const file of files) {
       const text = fs.readFileSync(file, 'utf8');
       for (const match of text.matchAll(/topOffset=\{([^}]*)\}/g)) {
+        seen += 1;
         const value = match[1].trim();
         if (!/^[A-Za-z_$][\w$]*Height$/.test(value)) {
           offenders.push(`${path.basename(file)} — topOffset={${value}}`);
@@ -24,5 +30,8 @@ describe('no hand-tuned coach-note offsets in screens', () => {
       }
     }
     expect(offenders).toEqual([]);
+    // And the sweep actually looked at something — a rename that moves every
+    // call site must fail here, not pass vacuously.
+    expect(seen).toBeGreaterThan(0);
   });
 });

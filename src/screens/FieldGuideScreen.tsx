@@ -8,15 +8,12 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Line } from 'react-native-svg';
 
-import CoachNote from '@/components/CoachNote';
+import ScreenFrame, { screenContent } from '@/components/ScreenFrame';
 import EmotionChip from '@/components/EmotionChip';
-import { useMeasuredHeight } from '@/hooks/useMeasuredHeight';
 import FamilyGroup from '@/components/FamilyGroup';
 import LearnLink from '@/components/LearnLink';
-import PaperTexture from '@/components/PaperTexture';
 import { borderRadius, colors, familyPalette, hitTarget, spacing, typography } from '@/constants/theme';
 import { EMOTION_FAMILIES } from '@/content/emotions';
 import { UNDERNEATH_MAP } from '@/content/underneath';
@@ -25,7 +22,6 @@ import { useHelperSheetStore } from '@/store/helperSheetStore';
 import type { EmotionFamilyId } from '@/types/models';
 
 export default function FieldGuideScreen() {
-  const insets = useSafeAreaInsets();
   const navigation = useNavigation();
 
   // One state panel, one unfolded family, and one word detail at a time — the
@@ -33,7 +29,6 @@ export default function FieldGuideScreen() {
   const [openState, setOpenState] = React.useState<string | null>(null);
   const [openFamily, setOpenFamily] = React.useState<EmotionFamilyId | null>(null);
   const [openWordId, setOpenWordId] = React.useState<string | null>(null);
-  const [headerHeight, onHeaderLayout] = useMeasuredHeight();
 
   const openWord = openWordId ? findVocabularyWord(openWordId) : undefined;
   const openUnderneath = openState
@@ -41,9 +36,11 @@ export default function FieldGuideScreen() {
     : undefined;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-field-guide">
-      <PaperTexture />
-      <View style={styles.headerRow} onLayout={onHeaderLayout}>
+    <ScreenFrame
+      testID="screen-field-guide"
+      note={{ id: 'note-field-guide', family: 'anticipation' }}
+      header={
+      <View style={styles.headerRow}>
         <Pressable
           testID="field-guide-back"
           accessibilityRole="button"
@@ -58,8 +55,12 @@ export default function FieldGuideScreen() {
         </Pressable>
         <Text style={typography.title}>Field guide</Text>
       </View>
-
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      }
+    >
+      <ScrollView
+        contentContainerStyle={[styles.content, screenContent]}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={typography.body}>
           A little map of feelings — for finding the right word, and for noticing what an old
           mood might be carrying.
@@ -176,11 +177,7 @@ export default function FieldGuideScreen() {
           nine families. None of them is a test — the closest word is close enough.
         </Text>
       </ScrollView>
-
-      {/* First-visit helper note, floating under the measured header row —
-          the same place as on every other screen (one rule, 2026-09-03). */}
-      <CoachNote id="note-field-guide" topOffset={headerHeight} family="anticipation" />
-    </View>
+    </ScreenFrame>
   );
 }
 
@@ -199,16 +196,10 @@ function UnderneathFamilyRow({ familyId }: { familyId: EmotionFamilyId }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.paper,
-    paddingHorizontal: spacing.md,
-  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    marginBottom: spacing.md,
   },
   iconButton: {
     width: hitTarget,
@@ -217,7 +208,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   content: {
-    paddingBottom: spacing.xl,
     gap: spacing.xl,
   },
   section: {

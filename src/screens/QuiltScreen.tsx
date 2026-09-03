@@ -31,9 +31,8 @@ import {
 } from '@/constants/theme';
 import LayeredClusterVignette from '@/components/LayeredClusterVignette';
 import LogoMark from '@/components/LogoMark';
-import PaperTexture from '@/components/PaperTexture';
-import CoachNote from '@/components/CoachNote';
-import { useMeasuredHeight } from '@/hooks/useMeasuredHeight';
+import ScreenFrame, { screenContent } from '@/components/ScreenFrame';
+import { useMoodFamilies } from '@/hooks/useMoodFamilies';
 import { useNowOnFocus } from '@/hooks/useNowOnFocus';
 import FieldGuideDoorway from '@/components/FieldGuideDoorway';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -103,7 +102,6 @@ export default function QuiltScreen() {
   // weekday labels, so the layout engine is handed the already-margin-less
   // width (it lays out patches from x=0).
   const contentWidth = width - spacing.md * 2;
-  const [headerHeight, onHeaderLayout] = useMeasuredHeight();
   // One clock, advancing on focus, so the week summary and the mood mark roll
   // over on the first open after a Monday even with the app kept in memory.
   const now = useNowOnFocus();
@@ -117,7 +115,7 @@ export default function QuiltScreen() {
   );
   // The prominent current mood — the same families every mark wears (user,
   // 2026-09-03), so the header mark and the summary mark agree.
-  const moodFamilies = React.useMemo(() => selectMoodFamilies(checkIns, now), [checkIns, now]);
+  const moodFamilies = useMoodFamilies(now);
 
   // Stitch-in: when the newest check-in id changes (a fresh stitch, not a
   // rehydrate), flag it for the one-shot arrival animation, then clear.
@@ -150,9 +148,11 @@ export default function QuiltScreen() {
     : null;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-quilt">
-      <PaperTexture />
-      <View style={styles.headerRow} onLayout={onHeaderLayout}>
+    <ScreenFrame
+      testID="screen-quilt"
+      note={{ id: 'note-quilt', family: 'sadness' }}
+      header={
+      <View style={styles.headerRow}>
         <Text style={styles.title}>Your mood layers</Text>
         {/* Once check-ins exist, the field guide lives up here as the small
             layered mark — colour among the ink chrome names it, and the colour
@@ -214,7 +214,8 @@ export default function QuiltScreen() {
           </Svg>
         </Pressable>
       </View>
-
+      }
+    >
       <WeeklySummaryCard summary={weeklySummary} />
 
       {/* The field guide's home-screen doorway: a FULL row only while the
@@ -245,7 +246,7 @@ export default function QuiltScreen() {
       ) : null}
 
       {checkIns.length === 0 ? (
-        <View style={styles.empty}>
+        <View style={[styles.empty, screenContent]}>
           {/* The layered cluster in miniature — what a first check-in will
               look like (replaced the dashed placeholder square 2026-07-17). */}
           <LayeredClusterVignette size={72} />
@@ -256,7 +257,7 @@ export default function QuiltScreen() {
           ref={listRef}
           data={blocks}
           keyExtractor={(item) => item.weekKey}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[styles.listContent, screenContent]}
           initialNumToRender={3}
           windowSize={5}
           removeClippedSubviews
@@ -271,9 +272,6 @@ export default function QuiltScreen() {
         />
       )}
 
-      {/* First-visit helper note, floating under the measured header row
-          (present on day zero AND returning layouts). */}
-      <CoachNote id="note-quilt" topOffset={headerHeight} family="sadness" />
 
       <Modal
         visible={selected !== null}
@@ -370,7 +368,7 @@ export default function QuiltScreen() {
           </View>
         </View>
       </Modal>
-    </View>
+    </ScreenFrame>
   );
 }
 
@@ -382,11 +380,6 @@ function buildTitle(checkIn: CheckIn): string {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.paper,
-    paddingHorizontal: spacing.md,
-  },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -427,8 +420,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   listContent: {
-    paddingVertical: spacing.md,
-    paddingBottom: spacing.xxl,
     gap: spacing.lg,
   },
   backdrop: {

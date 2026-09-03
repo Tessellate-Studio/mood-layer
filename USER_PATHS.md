@@ -31,14 +31,38 @@ hints).
   (`checkin-fab`), which exists in both layouts — never to the conditional
   header field-guide icon.
 - **Placement is one rule on every screen (2026-09-03):** the note sits
-  directly under the screen's title row, whose height the screen measures
+  directly under the screen's title row, whose height `ScreenFrame` measures
   with `onLayout` (`useMeasuredHeight`) — the same in empty and filled
   states, and it follows a wrapped title or a larger system font. Typed
-  offsets are banned by `noHandTunedOffsets.test.ts` (anti-pattern #9).
+  offsets are banned by `noHandTunedOffsets.test.ts`, and the frame owns the
+  anchor so a page cannot mount a note without one (anti-patterns #9, #11).
 
 **Uncovered (known, accepted):**
 - The note floats over content until dismissed; on very small screens it can
   briefly overlap the weekly summary card on Layers.
+
+## Every page screen (2026-09-03)
+
+**The frame, from the three the user approved (Settings, Field guide,
+Layers):** paper ground with the grain · side gutters of `spacing.md` · the
+safe-area top plus `spacing.md` on the OUTER frame · a FIXED title row above
+the body · the scroller ending on one bottom token, identical whether the
+page is full or empty. `ScreenFrame` is that frame; all seven pages wear it
+(Layers, Experiments, Insights, Circle, Field guide, Reflections, Settings).
+
+**Edges:**
+- **Circle and Experiments before this:** the safe-area top sat on the
+  scroller's content, so their titles scrolled away under the status bar
+  while the approved three kept theirs fixed. Both now match.
+- **Empty states** get the same frame and the same bottom as full ones — the
+  body centres in what is left, it does not re-space the page.
+- **Flow screens** (check-in, judgment, practice, breathing, name-it,
+  onboarding) are deliberately unframed: a footer-driven wizard is a
+  different shape, with its own measured footer and floating hint.
+
+**Uncovered (known, accepted):**
+- The tab bar's own height is react-navigation's; the frame does not pad for
+  it, matching the approved screens.
 
 ## Insights
 

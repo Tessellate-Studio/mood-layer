@@ -18,14 +18,11 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Line, Path } from 'react-native-svg';
 
 import { borderRadius, colors, hitTarget, mutedPalette, spacing, typography } from '@/constants/theme';
 import LogoDivider from '@/components/LogoDivider';
-import PaperTexture from '@/components/PaperTexture';
-import CoachNote from '@/components/CoachNote';
-import { useMeasuredHeight } from '@/hooks/useMeasuredHeight';
+import ScreenFrame, { screenContent } from '@/components/ScreenFrame';
 import { useSettingsStore } from '@/store/settingsStore';
 import ThreadCard from '@/components/ThreadCard';
 import {
@@ -390,13 +387,11 @@ function ReceivedStrip({ people, received }: { people: CirclePerson[]; received:
 }
 
 export default function CircleScreen() {
-  const insets = useSafeAreaInsets();
   const people = useCircleStore((s) => s.people);
   const received = useCircleStore((s) => s.received);
   const checkIns = useCheckInStore((s) => s.checkIns);
   const judgmentEntries = useExperimentStore((s) => s.judgmentEntries);
   const [inviting, setInviting] = React.useState(false);
-  const [headerHeight, onHeaderLayout] = useMeasuredHeight();
 
   // Pull anything paired people sent since we last looked. Focus-driven in
   // phase 1 (a push poke arrives with scheduled sends, phase 2).
@@ -430,14 +425,15 @@ export default function CircleScreen() {
   }, [pendingSharePersonId, people, stats, clearPendingShare]);
 
   return (
-    <View style={styles.container}>
-      <PaperTexture />
+    <ScreenFrame
+      testID="screen-circle"
+      header={<Text style={typography.title}>Your circle</Text>}
+      note={{ id: 'note-circle', family: PERSON_FAMILY }}
+    >
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.md, paddingBottom: insets.bottom + spacing.xxl }]}
+        contentContainerStyle={[styles.content, screenContent]}
         keyboardShouldPersistTaps="handled"
-        testID="screen-circle"
       >
-        <Text style={typography.title} onLayout={onHeaderLayout}>Your circle</Text>
         <Text style={styles.intro}>
           Nothing leaves your phone until you choose it. You control what each person sees and how
           often.
@@ -469,21 +465,12 @@ export default function CircleScreen() {
 
         <LogoDivider tip="Change or stop sharing any time. Removing someone deletes everything they were ever sent." />
       </ScrollView>
-
-      {/* First-visit helper note, floating under the measured title row —
-          the same place as on every other screen (one rule, 2026-09-03). */}
-      <CoachNote id="note-circle" topOffset={headerHeight} family={PERSON_FAMILY} />
-    </View>
+    </ScreenFrame>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.paper,
-  },
   content: {
-    paddingHorizontal: spacing.md,
     gap: spacing.sm,
   },
   intro: {
