@@ -22,6 +22,7 @@ import LogoMark from '@/components/LogoMark';
 import PaperTexture from '@/components/PaperTexture';
 import CoachNote from '@/components/CoachNote';
 import ThreadCard from '@/components/ThreadCard';
+import { useMeasuredHeight } from '@/hooks/useMeasuredHeight';
 import {
   INSIGHTS_EMPTY_CAPTION,
   INSIGHTS_EMPTY_MONTH_BELOW,
@@ -35,7 +36,7 @@ import {
 import { monthlyMoodDigest, monthlyPracticeReflection } from '@/content/monthlyDigest';
 import { RESISTANCE_TELLS } from '@/content/resistance';
 import { useMotion } from '@/hooks/useMotion';
-import { useCheckInStore } from '@/store/checkInStore';
+import { selectMoodFamilies, useCheckInStore } from '@/store/checkInStore';
 import { useExperimentStore } from '@/store/experimentStore';
 import { useInsightStore } from '@/store/insightStore';
 import type { EmotionFamilyId, InsightCardState } from '@/types/models';
@@ -135,13 +136,21 @@ export default function InsightsScreen() {
   const practiceSessions = useExperimentStore((s) => s.practiceSessions);
 
   const { reduced: reduceMotion } = useMotion();
+  const [headerHeight, onHeaderLayout] = useMeasuredHeight();
+  // "Now" advances on every focus, so every date-keyed view below — last
+  // week's cards, last month's cards, the mood mark, the empty-state reason —
+  // rolls over on the first open after a Monday or a 1st, even when the app
+  // stayed in memory across the boundary.
+  const [now, setNow] = React.useState(() => new Date());
 
   // Generate LAST week's cards the first time the tab is focused after the
   // week rolls over. getState() reads (not hook subscriptions) keep this
   // callback stable so useFocusEffect doesn't re-run on every store change.
   useFocusEffect(
     React.useCallback(() => {
-      const lastWeek = previousWeekKey(new Date());
+      const fresh = new Date();
+      setNow(fresh);
+      const lastWeek = previousWeekKey(fresh);
       if (useInsightStore.getState().lastGeneratedWeekKey === lastWeek) return;
       const stats = computeStatsForWeek(
         useCheckInStore.getState().checkIns,
@@ -158,7 +167,7 @@ export default function InsightsScreen() {
   // card: after a week too quiet to generate, the newest card is two weeks
   // old and must not sit under that header — the empty state shows instead.
   // Older cards stay in the store, unread here, for a later variety pass.
-  const lastWeek = previousWeekKey(new Date());
+  const lastWeek = previousWeekKey(now);
   const visible = cards.filter((card) => card.weekKey === lastWeek);
   const hasCards = visible.length > 0;
 
@@ -181,23 +190,19 @@ export default function InsightsScreen() {
     [summaryStats]
   );
 
-  // The week's mood, worn by the same mark the home screen breathes — the two
-  // screens read as one system (user, 2026-07-17).
-  const markFamilies = React.useMemo(() => {
-    if (!summaryStats) return undefined;
-    const top = (Object.entries(summaryStats.familyCounts) as [EmotionFamilyId, number][])
-      .filter(([, n]) => n > 0)
-      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-      .map(([family]) => family);
-    return top.length > 0 ? top.slice(0, 3) : undefined;
-  }, [summaryStats]);
+  // The prominent CURRENT mood, worn by the same mark the home screen breathes
+  // — one rule for every mark (user, 2026-07-17; 2026-09-03). Not last week's,
+  // even though the cards are: the mark is the app's mood, the cards a report.
+  const moodFamilies = React.useMemo(() => selectMoodFamilies(checkIns, now), [checkIns, now]);
 
-  // Beyond the week: the month's texture + what the practices surfaced
-  // (user, 2026-07-17/18). Computed live, never stored; hidden while thin.
-  const moodDigest = React.useMemo(() => monthlyMoodDigest(checkIns), [checkIns]);
+  // Beyond the week: last calendar month's texture + what the practices
+  // surfaced (user, 2026-07-17/18; calendar month, not rolling, 2026-09-03).
+  // Computed live — a finished month's data cannot change — never stored;
+  // hidden while thin.
+  const moodDigest = React.useMemo(() => monthlyMoodDigest(checkIns, now), [checkIns, now]);
   const practiceReflection = React.useMemo(
-    () => monthlyPracticeReflection(practiceSessions, judgmentEntries),
-    [practiceSessions, judgmentEntries]
+    () => monthlyPracticeReflection(practiceSessions, judgmentEntries, now),
+    [practiceSessions, judgmentEntries, now]
   );
   const monthlyBlock =
     moodDigest || practiceReflection ? (
@@ -237,16 +242,16 @@ export default function InsightsScreen() {
   // old copy claimed "not enough layers" even with a full month behind it
   // (user, 2026-07-18).
   const thisWeekCount = React.useMemo(
-    () => computeStatsForWeek(checkIns, judgmentEntries, weekKey(new Date().toISOString())).checkInCount,
-    [checkIns, judgmentEntries]
+    () => computeStatsForWeek(checkIns, judgmentEntries, weekKey(now.toISOString())).checkInCount,
+    [checkIns, judgmentEntries, now]
   );
   const emptyText = thisWeekCount === 0 ? INSIGHTS_EMPTY_QUIET_WEEK : INSIGHTS_EMPTY_NO_PATTERN;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-insights">
       <PaperTexture />
-      <View style={styles.headerRow}>
-        {markFamilies ? <LogoMark families={markFamilies} size={44} /> : null}
+      <View style={styles.headerRow} testID="insights-header" onLayout={onHeaderLayout}>
+        <LogoMark families={moodFamilies} size={44} />
         <View style={styles.headerText}>
           <Text style={typography.title}>{INSIGHTS_HEADER_TITLE}</Text>
           {summaryStats ? (
@@ -299,9 +304,8 @@ export default function InsightsScreen() {
       )}
 
       {/* First-visit helper note — there is nothing to do here yet, and the
-          note says exactly that. topOffset clears the title at the post-bump
-          scale. */}
-      <CoachNote id="note-insights" topOffset={68} family="enjoyment" />
+          note says exactly that. It sits under the measured header row. */}
+      <CoachNote id="note-insights" topOffset={headerHeight} family="enjoyment" />
     </View>
   );
 }

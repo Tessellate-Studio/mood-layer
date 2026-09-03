@@ -15,19 +15,20 @@ import type {
   ResistanceTellId,
 } from '@/types/models';
 import type { PracticeSession } from '@/store/experimentStore';
+import { monthKey, monthLabel, previousMonthKey } from '@/utils/dates';
 import { sessionConclusion } from '@/utils/practiceWork';
 import { groupSittings } from '@/utils/sittings';
-
-const DAYS_30_MS = 30 * 24 * 60 * 60 * 1000;
 
 /** Fewer check-ins than this and a month has no texture to read yet. */
 export const MONTHLY_MIN_CHECKINS = 8;
 
 // The overlines the Insights screen wears on the month cards — kept with the
-// titles they label, so the pairing is decided here, not in the screen. "This
-// month" is honest: the window is the rolling 30 days ending today.
-export const MONTHLY_TEXTURE_OVERLINE = 'This month · Texture';
-export const MONTHLY_PRACTICES_OVERLINE = 'This month · Practices';
+// titles they label, so the pairing is decided here, not in the screen. The
+// cards describe the calendar month that just ended (the weekly pattern, user
+// 2026-09-03): fixed for the whole of the following month, refreshed on the
+// first open on the 1st — so "last month", and the title names it.
+export const MONTHLY_TEXTURE_OVERLINE = 'Last month · Texture';
+export const MONTHLY_PRACTICES_OVERLINE = 'Last month · Practices';
 
 export interface MonthlyMoodDigest {
   overline: string;
@@ -37,8 +38,7 @@ export interface MonthlyMoodDigest {
   families: EmotionFamilyId[];
 }
 
-const inWindow = (iso: string, now: Date) =>
-  now.getTime() - new Date(iso).getTime() <= DAYS_30_MS && new Date(iso) <= now;
+const inMonth = (iso: string, mk: string) => monthKey(iso) === mk;
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
@@ -51,7 +51,9 @@ export function monthlyMoodDigest(
   checkIns: CheckIn[],
   now: Date = new Date()
 ): MonthlyMoodDigest | null {
-  const recent = checkIns.filter((c) => inWindow(c.createdAt, now));
+  const mk = previousMonthKey(now);
+  const month = monthLabel(mk);
+  const recent = checkIns.filter((c) => inMonth(c.createdAt, mk));
   if (recent.length < MONTHLY_MIN_CHECKINS) return null;
 
   const days = new Set(recent.map((c) => c.dayKey)).size;
@@ -84,10 +86,10 @@ export function monthlyMoodDigest(
 
   return {
     overline: MONTHLY_TEXTURE_OVERLINE,
-    title: 'The month, in layers',
+    title: `${month}, in layers`,
     body:
       `${plural(recent.length, 'check-in', 'check-ins')} across ` +
-      `${plural(days, 'day', 'days')} this month. ${carried} carried it.` +
+      `${plural(days, 'day', 'days')} in ${month}. ${carried} carried it.` +
       `${tellClause} Worth a slow scroll back through the layers?`,
     families: topFamilies.slice(0, 3),
   };
@@ -115,11 +117,13 @@ export function monthlyPracticeReflection(
   judgmentEntries: JudgmentEntry[],
   now: Date = new Date()
 ): PracticeReflection | null {
+  const mk = previousMonthKey(now);
+  const month = monthLabel(mk);
   const sittings = groupSittings(judgmentEntries).filter((s) =>
-    inWindow(s.entries[0].createdAt, now)
+    inMonth(s.entries[0].createdAt, mk)
   );
   const recentSessions = practiceSessions
-    .filter((s) => inWindow(s.createdAt, now))
+    .filter((s) => inMonth(s.createdAt, mk))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
   if (sittings.length === 0 && recentSessions.length === 0) return null;
@@ -142,13 +146,13 @@ export function monthlyPracticeReflection(
   if (topFeeling && topFeeling[1] >= 2) {
     const label = (findVocabularyWord(topFeeling[0])?.word.label ?? topFeeling[0]).toLowerCase();
     body =
-      `Under the judgments you looked at this month, ${label} was waiting ` +
+      `Under the judgments you looked at in ${month}, ${label} was waiting ` +
       `${plural(topFeeling[1], 'time', 'times')}. Worth meeting it directly?`;
   } else if (sittings.length > 0) {
     // A blank line ahead of the invitation, so it reads as its own beat
     // instead of trailing the count as one run-on sentence (user, 2026-09-02).
     body =
-      `${plural(sittings.length, 'judgment sitting', 'judgment sittings')} this month.\n\n` +
+      `${plural(sittings.length, 'judgment sitting', 'judgment sittings')} in ${month}.\n\n` +
       'Naming what sits underneath is the whole practice — the rest can wait.';
   } else {
     body = 'What these sittings arrived at, kept where you can find it again.';

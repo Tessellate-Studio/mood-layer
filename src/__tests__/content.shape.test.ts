@@ -473,9 +473,9 @@ describe('insight templates', () => {
     // The pattern overline names the same window as the header.
     expect(INSIGHTS_OVERLINE_PATTERN).toContain(INSIGHTS_HEADER_TITLE);
     // The month cards' overlines live with the titles they label and name
-    // their window too: the rolling 30 days.
-    expect(MONTHLY_TEXTURE_OVERLINE).toMatch(/^This month/);
-    expect(MONTHLY_PRACTICES_OVERLINE).toMatch(/^This month/);
+    // their window too: the calendar month that just ended.
+    expect(MONTHLY_TEXTURE_OVERLINE).toMatch(/^Last month/);
+    expect(MONTHLY_PRACTICES_OVERLINE).toMatch(/^Last month/);
   });
 });
 

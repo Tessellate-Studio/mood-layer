@@ -2,8 +2,10 @@
 // quiet preview line) that unfolds its word chips on tap. Born from user
 // feedback (2026-07-13): nine fully-open families read as a wall of ~50
 // chips — exactly wrong for someone already overwhelmed. Folded is the calm
-// default; the preview hints at the range without asking to be read. The
-// preview stays inkMuted (7:1), never a sub-AA fade — contrast is a hard rule.
+// default; the preview hints at the range without asking to be read. It is
+// still reading text, so it sits at body size in the body token's inkSoft
+// (anti-pattern #10) — quiet by colour, never by a smaller face, and never a
+// sub-AA fade; contrast is a hard rule.
 
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -75,8 +77,10 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: spacing.xs,
   },
+  // The folded essence is reading text: body size (anti-pattern #10), in the
+  // body token's own inkSoft.
   preview: {
-    ...typography.caption,
+    ...typography.body,
   },
   toggle: {
     ...typography.heading,

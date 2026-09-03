@@ -3,10 +3,12 @@
 // "Find the word" (the full mild→intense vocabulary per family).
 
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
+import { fireEvent, render, screen, within } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import { typography } from '@/constants/theme';
 import ExperimentsScreen from '@/screens/ExperimentsScreen';
 import FieldGuideScreen from '@/screens/FieldGuideScreen';
 import { EMOTION_FAMILIES } from '@/content/emotions';
@@ -39,6 +41,23 @@ describe('FieldGuideScreen', () => {
   it('floats the first-visit helper note', async () => {
     renderScreen(<FieldGuideScreen />);
     expect(await screen.findByTestId('coach-note-field-guide')).toBeTruthy();
+  });
+
+  it('sets reading text in body size and the family key in label size — never caption', async () => {
+    // Rule (user, 2026-09-03: "still tiny"): reading text is never below
+    // `body`; a legend the reader must scan is at least `label`; `caption`
+    // is for metadata only.
+    renderScreen(<FieldGuideScreen />);
+    await screen.findByTestId('screen-field-guide');
+    for (const essence of screen.getAllByText(EMOTION_FAMILIES.anger.essence)) {
+      expect(StyleSheet.flatten(essence.props.style).fontSize).toBeGreaterThanOrEqual(
+        typography.body.fontSize
+      );
+    }
+    const keyLabel = within(screen.getByTestId('family-key-anger')).getByText('Anger');
+    expect(StyleSheet.flatten(keyLabel.props.style).fontSize).toBeGreaterThanOrEqual(
+      typography.label.fontSize
+    );
   });
 
   it('shows a chip for every surface state', async () => {

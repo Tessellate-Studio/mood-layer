@@ -5,13 +5,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { topFamilies } from '@/content/circle';
 import type {
   CheckIn,
   EmotionFamilyId,
   ResistanceTellId,
   WeekStats,
 } from '@/types/models';
-import { dayKey, weekKey } from '@/utils/dates';
+import { dayKey, previousWeekKey, weekKey } from '@/utils/dates';
 import { generateUUID } from '@/utils/ids';
 
 interface CheckInState {
@@ -150,4 +151,17 @@ export function selectWeekStats(
     distinctEmotionIds: [...distinct],
     judgmentEntryCount,
   };
+}
+
+/**
+ * The prominent current mood that every mark wears (user, 2026-09-03: the
+ * Layers header mark, the weekly-summary mark and the Insights header mark
+ * all tinted the same way). This week's families, most frequent first, at
+ * most three; last week's while this week is still empty; [] when both are,
+ * which LogoMark renders as the brand stack.
+ */
+export function selectMoodFamilies(checkIns: CheckIn[], now: Date): EmotionFamilyId[] {
+  const top = (wk: string) => topFamilies(selectWeekStats(checkIns, 0, wk)).slice(0, 3);
+  const thisWeek = top(weekKey(now.toISOString()));
+  return thisWeek.length > 0 ? thisWeek : top(previousWeekKey(now));
 }

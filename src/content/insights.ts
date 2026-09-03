@@ -28,7 +28,7 @@ export const INSIGHTS_EMPTY_NO_PATTERN =
   'Checked in, but no clear pattern has surfaced yet — insights stay quiet until one does.';
 export const INSIGHTS_EMPTY_CAPTION =
   'Patterns appear here once a week, when there are enough layers to read.';
-export const INSIGHTS_EMPTY_MONTH_BELOW = 'Your month is below.';
+export const INSIGHTS_EMPTY_MONTH_BELOW = 'Last month is below.';
 
 export interface InsightTemplate {
   id: string;

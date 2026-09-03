@@ -13,6 +13,7 @@ import Svg, { Line } from 'react-native-svg';
 
 import CoachNote from '@/components/CoachNote';
 import EmotionChip from '@/components/EmotionChip';
+import { useMeasuredHeight } from '@/hooks/useMeasuredHeight';
 import FamilyGroup from '@/components/FamilyGroup';
 import LearnLink from '@/components/LearnLink';
 import PaperTexture from '@/components/PaperTexture';
@@ -32,6 +33,7 @@ export default function FieldGuideScreen() {
   const [openState, setOpenState] = React.useState<string | null>(null);
   const [openFamily, setOpenFamily] = React.useState<EmotionFamilyId | null>(null);
   const [openWordId, setOpenWordId] = React.useState<string | null>(null);
+  const [headerHeight, onHeaderLayout] = useMeasuredHeight();
 
   const openWord = openWordId ? findVocabularyWord(openWordId) : undefined;
   const openUnderneath = openState
@@ -41,7 +43,7 @@ export default function FieldGuideScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-field-guide">
       <PaperTexture />
-      <View style={styles.headerRow}>
+      <View style={styles.headerRow} testID="field-guide-header" onLayout={onHeaderLayout}>
         <Pressable
           testID="field-guide-back"
           accessibilityRole="button"
@@ -175,9 +177,9 @@ export default function FieldGuideScreen() {
         </Text>
       </ScrollView>
 
-      {/* First-visit helper note, floating below the header + intro, above
-          the family key. topOffset clears the intro at the post-bump scale. */}
-      <CoachNote id="note-field-guide" topOffset={108} family="anticipation" />
+      {/* First-visit helper note, floating under the measured header row —
+          the same place as on every other screen (one rule, 2026-09-03). */}
+      <CoachNote id="note-field-guide" topOffset={headerHeight} family="anticipation" />
     </View>
   );
 }
@@ -189,7 +191,7 @@ function UnderneathFamilyRow({ familyId }: { familyId: EmotionFamilyId }) {
     <View style={styles.familyRow}>
       <View style={styles.familyRowText}>
         <Text style={typography.heading}>{family.label}</Text>
-        <Text style={typography.caption}>{family.essence}</Text>
+        <Text style={typography.body}>{family.essence}</Text>
       </View>
       <LearnLink family={familyId} testID={`guide-learn-${familyId}`} />
     </View>
@@ -244,8 +246,9 @@ const styles = StyleSheet.create({
     height: 14,
     borderRadius: borderRadius.sm,
   },
+  // A legend the eye scans: label size, not caption (anti-pattern #10).
   keyLabel: {
-    ...typography.caption,
+    ...typography.label,
     color: colors.inkSoft,
   },
   panel: {
@@ -277,7 +280,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   footer: {
-    ...typography.caption,
+    ...typography.body,
     textAlign: 'center',
     marginTop: spacing.md,
   },

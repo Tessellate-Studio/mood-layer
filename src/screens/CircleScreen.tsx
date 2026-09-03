@@ -25,6 +25,7 @@ import { borderRadius, colors, hitTarget, mutedPalette, spacing, typography } fr
 import LogoDivider from '@/components/LogoDivider';
 import PaperTexture from '@/components/PaperTexture';
 import CoachNote from '@/components/CoachNote';
+import { useMeasuredHeight } from '@/hooks/useMeasuredHeight';
 import { useSettingsStore } from '@/store/settingsStore';
 import ThreadCard from '@/components/ThreadCard';
 import {
@@ -395,6 +396,7 @@ export default function CircleScreen() {
   const checkIns = useCheckInStore((s) => s.checkIns);
   const judgmentEntries = useExperimentStore((s) => s.judgmentEntries);
   const [inviting, setInviting] = React.useState(false);
+  const [headerHeight, onHeaderLayout] = useMeasuredHeight();
 
   // Pull anything paired people sent since we last looked. Focus-driven in
   // phase 1 (a push poke arrives with scheduled sends, phase 2).
@@ -435,7 +437,9 @@ export default function CircleScreen() {
         keyboardShouldPersistTaps="handled"
         testID="screen-circle"
       >
-        <Text style={typography.title}>Your circle</Text>
+        <View testID="circle-header" onLayout={onHeaderLayout}>
+          <Text style={typography.title}>Your circle</Text>
+        </View>
         <Text style={styles.intro}>
           Nothing leaves your phone until you choose it. You control what each person sees and how
           often.
@@ -468,10 +472,9 @@ export default function CircleScreen() {
         <LogoDivider tip="Change or stop sharing any time. Removing someone deletes everything they were ever sent." />
       </ScrollView>
 
-      {/* First-visit helper note, floating below the title + intro, above
-          the invite row. topOffset clears the intro at the post-bump scale
-          (title +1, two body lines +1 each). */}
-      <CoachNote id="note-circle" topOffset={100} family={PERSON_FAMILY} />
+      {/* First-visit helper note, floating under the measured title row —
+          the same place as on every other screen (one rule, 2026-09-03). */}
+      <CoachNote id="note-circle" topOffset={headerHeight} family={PERSON_FAMILY} />
     </View>
   );
 }

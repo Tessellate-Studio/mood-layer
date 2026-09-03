@@ -1,7 +1,15 @@
 // Monthly digests — pure generators for the Insights tab's beyond-the-week
-// sections. Date-stable: `now` is injected.
+// sections. They describe LAST calendar month (the weekly pattern, user
+// 2026-09-03): with NOW in July, everything counted must sit in June.
+// Date-stable: `now` is injected.
 
-import { monthlyMoodDigest, monthlyPracticeReflection, MONTHLY_MIN_CHECKINS } from '@/content/monthlyDigest';
+import {
+  monthlyMoodDigest,
+  monthlyPracticeReflection,
+  MONTHLY_MIN_CHECKINS,
+  MONTHLY_PRACTICES_OVERLINE,
+  MONTHLY_TEXTURE_OVERLINE,
+} from '@/content/monthlyDigest';
 import type { PracticeSession } from '@/store/experimentStore';
 import type { CheckIn, JudgmentEntry } from '@/types/models';
 import { dayKey } from '@/utils/dates';
@@ -24,30 +32,47 @@ function checkIn(daysAgo: number, i = 0, flags: CheckIn['resistanceFlags'] = [])
   };
 }
 
+/** daysAgo that lands on the n-th day back from June 30 (NOW is Jul 17). */
+const inJune = (n: number) => 17 + n;
+
 describe('monthlyMoodDigest', () => {
-  it('stays silent while the month is too thin to read', () => {
-    const thin = Array.from({ length: MONTHLY_MIN_CHECKINS - 1 }, (_, i) => checkIn(i + 1));
+  it('stays silent while last month is too thin to read', () => {
+    const thin = Array.from({ length: MONTHLY_MIN_CHECKINS - 1 }, (_, i) => checkIn(inJune(i)));
     expect(monthlyMoodDigest(thin, NOW)).toBeNull();
   });
 
-  it('names count, spread, carrying families, and the leading tell', () => {
-    const month = Array.from({ length: 10 }, (_, i) =>
-      checkIn(i + 1, 0, i < 4 ? ['binary-stuckness'] : [])
+  it('names last month by name, with count, spread, carrying families, and the leading tell', () => {
+    const june = Array.from({ length: 10 }, (_, i) =>
+      checkIn(inJune(i), 0, i < 4 ? ['binary-stuckness'] : [])
     );
-    const digest = monthlyMoodDigest(month, NOW);
+    const digest = monthlyMoodDigest(june, NOW);
     expect(digest).not.toBeNull();
-    expect(digest!.body).toContain('10 check-ins across 10 days');
+    expect(digest!.overline).toBe(MONTHLY_TEXTURE_OVERLINE);
+    expect(digest!.title).toBe('June, in layers');
+    expect(digest!.body).toContain('10 check-ins across 10 days in June');
     expect(digest!.body).toContain('Enjoyment and Fear carried it');
     expect(digest!.body).toContain('Stuck between two options');
-    // Old check-ins outside the 30-day window don't count.
-    expect(monthlyMoodDigest([...month, checkIn(45)], NOW)!.body).toContain('10 check-ins');
+    expect(digest!.body.toLowerCase()).not.toContain('this month');
+  });
+
+  it('counts only last calendar month — not this month, not the month before', () => {
+    const june = Array.from({ length: 10 }, (_, i) => checkIn(inJune(i)));
+    const withNeighbours = [...june, checkIn(1), checkIn(60)]; // Jul 16 and May 18
+    expect(monthlyMoodDigest(withNeighbours, NOW)!.body).toContain('10 check-ins');
+  });
+
+  it('is silent while the current month is busy but last month was thin', () => {
+    // The weekly pattern: the card describes a COMPLETED period, so a full
+    // July with a quiet June shows nothing until August.
+    const july = Array.from({ length: 10 }, (_, i) => checkIn(i + 1));
+    expect(monthlyMoodDigest(july, NOW)).toBeNull();
   });
 
   it('skips the tell clause below three occurrences', () => {
-    const month = Array.from({ length: 10 }, (_, i) =>
-      checkIn(i + 1, 0, i < 2 ? ['comparison'] : [])
+    const june = Array.from({ length: 10 }, (_, i) =>
+      checkIn(inJune(i), 0, i < 2 ? ['comparison'] : [])
     );
-    expect(monthlyMoodDigest(month, NOW)!.body).not.toContain('Comparison');
+    expect(monthlyMoodDigest(june, NOW)!.body).not.toContain('Comparison');
   });
 });
 
@@ -88,11 +113,11 @@ describe('monthlyPracticeDigest', () => {
   });
 
   it('surfaces the feeling most often found under judgments, not a tally', () => {
-    // 'worried' waits under two of the sitting's judgments.
+    // 'worried' waits under two of the sitting's judgments — in June.
     const entries: JudgmentEntry[] = [
       {
         id: 'j-a',
-        createdAt: new Date(2026, 6, 12, 20).toISOString(),
+        createdAt: new Date(2026, 5, 12, 20).toISOString(),
         target: 'myself',
         judgment: 'being slow',
         uncoveredFeelings: [{ emotionId: 'worried', family: 'fear', intensity: 2 }],
@@ -100,7 +125,7 @@ describe('monthlyPracticeDigest', () => {
       },
       {
         id: 'j-b',
-        createdAt: new Date(2026, 6, 12, 20).toISOString(),
+        createdAt: new Date(2026, 5, 12, 20).toISOString(),
         target: 'my week',
         judgment: 'the mess',
         uncoveredFeelings: [{ emotionId: 'worried', family: 'fear', intensity: 3 }],
@@ -109,7 +134,9 @@ describe('monthlyPracticeDigest', () => {
     ];
     const reflection = monthlyPracticeReflection([], entries, NOW);
     expect(reflection).not.toBeNull();
-    expect(reflection!.body).toContain('worried was waiting 2 times');
+    expect(reflection!.overline).toBe(MONTHLY_PRACTICES_OVERLINE);
+    expect(reflection!.body).toContain('in June, worried was waiting 2 times');
+    expect(reflection!.body.toLowerCase()).not.toContain('this month');
   });
 
   it('breaks the sitting count onto its own line, ahead of the reflection invite', () => {
@@ -118,7 +145,7 @@ describe('monthlyPracticeDigest', () => {
     const entries: JudgmentEntry[] = [
       {
         id: 'j-only',
-        createdAt: new Date(2026, 6, 12, 20).toISOString(),
+        createdAt: new Date(2026, 5, 12, 20).toISOString(),
         target: 'myself',
         judgment: 'being slow',
         uncoveredFeelings: [{ emotionId: 'worried', family: 'fear', intensity: 2 }],
@@ -130,19 +157,19 @@ describe('monthlyPracticeDigest', () => {
     // The count sentence and the invitation read as two separate lines, not
     // one run-on paragraph — the invitation is worth a beat on its own.
     expect(reflection!.body).toBe(
-      '1 judgment sitting this month.\n\nNaming what sits underneath is the whole practice — the rest can wait.'
+      '1 judgment sitting in June.\n\nNaming what sits underneath is the whole practice — the rest can wait.'
     );
   });
 
   it('keeps the actual CONCLUSIONS of recent sittings, newest first', () => {
     const reflection = monthlyPracticeReflection(
       [
-        session('ps-old', 'problem-solution', 10, {
+        session('ps-old', 'problem-solution', inJune(13), {
           entries: { problem: ['no time'], ideas: ['ask for help'], 'small-step': ['email Sam'] },
           marks: {},
           picks: { 'one-step': ['ideas:0'] },
         }),
-        session('ps-new', 'five-year-flashback', 2, {
+        session('ps-new', 'five-year-flashback', inJune(3), {
           entries: { decision: ['move?'], options: ['stay', 'go north'] },
           marks: {},
           picks: { 'still-matters': ['options:1'] },
@@ -160,13 +187,13 @@ describe('monthlyPracticeDigest', () => {
     expect(reflection!.kept[1].practice).toBe('Problem, then solution');
   });
 
-  it('ignores sittings older than the 30-day window', () => {
+  it('ignores sittings outside last calendar month — this month and the month before', () => {
+    const work = { entries: { problem: ['old'] }, marks: {}, picks: {} };
     const reflection = monthlyPracticeReflection(
-      [session('ps-stale', 'problem-solution', 45, {
-        entries: { problem: ['old'] },
-        marks: {},
-        picks: {},
-      })],
+      [
+        session('ps-this-month', 'problem-solution', 2, work), // Jul 15
+        session('ps-two-back', 'problem-solution', 60, work), // May 18
+      ],
       [],
       NOW
     );

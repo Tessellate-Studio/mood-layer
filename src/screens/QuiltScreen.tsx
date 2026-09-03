@@ -33,6 +33,7 @@ import LayeredClusterVignette from '@/components/LayeredClusterVignette';
 import LogoMark from '@/components/LogoMark';
 import PaperTexture from '@/components/PaperTexture';
 import CoachNote from '@/components/CoachNote';
+import { useMeasuredHeight } from '@/hooks/useMeasuredHeight';
 import FieldGuideDoorway from '@/components/FieldGuideDoorway';
 import { useSettingsStore } from '@/store/settingsStore';
 import WeeklySummaryCard from '@/components/WeeklySummaryCard';
@@ -41,7 +42,7 @@ import { EMOTION_FAMILIES } from '@/content/emotions';
 import { findVocabularyWord } from '@/content/vocabulary';
 import type { RootStackParamList } from '@/navigation/AppNavigator';
 import QuiltWeek from '@/components/QuiltWeek';
-import { selectWeekStats, useCheckInStore } from '@/store/checkInStore';
+import { selectMoodFamilies, selectWeekStats, useCheckInStore } from '@/store/checkInStore';
 import { useHelperSheetStore } from '@/store/helperSheetStore';
 import type { CheckIn, EmotionFamilyId } from '@/types/models';
 import { useMotion } from '@/hooks/useMotion';
@@ -101,6 +102,7 @@ export default function QuiltScreen() {
   // weekday labels, so the layout engine is handed the already-margin-less
   // width (it lays out patches from x=0).
   const contentWidth = width - spacing.md * 2;
+  const [headerHeight, onHeaderLayout] = useMeasuredHeight();
   const blocks = React.useMemo(
     () => computeQuiltLayout(checkIns, contentWidth - 34),
     [checkIns, contentWidth]
@@ -109,6 +111,9 @@ export default function QuiltScreen() {
     const wk = weekKey(new Date().toISOString());
     return homeWeeklySummary(selectWeekStats(checkIns, 0, wk));
   }, [checkIns]);
+  // The prominent current mood — the same families every mark wears (user,
+  // 2026-09-03), so the header mark and the summary mark agree.
+  const moodFamilies = React.useMemo(() => selectMoodFamilies(checkIns, new Date()), [checkIns]);
   const todayHasEntry = React.useMemo(
     () => checkIns.some((c) => c.dayKey === dayKey(new Date().toISOString())),
     [checkIns]
@@ -147,10 +152,11 @@ export default function QuiltScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.md }]} testID="screen-quilt">
       <PaperTexture />
-      <View style={styles.headerRow}>
+      <View style={styles.headerRow} testID="quilt-header" onLayout={onHeaderLayout}>
         <Text style={styles.title}>Your mood layers</Text>
         {/* Once check-ins exist, the field guide lives up here as the small
-            layered mark — colour among the ink chrome names it. */}
+            layered mark — colour among the ink chrome names it, and the colour
+            is the current mood, like every mark. */}
         {checkIns.length > 0 ? (
           <Pressable
             testID="header-field-guide"
@@ -159,7 +165,7 @@ export default function QuiltScreen() {
             style={styles.iconButton}
             onPress={() => navigation.navigate('FieldGuide')}
           >
-            <LogoMark size={24} />
+            <LogoMark families={moodFamilies} size={24} />
           </Pressable>
         ) : null}
         {/* Add lives up here as quiet chrome, twin to settings — no floating
@@ -265,10 +271,9 @@ export default function QuiltScreen() {
         />
       )}
 
-      {/* First-visit helper note, floating under the header chrome (present
-          on day zero AND returning layouts). The header row's height comes
-          from its 44dp icon buttons, not the type scale. */}
-      <CoachNote id="note-quilt" topOffset={48} family="sadness" />
+      {/* First-visit helper note, floating under the measured header row
+          (present on day zero AND returning layouts). */}
+      <CoachNote id="note-quilt" topOffset={headerHeight} family="sadness" />
 
       <Modal
         visible={selected !== null}

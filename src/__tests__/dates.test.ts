@@ -3,7 +3,15 @@
 // parsed as LOCAL time, which makes these assertions hold in any test-runner
 // timezone while still exercising the "dayKey/weekKey use local time" rule.
 
-import { dayKey, weekKey, dayPartLabel, previousWeekKey } from '@/utils/dates';
+import {
+  dayKey,
+  weekKey,
+  dayPartLabel,
+  monthKey,
+  monthLabel,
+  previousMonthKey,
+  previousWeekKey,
+} from '@/utils/dates';
 
 describe('dayKey', () => {
   it('formats local YYYY-MM-DD', () => {
@@ -64,6 +72,36 @@ describe('previousWeekKey', () => {
   it('crosses year boundaries', () => {
     // 2026-01-01 is in 2026-W01; the previous week is 2025-W52.
     expect(previousWeekKey(new Date(2026, 0, 1, 12, 0, 0))).toBe('2025-W52');
+  });
+
+  it('on Monday itself already names the week that just ended', () => {
+    // 2026-07-06 is a Monday, first minutes of 2026-W28 → last week is W27.
+    // The Insights tab refreshes on the FIRST open on Monday, not after it.
+    expect(previousWeekKey(new Date(2026, 6, 6, 0, 30, 0))).toBe('2026-W27');
+  });
+});
+
+describe('monthKey / previousMonthKey / monthLabel', () => {
+  it('formats local YYYY-MM', () => {
+    expect(monthKey('2026-07-07T14:23:45')).toBe('2026-07');
+    expect(monthKey('2026-12-31T23:59:00')).toBe('2026-12');
+  });
+
+  it('previousMonthKey names the calendar month before now', () => {
+    expect(previousMonthKey(new Date(2026, 6, 17, 12, 0, 0))).toBe('2026-06');
+    // On the 1st itself the month that just ended is already "last month".
+    expect(previousMonthKey(new Date(2026, 6, 1, 0, 5, 0))).toBe('2026-06');
+    // Day-of-month must not carry over: Mar 31 → Feb, not "Mar 3".
+    expect(previousMonthKey(new Date(2026, 2, 31, 12, 0, 0))).toBe('2026-02');
+  });
+
+  it('previousMonthKey crosses the year boundary', () => {
+    expect(previousMonthKey(new Date(2026, 0, 1, 12, 0, 0))).toBe('2025-12');
+  });
+
+  it('monthLabel reads as the month name', () => {
+    expect(monthLabel('2026-06')).toBe('June');
+    expect(monthLabel('2025-12')).toBe('December');
   });
 });
 

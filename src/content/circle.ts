@@ -53,8 +53,12 @@ const FAMILY_TONE: Record<EmotionFamilyId, string> = {
   trust: 'settled',
 };
 
-/** The families that showed up most this week, most-frequent first (count > 0). */
-function topFamilies(stats: WeekStats): EmotionFamilyId[] {
+/**
+ * The families that showed up most in a week, most-frequent first (count > 0),
+ * alphabetical on a tie. The ONE ranking every mood-tinted mark uses
+ * (`selectMoodFamilies`, `homeWeeklySummary`), so the marks always agree.
+ */
+export function topFamilies(stats: WeekStats): EmotionFamilyId[] {
   return (Object.entries(stats.familyCounts) as [EmotionFamilyId, number][])
     .filter(([, n]) => n > 0)
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
