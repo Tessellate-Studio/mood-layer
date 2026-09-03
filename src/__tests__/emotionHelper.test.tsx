@@ -5,6 +5,7 @@
 // definition, the whole family card is unnecessary").
 
 import React from 'react';
+import { ScrollView, StyleSheet } from 'react-native';
 import { render, screen } from '@testing-library/react-native';
 
 import EmotionHelperContent from '@/components/EmotionHelperContent';
@@ -52,6 +53,19 @@ describe('EmotionHelperContent', () => {
 });
 
 describe('EmotionHelperSheet', () => {
+  // Device feedback 2026-09-03: "Enjoyment has this last line that I can't
+  // access via scroll. All family cards can't be scrolled." RN's ScrollView
+  // defaults to flexShrink: 0 — inside the sheet's maxHeight it grows to its
+  // full content height instead of shrinking to the available space, so the
+  // overflow is clipped, not scrollable. Same fix already proven on
+  // QuiltScreen's own detail sheet (2026-07-17).
+  it('lets the body ScrollView shrink inside the sheet, so long content scrolls instead of clipping', () => {
+    render(<EmotionHelperSheet target={{ kind: 'family', family: 'enjoyment' }} onClose={() => {}} />);
+    const scroll = screen.UNSAFE_getByType(ScrollView);
+    const flat = StyleSheet.flatten(scroll.props.style);
+    expect(flat.flexShrink).toBe(1);
+  });
+
   it('is hidden when the target is null (no content rendered)', () => {
     render(<EmotionHelperSheet target={null} onClose={() => {}} />);
     expect(screen.queryByText('What it means')).toBeNull();

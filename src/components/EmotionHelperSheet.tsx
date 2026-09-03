@@ -11,7 +11,7 @@
 // the ScrollView scrolls instead — device feedback 2026-09-02).
 
 import React from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 
 import EmotionHelperContent from '@/components/EmotionHelperContent';
 import Sheet from '@/components/Sheet';
@@ -42,7 +42,7 @@ export function EmotionHelperSheet({ target, onClose }: Props) {
       testID="emotion-helper"
     >
       {target ? (
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
           {target.kind === 'family' ? (
             <EmotionHelperContent family={target.family} showTitle={false} />
           ) : (
@@ -53,5 +53,17 @@ export function EmotionHelperSheet({ target, onClose }: Props) {
     </Sheet>
   );
 }
+
+const styles = StyleSheet.create({
+  scroll: {
+    flexGrow: 0,
+    // MUST shrink inside the sheet's maxHeight — RN's default flexShrink of
+    // 0 let a long family card overflow the hidden clip instead of
+    // scrolling, cutting off the bottom with no way to reach it (device
+    // feedback 2026-09-03, same class of bug as QuiltScreen's own detail
+    // sheet, 2026-07-17 — see its sheetScroll style for the same fix).
+    flexShrink: 1,
+  },
+});
 
 export default EmotionHelperSheet;

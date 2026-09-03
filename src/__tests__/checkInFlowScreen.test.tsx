@@ -225,6 +225,26 @@ describe('CheckInFlowScreen', () => {
     expect(useHelperSheetStore.getState().target).toEqual({ kind: 'word', wordId: 'sad' });
   });
 
+  it('long-pressing the family name line opens THAT family\'s own card', () => {
+    // The family card isn't reachable any other way from this screen (user,
+    // 2026-09-03) — holding the header row is the same tap-to-act/
+    // hold-to-learn idiom the word chips already teach, one level up.
+    renderScreen();
+    fireEvent(screen.getByTestId('family-sadness'), 'longPress');
+    expect(useHelperSheetStore.getState().target).toEqual({ kind: 'family', family: 'sadness' });
+  });
+
+  it('long-pressing the family name line still folds/unfolds normally on a plain tap', () => {
+    renderScreen();
+    expect(screen.queryByTestId('chip-sad')).toBeNull();
+    fireEvent.press(screen.getByTestId('family-sadness'));
+    expect(screen.getByTestId('chip-sad')).toBeTruthy();
+    fireEvent(screen.getByTestId('family-sadness'), 'longPress');
+    // The hold opened the helper without also collapsing the family — a
+    // long-press should teach, not silently toggle state underneath it.
+    expect(screen.getByTestId('chip-sad')).toBeTruthy();
+  });
+
   it('long-pressing an underneath-panel chip opens that word helper too', () => {
     renderScreen();
     fireEvent.press(screen.getByTestId('chip-stressed')); // masking → panel
