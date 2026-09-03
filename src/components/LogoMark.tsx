@@ -1,12 +1,15 @@
-// The app mark: stacked strata — three bands of translucent feeling-cloth,
+// The app mark: stacked strata — four bands of translucent feeling-cloth,
 // deepening where they overlap. Geometry matches the logo handoff's
-// appicon_bare.svg exactly (240-unit viewBox, top-to-bottom narrowing bands
-// centred at x=120) so the in-app mark and the store/launcher icon are the
-// same shape. Colours come from theme tokens, not the asset's baked-in hex,
-// so the mark can be mood-tinted at runtime: the brand stack is
-// anger/enjoyment/sadness (rose/amber/blue, per the handoff); passing
+// four-band icon_paper.svg exactly (240-unit viewBox, top-to-bottom widening
+// bands centred at x=120, each overlapping the one below by 16 units) so the
+// in-app mark and the store/launcher icon are the same shape (installed
+// 2026-09-02 — the user's pick from the identity canvas). Colours come from
+// theme tokens, not the asset's baked-in hex, so the mark can be mood-tinted
+// at runtime: the brand stack is enjoyment / anger / contempt / sadness
+// (amber · rose · mauve · blue, top to bottom, per the canvas); passing
 // `families` swaps which families are stacked (the mood variants), same
-// geometry.
+// geometry. Overlap-deepening is alpha alone — no blend mode on
+// react-native-svg.
 
 import React from 'react';
 import Svg, { Rect } from 'react-native-svg';
@@ -14,22 +17,21 @@ import Svg, { Rect } from 'react-native-svg';
 import { familyPalette } from '@/constants/theme';
 import type { EmotionFamilyId } from '@/types/models';
 
-const BRAND_STACK: EmotionFamilyId[] = ['anger', 'enjoyment', 'sadness'];
+const BRAND_STACK: EmotionFamilyId[] = ['enjoyment', 'anger', 'contempt', 'sadness'];
 
 const VIEWBOX_SIZE = 240;
 
-// Top-to-bottom, narrowest-to-widest, each overlapping the one below by 28
-// units so the alpha fills deepen at the seams — lifted verbatim from
-// assets/svg/appicon_bare.svg.
-const BANDS = [
-  { x: 59, y: 49, w: 122, h: 66 },
-  { x: 47, y: 87, w: 146, h: 66 },
-  { x: 36, y: 125, w: 168, h: 66 },
-];
+// Top-to-bottom, narrowest-to-widest — lifted verbatim from icon_paper.svg.
+export const LOGO_BANDS = [
+  { x: 84, y: 48, w: 72, h: 48 },
+  { x: 74, y: 80, w: 92, h: 48 },
+  { x: 64, y: 112, w: 112, h: 48 },
+  { x: 54, y: 144, w: 132, h: 48 },
+] as const;
 
 interface Props {
   /**
-   * Families to stack, top band first. Padded to three bands by repeating
+   * Families to stack, top band first. Padded to four bands by repeating
    * the first (dominant) family. Omit for the fixed brand stack.
    */
   families?: EmotionFamilyId[];
@@ -41,21 +43,23 @@ export default function LogoMark({ families, size = 56 }: Props) {
 
   return (
     <Svg width={size} height={size} viewBox={`0 0 ${VIEWBOX_SIZE} ${VIEWBOX_SIZE}`}>
-      {BANDS.map((band, i) => {
-        const palette = familyPalette[stack[i] ?? stack[0]];
+      {/* Bottom band first so each band overlaps the one beneath it. */}
+      {[...LOGO_BANDS].reverse().map((band, i) => {
+        const bandIndex = LOGO_BANDS.length - 1 - i;
+        const palette = familyPalette[stack[bandIndex] ?? stack[0]];
         return (
           <Rect
-            key={i}
+            key={bandIndex}
             x={band.x}
             y={band.y}
             width={band.w}
             height={band.h}
             rx={band.h / 2}
-            fill={palette.shades[3]}
+            fill={palette.shades[4]}
             fillOpacity={0.82}
             stroke={palette.thread}
             strokeOpacity={0.6}
-            strokeWidth={2.2}
+            strokeWidth={1.6}
           />
         );
       })}
