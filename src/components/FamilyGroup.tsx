@@ -6,6 +6,12 @@
 // still reading text, so it sits at body size in the body token's inkSoft
 // (anti-pattern #10) — quiet by colour, never by a smaller face, and never a
 // sub-AA fade; contrast is a hard rule.
+//
+// Holding the header row opens the family's own card (What it means, In the
+// body, When resisted, An invitation) — the same tap-to-act/hold-to-learn
+// idiom every word chip already teaches, extended to the family name itself.
+// User, 2026-09-03: on check-in "family card is otherwise not displayed on
+// this screen and it genuinely has some useful information."
 
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -13,6 +19,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import SectionHeader from '@/components/SectionHeader';
 import { colors, hitTarget, spacing, typography } from '@/constants/theme';
 import type { EmotionFamily } from '@/content/emotions';
+import { useHelperSheetStore } from '@/store/helperSheetStore';
 
 interface Props {
   family: EmotionFamily;
@@ -24,9 +31,21 @@ interface Props {
   /** Rendered while folded — e.g. already-chosen chips staying visible. */
   pinned?: React.ReactNode;
   children: React.ReactNode;
+  /** Long-press doorway. Defaults to this family's own helper sheet, so
+   *  every screen that lists families teaches on hold without wiring. */
+  onLongPress?(): void;
 }
 
-export function FamilyGroup({ family, expanded, onToggle, testID, preview, pinned, children }: Props) {
+export function FamilyGroup({
+  family,
+  expanded,
+  onToggle,
+  testID,
+  preview,
+  pinned,
+  children,
+  onLongPress,
+}: Props) {
   const previewText =
     preview ??
     `${family.gradient
@@ -39,9 +58,10 @@ export function FamilyGroup({ family, expanded, onToggle, testID, preview, pinne
         testID={testID}
         accessibilityRole="button"
         accessibilityState={{ expanded }}
-        accessibilityLabel={`${family.label}. ${expanded ? 'Fold' : 'Unfold'} its words.`}
+        accessibilityLabel={`${family.label}. ${expanded ? 'Fold' : 'Unfold'} its words. Hold to learn about ${family.label}.`}
         style={styles.header}
         onPress={onToggle}
+        onLongPress={onLongPress ?? (() => useHelperSheetStore.getState().openFamily(family.id))}
       >
         <View style={styles.headerText}>
           {/* Muted-layer treatment: the family's tinted section glyph does
