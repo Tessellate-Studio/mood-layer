@@ -177,7 +177,7 @@ describe('ThreadCard', () => {
 });
 
 describe('LogoDivider', () => {
-  it('renders the three-band mark and the closing tip', () => {
+  it('renders the mark and the closing tip', () => {
     render(<LogoDivider tip="Nothing here is a test." />);
     expect(screen.getByTestId('logo-divider')).toBeTruthy();
     expect(screen.getByText('Nothing here is a test.')).toBeTruthy();

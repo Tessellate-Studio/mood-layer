@@ -98,12 +98,12 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
   translucent) and it was installed everywhere the coloured mark is drawn —
   every icon PNG, the splash, the in-app `LogoMark` (four bands now, same
   geometry as the icon), `appicon_ink.svg` and the `var_*` variants. The
-  monochrome outline was explicitly NOT installed ("not the black and white
-  one"). Verification moves to the device-test queue (needs a fresh APK — no
-  OTA path).
-  **Still open:** `icon_mono.svg`, `LogoDivider` and the Quilt `TabIcon`'s
-  `MONO_BANDS` still draw the old three-band outline. Decide whether the mono
-  glyph should follow the four-band shape or stay — user's call.
+  monochrome outline was first held back ("not the black and white one"),
+  then brought to four bands too on 2026-09-03 ("it needs to be 4 bands
+  too"): `icon_mono.svg`, `LogoDivider` and the Quilt `TabIcon` all draw
+  `LogoMark`'s `LOGO_BANDS`, so every drawing of the mark is one shape.
+  Verification moves to the device-test queue (the icons need a fresh APK —
+  no OTA path; the in-app drawings show in Expo Go).
 
 - **Clean on-device verification pass of the v0.2.0 redesign** — rubric **7/12**.
   Full walkthrough of Quilt cloth, Insights depth, Circle, judgment

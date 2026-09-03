@@ -1,12 +1,17 @@
-// Closing divider: the three-band logo mark, stacked ink-fading bands, above
+// Closing divider: the four-band logo mark, stacked ink-fading bands, above
 // an optional centred closing tip. Lifts a screen's last line out of grey
-// body text and gives the page a deliberate full stop.
+// body text and gives the page a deliberate full stop. Same geometry as the
+// launcher icon and LogoMark (four bands since 2026-09-02).
 
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Rect } from 'react-native-svg';
 
+import { LOGO_BANDS } from '@/components/LogoMark';
 import { colors, spacing, typography } from '@/constants/theme';
+
+/** Ink fading down the stack, top band first — the mark in one colour. */
+const BAND_INK = [colors.ink, colors.inkSoft, colors.inkMuted, colors.inkFaint] as const;
 
 interface Props {
   /** Closing line rendered under the mark; omitted → the mark stands alone. */
@@ -19,9 +24,19 @@ export function LogoDivider({ tip }: Props) {
       {/* Decorative mark — hidden from screen readers; the tip is real text. */}
       <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         <Svg width={34} height={34} viewBox="0 0 240 240" opacity={0.9}>
-          <Rect x={58} y={127} width={124} height={46} rx={23} fill="none" stroke={colors.inkFaint} strokeWidth={8} />
-          <Rect x={66} y={89} width={108} height={46} rx={23} fill="none" stroke={colors.inkMuted} strokeWidth={8} />
-          <Rect x={75} y={51} width={90} height={46} rx={23} fill="none" stroke={colors.ink} strokeWidth={8} />
+          {LOGO_BANDS.map((band, i) => (
+            <Rect
+              key={i}
+              x={band.x}
+              y={band.y}
+              width={band.w}
+              height={band.h}
+              rx={band.h / 2}
+              fill="none"
+              stroke={BAND_INK[i]}
+              strokeWidth={8}
+            />
+          ))}
         </Svg>
       </View>
       {tip ? <Text style={styles.tip}>{tip}</Text> : null}
