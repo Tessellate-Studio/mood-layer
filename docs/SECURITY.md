@@ -177,6 +177,55 @@ percent-encoded input) triggered by a crafted deep link — an app hang, not
 data disclosure. **Not dismissed**, because it is runtime-reachable and the
 fix is real but deferred; the alert stays open per the triage standard.
 
+> **Correction (2026-09-05).** The row above carries two claims that are wrong,
+> and the fix proposed to replace them has since been tested and rejected. The
+> disposition is unchanged; only the re-check trigger changes.
+>
+> **1. "Clears on a `@react-navigation` major" — no.** Verified against the
+> registry 2026-09-05: `@react-navigation/core@7.21.13` is the **latest**
+> published version, and it is the version already installed here. It still
+> pins `query-string@^7.1.3`. There is nothing newer to move to.
+>
+> **2. "`query-string@8` dropped the dependency outright" — no.** Every
+> `query-string@8` release still depends on `decode-uri-component` (`^0.2.2`
+> through 8.0.3, `^0.4.1` from 8.1.0). The advisory range is `<=0.4.2`, first
+> patched **0.5.0**. `query-string@9.5.0` did finally move to `^0.5.0` — but
+> `@react-navigation/core` pins `^7.1.3`, so that release is unreachable from
+> here. This was the "verify, don't infer" rule not being applied: the claim
+> came from a changelog reading rather than the published manifest.
+>
+> **3. The `overrides` pin proposed on 2026-09-01 breaks the app.** That
+> correction proposed `"overrides": {"decode-uri-component": "^0.5.0"}` and left
+> API compatibility as the open question. Tested 2026-09-05 — it is not an API
+> problem, it is a **module-format** problem:
+>
+> - `decode-uri-component@0.2.2` is CommonJS (`module.exports = fn`).
+> - `0.4.1` and `0.5.0` are **ESM-only** — `"type": "module"`, and their
+>   `exports` map has no `require` condition and no CJS entry point at all.
+> - `query-string@7.1.3` is CommonJS and does
+>   `const decodeComponent = require('decode-uri-component')`, then calls it
+>   directly at `index.js:233`.
+>
+> Under the pin that `require()` returns the namespace object
+> `{__esModule, default}` — not a function. Installing `query-string@7.1.3`
+> with the override and calling `parse()` gives:
+>
+> ```
+> FAIL "id=abc%20def"          -> TypeError: decodeComponent is not a function
+> FAIL "q=%E0%A4%A"            -> TypeError: decodeComponent is not a function
+> FAIL "name=%F0%9F%98%80&x=1" -> TypeError: decodeComponent is not a function
+> ```
+>
+> That is every query string, not a malformed edge case — the pin would break
+> all deep-link query parsing. `query-string@9.5.0` could adopt `^0.5.0` safely
+> only because query-string itself became ESM-only at v8; that adoption is not
+> evidence of CJS compatibility. **No pin was shipped.**
+>
+> **Disposition unchanged** — runtime-reachable, **not dismissed**, moderate
+> (deep-link DoS, no data disclosure). The re-check trigger is now: upstream
+> `@react-navigation/core` widening its `query-string` pin to a release carrying
+> `decode-uri-component@^0.5.0`. It cannot be cleared from this repo. Same
+> finding, same conclusion, in alate and badige this cycle.
 ### Accepted residual — 2
 
 | Package | Sev | Advisory | Reason |
@@ -204,8 +253,13 @@ neither is reached by app code that handles emotion check-ins or journal text.
 
 - **`image-size` publishing anything above 2.0.2** — this one cannot clear on
   our side at all. Nothing we upgrade fixes it until upstream ships.
-- A `@react-navigation` major (or `query-string` 7 → 8 inside it) — clears
-  `decode-uri-component`, the only runtime finding.
+- ~~A `@react-navigation` major (or `query-string` 7 → 8 inside it) — clears
+  `decode-uri-component`~~ — **wrong, corrected 2026-09-05.** `@react-navigation/core@7.21.13`
+  is the latest release and is what is installed; it still pins `query-string@^7.1.3`,
+  and `query-string@8` never dropped the dependency. This clears only when upstream
+  widens that pin to a `query-string` carrying `decode-uri-component@^0.5.0`. An
+  `overrides` pin was tested on 2026-09-05 and breaks deep-link parsing outright —
+  see the correction note above.
 - An Expo major — clears `uuid`.
 
 ## Security sweep — 2026-08-03
