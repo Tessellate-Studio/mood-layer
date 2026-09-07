@@ -153,8 +153,14 @@ jobs:
             VIOLATIONS="$VIOLATIONS\n- JWT token pattern detected in diff — confirm this is not a real service-role key"
           fi
 
-          # Private keys of any kind
-          if grep -q -- '-----BEGIN.*PRIVATE KEY-----' "$RUNNER_TEMP/diff.txt" 2>/dev/null; then
+          # Private keys of any kind. ANCHORED to the diff's leading '+' plus
+          # optional whitespace, like every other arm here — and for a reason
+          # this workflow learned the hard way on its own first run (PR #111):
+          # unanchored, `-----BEGIN.*PRIVATE KEY-----` matches any added line
+          # that merely QUOTES the pattern, so the scan flagged THIS FILE for
+          # containing its own matcher. A real key has the armour at the start
+          # of its own line; a mention of it does not.
+          if grep -qP '^\+[[:space:]]*-----BEGIN [A-Z ]*PRIVATE KEY-----' "$RUNNER_TEMP/diff.txt" 2>/dev/null; then
             VIOLATIONS="$VIOLATIONS\n- PEM private key block detected in diff"
           fi
 
