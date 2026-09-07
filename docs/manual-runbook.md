@@ -30,7 +30,7 @@ in [`SECURITY.md`](./SECURITY.md)).
 | [Publish to Google Play](#publish-to-google-play-indie-route--parked) | ⏸️ | **Parked — not the focus right now.** Account exists, CI already builds + uploads the AAB; steps kept for when you resume |
 | [Circle pairing — two-phone test](#circle-pairing--the-two-phone-test) | 🟢 | Walked 2026-08-20 against the live relay with a scripted stand-in peer — invite, claim, seal, send, receive, decrypt. Two real handsets remain untried, but nothing now depends on that |
 | [Device testing on Expo Go](#device-testing-on-expo-go) | 📖 | Reference only — no action outstanding |
-| [iOS TestFlight submission](#ios-testflight-submission--blocked-in-app-store-connect) | 🟡 | Repo-side config is correct; a submission blocker on Apple's side needs a console check |
+| [iOS TestFlight submission](#ios-testflight-submission--duplicate-build-number-resolved) | 🟢 | Duplicate build number — fixed in PR #112 (`buildNumber: "2"` + `autoIncrement: true`) |
 
 ---
 
@@ -282,74 +282,24 @@ splash, and the release fidelity of the shipped binary.
 
 ---
 
-## iOS TestFlight submission — blocked in App Store Connect
+## iOS TestFlight submission — duplicate build number (RESOLVED)
 
-**Status:** 🟡 The repo-side pipeline is correctly configured; every
-submission attempt still fails with a generic Apple-side error, which points
-at something in the App Store Connect / Apple Developer account itself — not
-in this repo.
+**Status:** 🟢 Root cause identified 2026-09-07: Apple rejected every
+`submit-latest` resubmission because build number 1 for version 0.2.0 was
+already consumed by the original hand submission (2026-08-25). The opaque
+`eas submit` message *"Something went wrong when submitting your app to
+Apple App Store Connect"* masked Apple's real error: *"Build number 1 for
+app version 0.2.0 has already been used."*
 
-**What's left:** Log into App Store Connect and check for a pending
-agreement, membership, or payment issue (steps below); once cleared, a free
-re-run confirms the fix before any build credit is spent.
-
-**What's verified correct (2026-09-03), so don't re-check these first:**
-- `app.json` → `ios.bundleIdentifier` = `com.tessellate.moodlayer`, matches
-  the ASC app; `ios.infoPlist.ITSAppUsesNonExemptEncryption: false` is set
-  (a missing encryption-compliance answer is the #1 cause of this class of
-  failure, and it's not the cause here).
-- `eas.json` → `submit.production.ios.ascAppId: "6804997227"` is correct and
-  resolves (`eas submit` finds the app and the existing build every time).
-- `EXPO_TOKEN` repo secret is present and valid — the workflow gets past
-  auth, credential lookup, and build lookup every time; it fails only once
-  Apple's own submission pipeline picks the job up.
-- The one existing build (`92546281`, App Version 0.2.0, Build 1, from
-  2026-08-25) is a valid finished build — `eas submit --latest` finds and
-  schedules it successfully both times below.
-
-**The failure pattern:** two independent `submit-latest` runs (2026-08-26 run
-`32937953263`, and 2026-09-03 run `33737733777`) both scheduled the
-submission, then spent **~3 real minutes** with Apple actually processing it
-before failing with the identical opaque message: *"Something went wrong
-when submitting your app to Apple App Store Connect."* `eas submit` does not
-surface anything more specific than that — the real reason is on the
-[Submission details] page each run printed (an expo.dev URL, login-gated —
-only visible to whoever's logged into the `newbietrawler` Expo account) or
-in App Store Connect itself. A near-instant failure would suggest a config
-typo; a ~3-minute failure after Apple has clearly started working on it
-suggests an **account-level** blocker, most commonly one of:
-
-1. **An unsigned Program License Agreement.** Apple periodically updates the
-   Developer Program agreement; ANY pending one silently blocks all
-   submissions with exactly this generic error. Check
-   [appstoreconnect.apple.com](https://appstoreconnect.apple.com) for a
-   banner under your account/agreements — usually **Business** (top-right
-   account menu) → **Agreements, Tax, and Banking**.
-2. **Apple Developer Program membership not current** (expired, or a
-   renewal payment that didn't go through) — check
-   [developer.apple.com/account](https://developer.apple.com/account) →
-   Membership.
-3. Less likely, since the app + bundle ID already exist and accepted the
-   build: a missing required field under **App Store Connect → My Apps →
-   The Mood Layer → App Information**.
-
-**Verify the fix, free, before spending a build credit:**
-```bash
-gh workflow run ios-release.yml --repo Tessellate-Studio/mood-layer -f mode=submit-latest
-```
-This resubmits the SAME existing build (`92546281`) — no new EAS build
-credit spent. Watch it with `gh run watch <run-id> --repo
-Tessellate-Studio/mood-layer --exit-status`; green here confirms the account
-blocker is cleared. Only after that succeeds does it make sense to spend a
-credit on a build carrying this session's actual changes:
-```bash
-gh workflow run ios-release.yml --repo Tessellate-Studio/mood-layer -f mode=build-and-submit
-```
+**Fix (PR [#112](https://github.com/Tessellate-Studio/mood-layer/pull/112)):**
+- `app.json` → `ios.buildNumber` set to `"2"`
+- `eas.json` → `production.autoIncrement: true` — EAS auto-bumps the build
+  number on every future build, so this class of failure cannot recur.
 
 **Verify:**
-- [ ] No pending agreement/membership/payment banner in App Store Connect or
-      developer.apple.com/account
-- [ ] A `submit-latest` dispatch reaches "Submit the latest existing build"
-      green (confirms the account is unblocked)
-- [ ] A `build-and-submit` dispatch lands a current build in TestFlight and
-      it installs on a registered internal-tester device
+- [ ] Merge PR #112, then dispatch a `build-and-submit`:
+  ```bash
+  gh workflow run ios-release.yml --repo Tessellate-Studio/mood-layer -f mode=build-and-submit
+  ```
+- [ ] The build lands in TestFlight and installs on a registered
+      internal-tester device
