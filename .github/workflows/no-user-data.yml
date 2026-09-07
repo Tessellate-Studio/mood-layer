@@ -1,0 +1,236 @@
+name: No user data
+
+# Advisory scan — fails the check and posts a PR comment if the diff contains
+# patterns that suggest real credentials or user data have been committed.
+#
+# THIS REPO IS PUBLIC, which changes the stakes rather than the mechanism: a
+# credential pushed here is disclosed the moment it lands, and force-pushing
+# it away does not undo that — GitHub keeps unreachable objects, and public
+# repos are scraped continuously. Anything this scan flags should be treated
+# as already leaked and rotated, not merely removed.
+#
+# What it covers on top of the generic key patterns:
+#   - Android signing material and Play service-account JSON, which are app
+#     IDENTITY credentials — losing one means losing the ability to ship
+#     updates to installed users
+#   - EXPO_TOKEN (can publish an OTA update to every device)
+#   - .env files committed (only .env.example is safe)
+#   - On-device user data accidentally captured in a fixture or a log dump.
+#     All Mood Layer data stays on the device by design, so a committed
+#     export is a privacy incident, not just clutter.
+#
+# EXPO_PUBLIC_SENTRY_DSN is deliberately NOT flagged: a DSN is public by
+# design — it ships inside the APK.
+
+on:
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+# One queue slot per workflow+ref; the workflow name is in the group so this
+# and ci.yml do not cancel each other on the same ref.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: Scan for user data / secrets
+    # `ubuntu-latest`: Actions minutes are free on public repositories, so the
+    # self-hosted-runner reasoning that governs alate and loom does not apply.
+    runs-on: ubuntu-latest
+    # `github.base_ref` is populated only on pull_request — it is EMPTY on a
+    # workflow_dispatch, which would silently turn every `origin/$BASE_REF...HEAD`
+    # below into a broken revision range. Resolve it once here. Read as a shell
+    # variable rather than interpolated with `${{ }}`, for the same
+    # script-injection reason called out on the github-script step below.
+    #
+    # Caveat before you use the hatch: dispatching against `master` diffs
+    # master against master, so the scan passes trivially. Dispatch it against
+    # the PR's BRANCH for a real result — and note that scans the branch tip,
+    # not the PR's merge commit.
+    env:
+      BASE_REF: ${{ github.base_ref || 'master' }}
+    # Without this GitHub defaults to 360 minutes. The `fetch-depth: 0`
+    # checkout is the only step that grows with repo history.
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Get changed files
+        id: changed
+        run: |
+          # $RUNNER_TEMP rather than /tmp — habit worth keeping even on an
+          # ephemeral hosted runner, so the file never outlives the job.
+          git diff --name-only "origin/$BASE_REF...HEAD" > "$RUNNER_TEMP/changed_files.txt"
+          echo "Changed files:"
+          cat "$RUNNER_TEMP/changed_files.txt"
+
+      - name: Check for committed .env files
+        id: env_check
+        run: |
+          VIOLATIONS=""
+          while IFS= read -r file; do
+            # .env files that are NOT .env.example are forbidden
+            if echo "$file" | grep -qE '(^|/)\.env$|(^|/)\.env\.[^e]'; then
+              VIOLATIONS="$VIOLATIONS\n- \`$file\` — real .env file committed (only .env.example is safe)"
+            fi
+          done < "$RUNNER_TEMP/changed_files.txt"
+
+          if [ -n "$VIOLATIONS" ]; then
+            echo "ENV_VIOLATIONS<<EOF" >> "$GITHUB_OUTPUT"
+            printf "$VIOLATIONS" >> "$GITHUB_OUTPUT"
+            echo "" >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check for signing material and data dumps
+        id: data_check
+        run: |
+          VIOLATIONS=""
+          while IFS= read -r file; do
+            case "$file" in
+              *.jks|*.keystore|*.p8|*.p12|*.mobileprovision|*google-services.json|*play-service-account*.json)
+                VIOLATIONS="$VIOLATIONS\n- \`$file\` — APP SIGNING / service-account credential. Rotate it; do not merely delete the file." ;;
+            esac
+            if echo "$file" | grep -qE '\.(db|sqlite|sqlite3|log|dump)$'; then
+              VIOLATIONS="$VIOLATIONS\n- \`$file\` — binary, database or log file should not be tracked (Mood Layer data is on-device only; a committed export is a privacy incident)"
+            fi
+          done < "$RUNNER_TEMP/changed_files.txt"
+
+          if [ -n "$VIOLATIONS" ]; then
+            echo "DATA_VIOLATIONS<<EOF" >> "$GITHUB_OUTPUT"
+            printf "$VIOLATIONS" >> "$GITHUB_OUTPUT"
+            echo "" >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Scan diff for credential patterns
+        id: cred_check
+        run: |
+          # Added lines only; lockfiles and .env.example excluded.
+          git diff "origin/$BASE_REF...HEAD" -- \
+            ':(exclude)*.env.example' \
+            ':(exclude)*.lock' \
+            ':(exclude)package-lock.json' \
+            > "$RUNNER_TEMP/diff.txt"
+
+          VIOLATIONS=""
+
+          # Expo access token — can publish an OTA update to every install
+          if grep -qP '^\+.*EXPO_TOKEN\s*[:=]\s*.{20,}' "$RUNNER_TEMP/diff.txt" 2>/dev/null; then
+            VIOLATIONS="$VIOLATIONS\n- EXPO_TOKEN assigned a value in the diff — that token can push an OTA update to every installed device. ROTATE IT."
+          fi
+
+          # Sentry auth token (NOT the DSN, which is public by design)
+          if grep -qP '^\+.*sntrys_[A-Za-z0-9_=]{40,}' "$RUNNER_TEMP/diff.txt" 2>/dev/null; then
+            VIOLATIONS="$VIOLATIONS\n- Sentry auth token pattern (sntrys_) detected in diff"
+          fi
+
+          # Anthropic API keys
+          if grep -qP '^\+.*sk-ant-api0[3-9]-[A-Za-z0-9_-]{93}' "$RUNNER_TEMP/diff.txt" 2>/dev/null; then
+            VIOLATIONS="$VIOLATIONS\n- Anthropic API key pattern detected in diff"
+          fi
+
+          # Google / Firebase API keys
+          if grep -qP '^\+.*AIza[0-9A-Za-z_-]{35}' "$RUNNER_TEMP/diff.txt" 2>/dev/null; then
+            VIOLATIONS="$VIOLATIONS\n- Google API key pattern (AIza...) detected in diff"
+          fi
+
+          # OpenAI API keys
+          if grep -qP '^\+.*sk-[A-Za-z0-9]{20}T3BlbkFJ[A-Za-z0-9]{20}' "$RUNNER_TEMP/diff.txt" 2>/dev/null; then
+            VIOLATIONS="$VIOLATIONS\n- OpenAI API key pattern detected in diff"
+          fi
+
+          # Supabase service-role JWT (the circle relay talks to Supabase)
+          if grep -qP '^\+.*eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+' "$RUNNER_TEMP/diff.txt" 2>/dev/null; then
+            VIOLATIONS="$VIOLATIONS\n- JWT token pattern detected in diff — confirm this is not a real service-role key"
+          fi
+
+          # Private keys of any kind
+          if grep -q -- '-----BEGIN.*PRIVATE KEY-----' "$RUNNER_TEMP/diff.txt" 2>/dev/null; then
+            VIOLATIONS="$VIOLATIONS\n- PEM private key block detected in diff"
+          fi
+
+          # Generic long hex secrets assigned to a credential-named variable
+          if grep -qiP '^\+.*(secret|password|token|key)\s*=\s*[0-9a-f]{32,}' "$RUNNER_TEMP/diff.txt" 2>/dev/null; then
+            VIOLATIONS="$VIOLATIONS\n- Hex secret assigned to a credential-named variable detected in diff"
+          fi
+
+          if [ -n "$VIOLATIONS" ]; then
+            echo "CRED_VIOLATIONS<<EOF" >> "$GITHUB_OUTPUT"
+            printf "$VIOLATIONS" >> "$GITHUB_OUTPUT"
+            echo "" >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Summarise and comment
+        # Gated on `pull_request` as well as on the findings: this step posts to
+        # `context.issue.number`, which does not exist on a workflow_dispatch.
+        # Without the guard a dispatched run that DID find something would die
+        # here on "Resource not accessible" instead of reaching the explicit
+        # failure step below — turning a real finding into a confusing error.
+        if: |
+          github.event_name == 'pull_request' && (
+            steps.env_check.outputs.ENV_VIOLATIONS != '' ||
+            steps.data_check.outputs.DATA_VIOLATIONS != '' ||
+            steps.cred_check.outputs.CRED_VIOLATIONS != ''
+          )
+        uses: actions/github-script@v9
+        # Pass step outputs through env, NOT inlined into the script body.
+        # Inlining `${{ ... }}` lets a crafted filename (containing backticks
+        # or ${...}) break out of the template literal and run arbitrary JS on
+        # the runner — the Actions script-injection anti-pattern (CWE-94).
+        # This repo is public, so anyone can open the PR that supplies that
+        # filename. Reading via process.env keeps the data as inert strings.
+        env:
+          ENV_VIOLATIONS:  ${{ steps.env_check.outputs.ENV_VIOLATIONS }}
+          DATA_VIOLATIONS: ${{ steps.data_check.outputs.DATA_VIOLATIONS }}
+          CRED_VIOLATIONS: ${{ steps.cred_check.outputs.CRED_VIOLATIONS }}
+        with:
+          script: |
+            const sections = [];
+
+            const envV  = (process.env.ENV_VIOLATIONS  || '').trim();
+            const dataV = (process.env.DATA_VIOLATIONS || '').trim();
+            const credV = (process.env.CRED_VIOLATIONS || '').trim();
+
+            if (envV)  sections.push(`**Committed .env files**\n${envV}`);
+            if (dataV) sections.push(`**Signing material / data files**\n${dataV}`);
+            if (credV) sections.push(`**Credential patterns**\n${credV}`);
+
+            const body = [
+              '## ⚠️ No-user-data scan found potential issues',
+              '',
+              'This is an advisory check — it does not block merging, but please review before proceeding.',
+              '',
+              sections.join('\n\n'),
+              '',
+              '> **This repository is public.** Anything real that reached a pushed commit is already disclosed:',
+              '> rotate it, do not merely delete the file. Removing it from the branch does not un-publish it.',
+              '> If a finding is a false positive, add a comment explaining why.',
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo:  context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+
+      - name: Fail if violations found
+        if: |
+          steps.env_check.outputs.ENV_VIOLATIONS != '' ||
+          steps.data_check.outputs.DATA_VIOLATIONS != '' ||
+          steps.cred_check.outputs.CRED_VIOLATIONS != ''
+        run: |
+          echo "No-user-data scan found issues."
+          echo "On a pull_request the details are posted as a PR comment; on a"
+          echo "workflow_dispatch that step is skipped, so read the step outputs above."
+          exit 1

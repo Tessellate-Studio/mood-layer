@@ -1,0 +1,126 @@
+#!/bin/sh
+
+# The Mood Layer — pre-commit gate. LIGHT by design, and deliberately does NOT
+# duplicate pre-push: typechecking lives there (forge/standards/workflows.md →
+# "Local gates stay light"). What lives HERE is the set of checks that are
+# only meaningful before the commit object exists — branch, secrets, file size
+# — because once a credential is committed, rotating it is the only fix.
+#
+# Bypass (discouraged): git commit --no-verify
+
+echo "🔍 pre-commit"
+
+# ── §0 Worktree self-heal ────────────────────────────────────────────
+# The session harness writes an ABSOLUTE core.hooksPath into each new
+# worktree's config.worktree, pinning that worktree to the MAIN checkout's
+# (possibly stale) hook — the mechanism behind alate's false-positive secret
+# scans of 2026-07-02. .husky is tracked, so a RELATIVE path resolves against
+# each worktree's own root. Reset the override and re-run this worktree's own
+# copy. Recursion-safe: after the reset the config reads ".husky".
+WT_HOOKSPATH=$(git config --worktree core.hooksPath 2>/dev/null)
+if [ -n "$WT_HOOKSPATH" ] && [ "$WT_HOOKSPATH" != ".husky" ] && [ -f .husky/pre-commit ]; then
+  git config --worktree core.hooksPath .husky
+  echo "🔁 hooksPath override was '$WT_HOOKSPATH' — reset to relative '.husky'; re-running this worktree's own hook"
+  exec sh .husky/pre-commit
+fi
+
+# ── §1 No direct commits to master ───────────────────────────────────
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "$BRANCH" = "master" ] || [ "$BRANCH" = "main" ]; then
+  echo "❌ Cannot commit directly to $BRANCH — branch first:"
+  echo "   git checkout -b feat/your-change"
+  exit 1
+fi
+echo "✅ branch: $BRANCH"
+
+# ── §2 Secrets (blocking) ────────────────────────────────────────────
+# Two arms, per alate's hook:
+#   (a) known key NAMES trip only when ASSIGNED a real-looking value. A bare
+#       mention of the name (an allowlist entry, a doc row, a workflow's
+#       `secrets.X` reference) is a name, not a secret, and must not block.
+#   (b) value PATTERNS trip wherever they appear — this is the real defense.
+#       An inline-passed token is never assigned to a known NAME, so arm (a)
+#       cannot see it; alate found a hardcoded Notion token exactly that way.
+# The names here are what this repo actually holds (see .github/workflows/*):
+# EXPO_TOKEN, the Android signing set, the Play service account, Supabase.
+#
+# EXPO_PUBLIC_SENTRY_DSN is deliberately absent: a DSN is public by design —
+# it ships inside the APK — and listing it would train people to --no-verify.
+#
+# Placeholder lines (ending `_here`, the .env.example convention) and
+# explanatory rows (# Example: …, markdown) are skipped.
+echo "🔐 secret scan"
+if git diff --cached | grep -iE "((SUPABASE_SERVICE_ROLE_KEY|EXPO_TOKEN|KEYSTORE_PASSWORD|KEY_PASSWORD|ANDROID_KEYSTORE|GOOGLE_PLAY_SERVICE_ACCOUNT_JSON_B64|LITMUS_DISPATCH_TOKEN|ANTHROPIC_API_KEY|OPENAI_API_KEY)[[:space:]]*[:=][[:space:]]*['\"]?[A-Za-z0-9_+/-]{16,}|sk-[a-zA-Z0-9]{40,}|sntrys_[A-Za-z0-9_=]{40,})" | grep -v ".md:" | grep -v "# Example:" | grep -v "_here"; then
+  echo "❌ SECURITY: credential-shaped value in the staged diff."
+  echo "   Use an environment variable or a GitHub secret. If this is real, ROTATE it."
+  exit 1
+fi
+
+# (c) PEM private keys — a SEPARATE, line-ANCHORED arm rather than another
+# alternative in the regex above. Unanchored, `-----BEGIN.*PRIVATE KEY-----`
+# matches any line that merely QUOTES the pattern, which is exactly what
+# happened on this commit: no-user-data.yml contains that string as its own
+# scanner pattern and the hook blocked its own workflow file. A real key has
+# the armour on its own line, so anchoring to `+` plus optional whitespace
+# separates a committed key from a mention of one. (alate's copy survives the
+# same trap only by accident — its pattern happens to sit on a line that also
+# contains `_here`, which the placeholder filter strips.)
+if git diff --cached | grep -qE '^\+[[:space:]]*-----BEGIN [A-Z ]*PRIVATE KEY-----'; then
+  echo "❌ SECURITY: a PEM private key block is being committed."
+  echo "   Remove it and ROTATE the key — this repo is public."
+  exit 1
+fi
+echo "✅ no secrets detected"
+
+# ── §3 Signing material must never be tracked (blocking) ─────────────
+# .gitignore already covers *.apk/*.aab, but a keystore or a Play service
+# account JSON is the one file whose leak cannot be undone by a force-push —
+# it is an app-identity credential, not a build output.
+SIGNING=$(git diff --cached --name-only --diff-filter=ACM | grep -iE '\.(jks|keystore|p8|p12|mobileprovision)$|google-services\.json$|play-service-account.*\.json$' || true)
+if [ -n "$SIGNING" ]; then
+  echo "❌ signing / service-account material staged:"
+  echo "$SIGNING" | sed 's/^/      /'
+  echo "   These belong in GitHub secrets (see .github/workflows/build-android-apk.yml)."
+  echo "   Unstage them, and if any was ever pushed, rotate it."
+  exit 1
+fi
+
+# ── §4 Large files (blocking) ────────────────────────────────────────
+LARGE_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -v 'package-lock.json' | xargs ls -l 2>/dev/null | awk '$5 > 512000 {print $9}')
+if [ -n "$LARGE_FILES" ]; then
+  echo "❌ files over 500KB staged:"
+  echo "$LARGE_FILES"
+  echo "   Compress the asset, or add it to .gitignore if it is a build artifact."
+  exit 1
+fi
+echo "✅ no large files"
+
+# ── §5 Advisory warnings (never block) ───────────────────────────────
+STAGED_TS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' || true)
+if [ -n "$STAGED_TS" ]; then
+  echo "$STAGED_TS" | xargs grep -ln ": any\|as any" 2>/dev/null | sed 's/^/⚠️  any type: /' || true
+fi
+git diff --cached | grep -E "FIXME|XXX|HACK|WIP" | grep -v ".md:" >/dev/null 2>&1 && echo "⚠️  WIP marker (FIXME/XXX/HACK/WIP) in the diff"
+
+# ── §6 Quality-pass reminder for non-trivial diffs (never blocks) ────
+# The process step that keeps getting skipped lives here as a backstop — a
+# hook cannot be forgotten. Size-branched: above ~50 lines a single-agent diff
+# goes to the adversarial-review WORKFLOW, not /code-review (build-feature
+# Step 5.5). Full rule: forge/standards/workflows.md.
+CODE_LINES=$(git diff --cached --numstat -- '*.ts' '*.tsx' '*.js' '*.jsx' ':!*package-lock.json' 2>/dev/null | awk '{s+=$1+$2} END {print s+0}')
+if [ "$CODE_LINES" -gt 30 ]; then
+  echo ""
+  echo "🧹 Non-trivial code diff ($CODE_LINES lines). Before pushing, confirm:"
+  if [ "$CODE_LINES" -gt 50 ]; then
+    echo "   1. Quality pass run? >50 lines from a SINGLE-AGENT build needs the"
+    echo "      ADVERSARIAL-REVIEW WORKFLOW, not /code-review (build-feature Step 5.5)."
+    echo "      Then /simplify. Built via researched-build? It reviewed internally — skip."
+  else
+    echo "   1. Quality pass run? (/code-review then /simplify, cleanups in a separate commit)"
+  fi
+  echo "   2. If this came from BACKLOG / the regression log / a tracker entry — entry updated?"
+  echo "   3. UI change? It needs a device-test queue item (forge standards/workflows.md)."
+fi
+
+echo ""
+echo "✅ pre-commit passed"

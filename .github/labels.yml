@@ -1,0 +1,161 @@
+# GitHub labels for The Mood Layer.
+#
+# This file is the SOURCE OF TRUTH; GitHub is the copy. There is no sync
+# workflow (that would be one more scheduled job for something that changes
+# twice a year), so apply it by hand:
+#
+#   gh label create <name> --color <color> --description "<desc>" -R Tessellate-Studio/mood-layer
+#   gh label edit   <name> --color <color> --description "<desc>" -R Tessellate-Studio/mood-layer
+#
+# Labels marked [agent] are READ BY AUTOMATION — a forge skill or a workflow
+# queries them. Renaming or deleting one silently breaks the thing that reads
+# it, so change those only together with the code that queries them.
+# `device-test-queue` and `build-time` are the two that matter most here: the
+# device-test skill drains the first, and `build-time` is how a finding that
+# needs a fresh native build is separated from one an OTA update can reach.
+
+# ── Type ─────────────────────────────────────────────────────────────
+- name: feature
+  color: "0E8A16"
+  description: "New functionality"
+
+- name: bug
+  color: "D73A4A"
+  description: "Something isn't working"
+
+- name: enhancement
+  color: "A2EEEF"
+  description: "Improvement to existing functionality"
+
+- name: refactor
+  color: "7057FF"
+  description: "Code restructuring without behavior change"
+
+- name: chore
+  color: "FEF2C0"
+  description: "Maintenance, dependencies, config"
+
+- name: documentation
+  color: "0075CA"
+  description: "Documentation updates"
+
+# ── Priority ─────────────────────────────────────────────────────────
+- name: critical
+  color: "B60205"
+  description: "Production-breaking, fix immediately"
+
+- name: high
+  color: "D93F0B"
+  description: "Important, fix soon"
+
+- name: medium
+  color: "FBCA04"
+  description: "Normal priority"
+
+- name: low
+  color: "C2E0C6"
+  description: "Nice to have"
+
+# ── Area ─────────────────────────────────────────────────────────────
+- name: ui
+  color: "1D76DB"
+  description: "Screens, components, visual design"
+
+- name: data
+  color: "5319E7"
+  description: "On-device store, persistence, migrations"
+
+- name: circle
+  color: "BFDADC"
+  description: "Circle relay / shared-mood features"
+
+- name: notifications
+  color: "D4C5F9"
+  description: "Reminders and scheduled notifications"
+
+- name: build
+  color: "F9D0C4"
+  description: "Expo / EAS / Android packaging"
+
+- name: infra
+  color: "E4E669"
+  description: "Infrastructure/CI/CD"
+
+# ── Status ───────────────────────────────────────────────────────────
+- name: in-progress
+  color: "EDEDED"
+  description: "Work in progress"
+
+- name: blocked
+  color: "B60205"
+  description: "Waiting on external dependency"
+
+- name: needs-review
+  color: "0E8A16"
+  description: "Ready for code review"
+
+- name: repeat-issue
+  color: "D73A4A"
+  description: "Issue that has recurred"
+
+# ── Automation [agent] ───────────────────────────────────────────────
+- name: ready-to-merge
+  color: "0E8A16"
+  description: "[agent] Dependabot patch/minor bump, triaged — merge by hand once CI is green"
+
+- name: gate-blocked
+  color: "B60205"
+  description: "[agent] PR conflicts with base, so its CI gate cannot run — an empty check list here means UNTESTED"
+
+- name: needs-triage
+  color: "FBCA04"
+  description: "[agent] Auto-filed, not yet assessed by a human"
+
+- name: needs-input
+  color: "D93F0B"
+  description: "[agent] An agent stopped here and needs a human decision"
+
+- name: crash-monitor
+  color: "B60205"
+  description: "[agent] Filed by the crash-monitor skill from Sentry or an open issue"
+
+- name: security-sweep
+  color: "D73A4A"
+  description: "[agent] Filed by the security-sweep skill from npm audit / Dependabot"
+
+- name: ops-alert
+  color: "E99695"
+  description: "[agent] Raised by the ops watchdog"
+
+- name: device-test-queue
+  color: "C5DEF5"
+  description: "[agent] Queued device verification — drained by the device-test skill"
+
+- name: build-time
+  color: "FBCA04"
+  description: "[agent] Needs a fresh native build — no OTA update can deliver it"
+
+- name: ci-failure
+  color: "D73A4A"
+  description: "[agent] CI went red — filed automatically"
+
+- name: auto-generated
+  color: "EDEDED"
+  description: "[agent] Opened by automation rather than a person"
+
+# ── Dependabot (created by GitHub itself) ────────────────────────────
+- name: dependencies
+  color: "0366D6"
+  description: "Dependency bump"
+
+- name: javascript
+  color: "168700"
+  description: "npm ecosystem"
+
+- name: github_actions
+  color: "000000"
+  description: "GitHub Actions ecosystem"
+
+- name: security
+  color: "D73A4A"
+  description: "Security-relevant"

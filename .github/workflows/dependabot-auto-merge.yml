@@ -1,0 +1,88 @@
+name: Dependabot triage
+
+# Triages Dependabot PRs. Patch and minor bumps get the `ready-to-merge` label;
+# major bumps (breaking-change potential) get a comment flagging them for
+# review. It does NOT merge anything — a human clicks Merge once CI is green.
+#
+# IT DELIBERATELY DOES NOT AUTO-MERGE, and the file name is kept only so run
+# history and check references stay intact. alate's copy of this workflow did
+# call `gh pr merge --auto --squash`, on the belief that `--auto` is a no-op
+# when required checks are not configured. That was never true. Measured there:
+#
+#     PR    opened      merged      gap
+#     #267  04:15:54Z   04:16:04Z   10s
+#     #263  07:00:42Z   07:00:54Z   12s
+#     #262  05:48:51Z   05:49:04Z   13s
+#
+# No CI run finishes in ten seconds — every bump that landed that way landed
+# unverified.
+#
+# WHY THAT STILL APPLIES HERE, on a repo where it could be fixed. This repo is
+# PUBLIC, so unlike alate and loom it CAN configure required status checks —
+# which is exactly the precondition `--auto` needs. But they are not
+# configured today (verified 2026-09-07: required_status_checks is null), and
+# `allow_auto_merge` IS on, so re-adding `--auto` right now would reproduce
+# alate's failure exactly. Order matters: configure required checks FIRST,
+# confirm a PR actually waits on them, and only then consider auto-merge.
+#
+# Expo bumps deserve the extra caution regardless. A dependabot MINOR bump
+# pushed react-native 0.83→0.85 ahead of the installed Expo SDK on alate and
+# broke the whole native Android build while JS CI stayed green — so "minor"
+# is not a synonym for "safe" on an Expo app, and `ready-to-merge` here means
+# "triaged as the low-risk kind", not "merge without looking".
+
+on: pull_request_target
+
+# Least-privilege. Labelling and commenting need only `pull-requests: write`,
+# and a token that cannot write contents cannot merge — which makes "does not
+# auto-merge" a property of the workflow rather than a promise in a comment.
+#
+# Deliberately NOT `issues: write`, so the job cannot create labels.
+# `ready-to-merge` is expected to exist already (see .github/labels.yml). If it
+# is ever deleted, the label step fails loudly rather than skipping silently.
+permissions:
+  pull-requests: write
+
+concurrency:
+  group: dependabot-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  triage:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Label patch + minor bumps as ready to merge
+        if: steps.meta.outputs.update-type != 'version-update:semver-major'
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPDATE_TYPE: ${{ steps.meta.outputs.update-type }}
+          DEP_NAMES: ${{ steps.meta.outputs.dependency-names }}
+        run: |
+          # Dependency names come from the PR and are read via env, never
+          # inlined into the script body — same injection reason as the
+          # github-script steps in no-user-data.yml, and it matters more here
+          # because this repo is public.
+          echo "Update type: $UPDATE_TYPE"
+          echo "Dependency names: $DEP_NAMES"
+          gh pr edit "$PR_URL" --add-label ready-to-merge
+
+      - name: Flag major bumps for human review
+        if: steps.meta.outputs.update-type == 'version-update:semver-major'
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Deliberately NOT labelled ready-to-merge — that label is the signal
+          # that a bump is the safe kind, and a major is exactly what it must
+          # not say. The comment is the only output here.
+          echo "Major bump detected — leaving for manual review."
+          gh pr comment "$PR_URL" --body "⚠️ Major version bump — not labelled \`ready-to-merge\`. Review the breaking changes, and merge by hand only once CI is green. If this touches \`expo\`, \`react-native\` or an \`expo-*\` package, check it against the installed SDK before merging — a JS-green bump can still break the native build."
