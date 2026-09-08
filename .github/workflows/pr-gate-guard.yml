@@ -1,0 +1,169 @@
+# ---------------------------------------------------------------------------
+# PR gate guard — makes a MISSING gate visible.
+#
+# THE FAILURE IT CATCHES. A `pull_request` workflow runs against the MERGE ref
+# (`refs/pull/N/merge`). When a PR conflicts with its base, GitHub cannot
+# compute that ref, so it runs NOTHING of that class — silently, with no run
+# record whose absence anyone could notice. First measured on alate PR #645
+# (2026-09-01): the PR sat open with no CI at all, and the only check on it
+# was `auto-merge / skipping`. `pull_request_target` runs against the BASE
+# branch instead, which is why it is the mechanism this guard is built on.
+#
+# WHY THE GATE CANNOT GUARD ITSELF. Any check added to ci.yml, or any new
+# `pull_request` workflow, shares the exact blind spot it would be covering: a
+# conflicted PR is precisely the case where it would not run. The guard has to
+# live outside that event class. That is the whole design.
+#
+# WHY IT STILL EARNS ITS PLACE ON A PUBLIC REPO. This repo is public, so
+# unlike alate and loom it CAN configure required status checks — and once it
+# does, a conflicted PR is blocked by the server rather than merely
+# unverified. Two reasons this is still worth having:
+#   1. Required checks are NOT configured today (verified 2026-09-07: the
+#      branch-protection API returns required_status_checks: null). Until they
+#      are, merge-on-green here is discipline, and "nothing red" and "nothing
+#      tested" look identical.
+#   2. Even with required checks on, GitHub blocks the merge without ever
+#      saying WHY the checks are missing rather than failing. The label and
+#      comment are the explanation, and `gh pr list --label gate-blocked`
+#      makes the state queryable by the agents that sweep this repo.
+#
+# SECURITY — the load-bearing constraint of `pull_request_target`. It runs
+# with a WRITE token in the base repo's context, so checking out or executing
+# PR-authored code under it is the well-known privilege-escalation path, and
+# that matters more here than on the private repos: this repo is PUBLIC, so
+# anyone can open a PR against it. This workflow therefore does NO checkout
+# and runs NO repo code: API calls only, and it never interpolates
+# PR-controlled text into a shell. Keep it that way.
+#
+# COST. `ubuntu-latest` rather than the org's self-hosted runners, because
+# Actions minutes are FREE on public repositories — the 2,000-minute pool that
+# forces alate and loom onto self-hosted does not apply here. The scheduled
+# sweep is a handful of API calls.
+# ---------------------------------------------------------------------------
+
+name: PR gate guard
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+  schedule:
+    # Half-hourly. What this catches is a stalled PR, not a live outage, so
+    # minutes-level latency buys nothing.
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+# No `contents:` at all — nothing here reads or writes the repo tree.
+# Comments and labels on a PR both go through the issues API.
+permissions:
+  pull-requests: write
+  issues: write
+
+concurrency:
+  # Per PR on the event path, one shared slot for the sweep: two overlapping
+  # sweeps would race on "have I already commented?".
+  group: pr-gate-guard-${{ github.event.pull_request.number || 'sweep' }}
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Flag open PRs whose gate cannot run
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const LABEL  = 'gate-blocked';
+            const MARKER = '<!-- pr-gate-guard -->';
+            const { owner, repo } = context.repo;
+
+            // On an event, look only at the PR that fired. On a sweep, look at
+            // every open PR — a PR goes conflicted when MASTER moves, which
+            // fires no event on the PR itself.
+            let numbers;
+            if (context.eventName === 'pull_request_target') {
+              numbers = [context.payload.pull_request.number];
+            } else {
+              const open = await github.paginate(github.rest.pulls.list, {
+                owner, repo, state: 'open', per_page: 100,
+              });
+              numbers = open.map((p) => p.number);
+            }
+            core.info(`Examining ${numbers.length} PR(s): ${numbers.join(', ') || '(none)'}`);
+
+            // `mergeable` is computed ASYNCHRONOUSLY. A fresh PR answers null
+            // ("not computed yet"), which is not the same as false and must
+            // never be treated as one — flagging on null would label every new
+            // PR. Poll briefly, then give up and say so rather than guess.
+            const resolveMergeable = async (number) => {
+              for (let attempt = 0; attempt < 6; attempt++) {
+                const { data } = await github.rest.pulls.get({ owner, repo, pull_number: number });
+                if (data.mergeable !== null) return data;
+                await new Promise((r) => setTimeout(r, 5000));
+              }
+              return null;
+            };
+
+            let flagged = 0;
+            let cleared = 0;
+
+            for (const number of numbers) {
+              const pr = await resolveMergeable(number);
+              if (!pr) {
+                core.warning(`#${number}: GitHub did not finish computing mergeable in time — left alone.`);
+                continue;
+              }
+              if (pr.draft) continue;
+
+              const labels = pr.labels.map((l) => l.name);
+              const alreadyFlagged = labels.includes(LABEL);
+
+              // mergeable === false is the ONLY condition flagged here, and it
+              // is exact rather than heuristic: it is the same state that stops
+              // GitHub building the merge ref. Deliberately NOT inferring "no
+              // gate ran" from an empty run list — a docs-only PR legitimately
+              // has no run, and duplicating that path logic here would
+              // false-positive on every docs PR.
+              if (pr.mergeable === false) {
+                if (alreadyFlagged) {
+                  core.info(`#${number}: still conflicted, already flagged.`);
+                  continue;
+                }
+                await github.rest.issues.addLabels({
+                  owner, repo, issue_number: number, labels: [LABEL],
+                });
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: number,
+                  body: [
+                    MARKER,
+                    '### ⚠️ This PR conflicts with its base — so its CI gate cannot run',
+                    '',
+                    'A `pull_request` workflow runs against the merge ref (`refs/pull/' + number + '/merge`).',
+                    'GitHub cannot build that ref while the PR conflicts, so **every** `pull_request` workflow',
+                    'is skipped — CI, lint and the secret scan alike. No run record is created, so the absence',
+                    'never shows up as a failure.',
+                    '',
+                    '**An empty check list here does not mean "nothing is wrong". It means nothing was tested.**',
+                    '',
+                    'Resolve the conflict (merge or rebase `master` into the branch) and push. The gate runs on',
+                    'the resulting `synchronize` event, and this label clears itself on the next pass.',
+                    '',
+                    '<sub>Posted by `.github/workflows/pr-gate-guard.yml`.</sub>',
+                  ].join('\n'),
+                });
+                flagged++;
+                core.warning(`#${number}: conflicted — gate cannot run. Labelled '${LABEL}'.`);
+              } else if (alreadyFlagged) {
+                // Recovered. Drop the label so a LATER conflict is reported as
+                // a new episode rather than swallowed as "already known". The
+                // comment stays: it is the record of what happened.
+                await github.rest.issues.removeLabel({
+                  owner, repo, issue_number: number, name: LABEL,
+                }).catch((e) => core.info(`#${number}: label already gone (${e.status}).`));
+                cleared++;
+                core.info(`#${number}: conflict resolved — '${LABEL}' removed.`);
+              }
+            }
+
+            core.info(`Done. flagged=${flagged} cleared=${cleared}`);

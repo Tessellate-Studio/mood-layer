@@ -19,8 +19,9 @@ fi
 # checkout's possibly-stale copy.
 git config core.hooksPath .husky
 
-chmod +x .husky/pre-push 2>/dev/null || true
+chmod +x .husky/pre-commit .husky/pre-push 2>/dev/null || true
 
 echo "✅ hooks installed (core.hooksPath = .husky)"
-echo "   pre-push runs: tsc --noEmit + jest"
-echo "   skip once:  git push --no-verify"
+echo "   pre-commit runs: branch guard, secret scan, signing-material + large-file guard"
+echo "   pre-push runs:   tsc --noEmit (FULL_PREPUSH=1 adds jest)"
+echo "   skip once:       git commit/push --no-verify"

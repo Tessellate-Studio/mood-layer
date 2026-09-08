@@ -4,6 +4,7 @@
   "description": "The Mood Layer — track your emotional quilt. Consumer emotion-tracking app (Expo/Android); all data stays on-device.",
   "main": "index.ts",
   "scripts": {
+    "prepare": "git config core.hooksPath .husky",
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
