@@ -17,15 +17,25 @@
 #      delivery stops silently: sends fail into a catch, and the only person
 #      who finds out is a user whose weekly share never arrived.
 #
-# WHY A `schedule:` IS ALLOWED HERE NOW. relock.yml's header records the
+# WHY A `schedule:` IS ALLOWED HERE. relock.yml's header records the
 # 2026-07-18 removal of its weekly cron under forge's "CI spend" standard,
 # after the org burned its 2,000 included Actions minutes. That standard binds
 # PRIVATE repos: GitHub bills Actions minutes only for private repositories,
-# and this repo is PUBLIC again (the private flip was parked — PR #53,
-# docs/user-actions-tracker.md). Public-repo Actions are free and uncapped, so
-# this costs nothing from the shared pool. If the repo is ever flipped back to
-# private, delete this workflow or flip OPS_WATCHDOG_ENABLED off in the same
-# change — do not let it quietly eat the budget again.
+# and this repo is PUBLIC (the private flip was parked — PR #53,
+# docs/user-actions-tracker.md).
+#
+# That earlier note told a future reader to DELETE this workflow, or disable it
+# via OPS_WATCHDOG_ENABLED, if the repo went private. Superseded on 2026-09-09:
+# the schedule now runs on the org's SELF-HOSTED runners, which cost nothing
+# from the pool whatever the repo's visibility, so the flip no longer forces a
+# choice between paying for the watchdog and going blind. Recurring work
+# belongs on those runners — standing user directive, same date. Keep the
+# schedule; keep it off hosted.
+#
+# On measured volume, so nobody re-derives a scary number from the cron
+# expression: `17 * * * *` reads as 24 runs/day, but GitHub heavily throttles
+# scheduled workflows and the observed rate was 6 runs in 24h (2026-09-09).
+# The cron is a ceiling, not a rate.
 #
 # Hourly, not every 10 minutes: the failure this watches for (a paused
 # Supabase project) takes days to develop and hours to matter. ~24 runs/day of
@@ -47,6 +57,15 @@ on:
   schedule:
     - cron: '17 * * * *'
   workflow_dispatch:
+    inputs:
+      runner:
+        description: 'Where to run. Pick ubuntu-latest if the self-hosted runner is not picking jobs up.'
+        type: choice
+        required: true
+        default: self-hosted
+        options:
+          - self-hosted
+          - ubuntu-latest
 
 permissions:
   issues: write
@@ -58,7 +77,20 @@ concurrency:
 jobs:
   probe:
     if: vars.OPS_WATCHDOG_ENABLED == 'true' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    # Self-hosted by default (2026-09-09): recurring work in this org belongs on
+    # the org runners, which cost zero Actions minutes — standing user
+    # directive. The dispatch hatch is not decoration: targeting a label with no
+    # runner behind it does not fail, it QUEUES FOR EVER, and a watchdog that
+    # silently stops watching is worse than no watchdog. If a scheduled run
+    # stops appearing, dispatch this at `ubuntu-latest` to confirm the probe
+    # itself still works, then fix the runner.
+    #
+    # Safe here in a way it would NOT be for pr-gate-guard.yml: this workflow
+    # has no `pull_request` or `pull_request_target` trigger, so no fork-authored
+    # code can ever reach the runner. That is the whole reason self-hosted +
+    # public repo is a documented risk, and it does not apply to a
+    # schedule-and-dispatch-only job.
+    runs-on: ${{ (github.event_name == 'workflow_dispatch' && inputs.runner == 'ubuntu-latest') && fromJSON('["ubuntu-latest"]') || fromJSON('["self-hosted","linux","ops"]') }}
     timeout-minutes: 5
     steps:
       - name: Probe the circle relay and alert on failure

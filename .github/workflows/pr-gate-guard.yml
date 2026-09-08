@@ -35,10 +35,18 @@
 # and runs NO repo code: API calls only, and it never interpolates
 # PR-controlled text into a shell. Keep it that way.
 #
-# COST. `ubuntu-latest` rather than the org's self-hosted runners, because
-# Actions minutes are FREE on public repositories — the 2,000-minute pool that
-# forces alate and loom onto self-hosted does not apply here. The scheduled
-# sweep is a handful of API calls.
+# COST. `ubuntu-latest` is correct ONLY while this repo is public: Actions
+# minutes are free on public repositories, so the 2,000-minute pool that forces
+# alate and loom onto self-hosted does not apply. That reasoning expires the
+# moment mood-layer goes private, which is planned.
+#
+# This originally ran a `*/30` sweep as well, on the reasoning that "a handful
+# of API calls" is cheap. That was wrong about the billing model: GitHub
+# charges per RUN, rounded UP to the minute, so 48 cheap runs a day is ~1,440
+# minutes a month — three quarters of the free pool from this file alone. The
+# schedule was removed on 2026-09-09 under a standing directive that recurring
+# work belongs on the self-hosted runners. See the `on:` block for what that
+# costs in coverage and when to re-add it.
 # ---------------------------------------------------------------------------
 
 name: PR gate guard
@@ -46,10 +54,25 @@ name: PR gate guard
 on:
   pull_request_target:
     types: [opened, synchronize, reopened]
-  schedule:
-    # Half-hourly. What this catches is a stalled PR, not a live outage, so
-    # minutes-level latency buys nothing.
-    - cron: '*/30 * * * *'
+  # NO `schedule:`. It carried `*/30 * * * *` until 2026-09-09 — 48 runs a day.
+  # GitHub bills hosted jobs per RUN, rounded UP to the minute, so even a
+  # 20-second API sweep costs a full minute: ~1,440 minutes a month against a
+  # 2,000-minute pool, on a repo that is planned to go private (at which point
+  # those minutes start being charged). Recurring work in this org belongs on
+  # the self-hosted runners, which cost nothing — standing user directive,
+  # 2026-09-09. This workflow cannot simply move there today: mood-layer is
+  # PUBLIC, and pointing a public repo at self-hosted runners is a documented
+  # risk, while the `ops` runner group's `allows_public_repositories` setting
+  # cannot be read without an `admin:org` token nobody here holds. Targeting a
+  # label with no runner behind it does not fail — it QUEUES FOR EVER, which is
+  # the silently-absent guard this very workflow exists to prevent.
+  #
+  # WHAT THIS COSTS, stated plainly rather than glossed: the event triggers
+  # below still catch a PR that is born conflicted, but NOT the commoner case —
+  # a PR that opened clean, went green, and then conflicted when master moved
+  # under it. No event fires on the PR in that case, so nothing re-checks it and
+  # the stale green check just sits there. The sweep existed for exactly that.
+  # Re-add it on `[self-hosted, linux, ops]` when this repo goes private.
   workflow_dispatch:
 
 # No `contents:` at all — nothing here reads or writes the repo tree.
