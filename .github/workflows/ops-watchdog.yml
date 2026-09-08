@@ -26,11 +26,12 @@
 #
 # That earlier note told a future reader to DELETE this workflow, or disable it
 # via OPS_WATCHDOG_ENABLED, if the repo went private. Superseded on 2026-09-09:
-# the schedule now runs on the org's SELF-HOSTED runners, which cost nothing
-# from the pool whatever the repo's visibility, so the flip no longer forces a
-# choice between paying for the watchdog and going blind. Recurring work
-# belongs on those runners — standing user directive, same date. Keep the
-# schedule; keep it off hosted.
+# the job now picks its runner from the repo's OWN VISIBILITY, so at the flip it
+# moves itself onto the org's self-hosted runners, which cost nothing from the
+# pool. The flip no longer forces a choice between paying for the watchdog and
+# going blind — and nobody has to remember to make the change. Recurring work
+# belongs on those runners: standing user directive, same date. Keep the
+# schedule.
 #
 # On measured volume, so nobody re-derives a scary number from the cron
 # expression: `17 * * * *` reads as 24 runs/day, but GitHub heavily throttles
@@ -77,20 +78,27 @@ concurrency:
 jobs:
   probe:
     if: vars.OPS_WATCHDOG_ENABLED == 'true' || github.event_name == 'workflow_dispatch'
-    # Self-hosted by default (2026-09-09): recurring work in this org belongs on
-    # the org runners, which cost zero Actions minutes — standing user
-    # directive. The dispatch hatch is not decoration: targeting a label with no
-    # runner behind it does not fail, it QUEUES FOR EVER, and a watchdog that
-    # silently stops watching is worse than no watchdog. If a scheduled run
-    # stops appearing, dispatch this at `ubuntu-latest` to confirm the probe
-    # itself still works, then fix the runner.
+    # HOSTED WHILE PUBLIC, SELF-HOSTED ONCE PRIVATE — decided per run, so the
+    # move happens on its own at the visibility flip and nobody has to remember.
+    # Actions minutes are free on public repos and billed on private ones;
+    # recurring work in this org belongs on the self-hosted runners, which cost
+    # nothing either way (standing user directive, 2026-09-09).
     #
-    # Safe here in a way it would NOT be for pr-gate-guard.yml: this workflow
-    # has no `pull_request` or `pull_request_target` trigger, so no fork-authored
-    # code can ever reach the runner. That is the whole reason self-hosted +
-    # public repo is a documented risk, and it does not apply to a
-    # schedule-and-dispatch-only job.
-    runs-on: ${{ (github.event_name == 'workflow_dispatch' && inputs.runner == 'ubuntu-latest') && fromJSON('["ubuntu-latest"]') || fromJSON('["self-hosted","linux","ops"]') }}
+    # There is no fork exposure to weigh here at all, unlike pr-gate-guard.yml:
+    # this workflow has no `pull_request` or `pull_request_target` trigger, so
+    # no PR — fork or otherwise — can cause it to run. Schedule and manual
+    # dispatch only.
+    #
+    # The dispatch hatch is not decoration: a label with no runner behind it
+    # does not fail, it QUEUES FOR EVER, and a watchdog that silently stops
+    # watching is worse than no watchdog. If scheduled runs stop appearing after
+    # the flip, dispatch at `ubuntu-latest` to confirm the probe still works,
+    # then fix the runner group.
+    #
+    # Fallback direction is deliberate: if `github.event.repository.private` is
+    # ever absent from a payload, this resolves to `ubuntu-latest` — the probe
+    # keeps running and costs a little, rather than queueing and going silent.
+    runs-on: ${{ (github.event_name == 'workflow_dispatch' && inputs.runner == 'ubuntu-latest') && fromJSON('["ubuntu-latest"]') || (github.event.repository.private && fromJSON('["self-hosted","linux","ops"]') || fromJSON('["ubuntu-latest"]')) }}
     timeout-minutes: 5
     steps:
       - name: Probe the circle relay and alert on failure

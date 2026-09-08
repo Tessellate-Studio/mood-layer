@@ -54,26 +54,29 @@ name: PR gate guard
 on:
   pull_request_target:
     types: [opened, synchronize, reopened]
-  # NO `schedule:`. It carried `*/30 * * * *` until 2026-09-09 — 48 runs a day.
-  # GitHub bills hosted jobs per RUN, rounded UP to the minute, so even a
-  # 20-second API sweep costs a full minute: ~1,440 minutes a month against a
-  # 2,000-minute pool, on a repo that is planned to go private (at which point
-  # those minutes start being charged). Recurring work in this org belongs on
-  # the self-hosted runners, which cost nothing — standing user directive,
-  # 2026-09-09. This workflow cannot simply move there today: mood-layer is
-  # PUBLIC, and pointing a public repo at self-hosted runners is a documented
-  # risk, while the `ops` runner group's `allows_public_repositories` setting
-  # cannot be read without an `admin:org` token nobody here holds. Targeting a
-  # label with no runner behind it does not fail — it QUEUES FOR EVER, which is
-  # the silently-absent guard this very workflow exists to prevent.
-  #
-  # WHAT THIS COSTS, stated plainly rather than glossed: the event triggers
-  # below still catch a PR that is born conflicted, but NOT the commoner case —
-  # a PR that opened clean, went green, and then conflicted when master moved
-  # under it. No event fires on the PR in that case, so nothing re-checks it and
-  # the stale green check just sits there. The sweep existed for exactly that.
-  # Re-add it on `[self-hosted, linux, ops]` when this repo goes private.
+  schedule:
+    # Kept. It catches the case no event can: a PR that opened clean, went
+    # green, then conflicted when master moved under it — nothing fires on the
+    # PR then, so the stale green check just sits there looking like a pass.
+    #
+    # This is free while the repo is public, and the `runs-on` below moves it to
+    # the self-hosted runners by itself the moment the repo goes private, so it
+    # never starts drawing on the shared pool.
+    #
+    # `*/30` is a CEILING, not a rate. GitHub throttles scheduled workflows
+    # hard: measured 2026-09-09, this fired ONCE in 24h, not 48 times. Do not
+    # re-derive a cost estimate from the expression — measure it.
+    - cron: '*/30 * * * *'
   workflow_dispatch:
+    inputs:
+      runner:
+        description: 'Where to run. Pick ubuntu-latest if the self-hosted runner is not picking jobs up.'
+        type: choice
+        required: true
+        default: self-hosted
+        options:
+          - self-hosted
+          - ubuntu-latest
 
 # No `contents:` at all — nothing here reads or writes the repo tree.
 # Comments and labels on a PR both go through the issues API.
@@ -89,7 +92,38 @@ concurrency:
 
 jobs:
   guard:
-    runs-on: ubuntu-latest
+    # HOSTED WHILE PUBLIC, SELF-HOSTED ONCE PRIVATE — decided per run, so the
+    # move happens on its own at the visibility flip and nobody has to remember.
+    # Actions minutes are free on public repos and billed on private ones, so
+    # this is exactly where the org's "recurring work goes on the self-hosted
+    # runners" directive (2026-09-09) starts to bite.
+    #
+    # Fork safety, since this fires on `pull_request_target` and would therefore
+    # put a PR-triggered job on shared infrastructure once private. Four things
+    # stack up, and the first is the one that actually does the work:
+    #   1. The repo's fork-PR approval policy is `all_external_contributors`
+    #      (verified 2026-09-09), so no outside contributor's PR runs anything
+    #      until a maintainer clicks Approve. A fork cannot silently take a
+    #      runner.
+    #   2. `pull_request_target` executes the BASE branch's copy of this file.
+    #      A fork cannot change what runs here by editing its own copy.
+    #   3. This job does NO checkout and runs NO repo code — API calls only.
+    #      There is no PR-authored code for a runner to execute. KEEP IT THAT
+    #      WAY: adding `actions/checkout` with `ref: github.event.pull_request.head.sha`
+    #      would turn every point above into a formality.
+    #   4. Once the repo is private, "fork PR from an outside contributor" stops
+    #      being a meaningful category anyway.
+    #
+    # The dispatch hatch is not decoration: a label with no runner behind it
+    # does not fail, it QUEUES FOR EVER — the silently-absent guard this whole
+    # workflow exists to prevent. If a scheduled run stops appearing after the
+    # flip, dispatch at `ubuntu-latest` to confirm the logic still works, then
+    # fix the runner group.
+    #
+    # Fallback direction is deliberate: if `github.event.repository.private` is
+    # ever absent from a payload, this resolves to `ubuntu-latest` — the guard
+    # keeps running and costs a little, rather than queueing and going silent.
+    runs-on: ${{ (github.event_name == 'workflow_dispatch' && inputs.runner == 'ubuntu-latest') && fromJSON('["ubuntu-latest"]') || (github.event.repository.private && fromJSON('["self-hosted","linux","ops"]') || fromJSON('["ubuntu-latest"]')) }}
     timeout-minutes: 10
 
     steps:
