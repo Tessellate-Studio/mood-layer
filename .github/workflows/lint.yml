@@ -1,3 +1,4 @@
+# Lint (advisory) — SUBJECT: the PR diff — eslint. Advisory: `continue-on-error`, so it reports without blocking the merge.
 # Advisory ESLint gate (eslint-config-expo flat config).
 #
 # Advisory-first, matching the code-inspection workflow's posture: the lint
@@ -6,7 +7,7 @@
 # which means a NEW error is a real regression rather than pre-existing noise.
 # Flip continue-on-error to false once the warning backlog is worked down and
 # the signal is proven on this app.
-name: lint
+name: Lint (advisory)
 
 on:
   pull_request:

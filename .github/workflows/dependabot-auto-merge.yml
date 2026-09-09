@@ -1,3 +1,4 @@
+# Dependabot triage — SUBJECT: Dependabot's own PRs. Labels patch/minor `ready-to-merge` and comments on majors. Merges NOTHING, despite the filename.
 name: Dependabot triage
 
 # Triages Dependabot PRs. Patch and minor bumps get the `ready-to-merge` label;

@@ -1,3 +1,4 @@
+# iOS Release (TestFlight) — SUBJECT: the iOS build submitted to TestFlight.
 name: iOS Release (TestFlight)
 
 # Ported from alate's ios-release.yml (2026-08-25), after the first mood-layer

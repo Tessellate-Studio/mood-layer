@@ -1,3 +1,4 @@
+# Watch — Mood Layer circle relay — SUBJECT: the circle relay — a Supabase edge function living in ALATE's project, not this repo's. Watches for that project pausing. Application health, NOT CI health.
 # ---------------------------------------------------------------------------
 # Ops watchdog — the only runtime signal this repo has that does not depend on
 # a human noticing something.
@@ -52,7 +53,7 @@
 # until repo variable OPS_WATCHDOG_ENABLED == 'true'. A manual dispatch always
 # runs — that is how it gets verified before being switched on.
 # ---------------------------------------------------------------------------
-name: Ops watchdog
+name: Watch — Mood Layer circle relay
 
 on:
   schedule:
@@ -145,7 +146,7 @@ jobs:
               await github.rest.issues.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                title: 'Ops watchdog: circle relay probe failing',
+                title: 'Watch — Mood Layer: circle relay probe failing',
                 labels: ['ops-alert'],
                 body:
                   `The scheduled relay probe failed.\n\n${detail}\n\n` +

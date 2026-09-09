@@ -1,3 +1,4 @@
+# No user data — SUBJECT: the PR diff — scans for committed credentials, signing material and data dumps. This repo is PUBLIC, so a finding is disclosed the moment it lands.
 name: No user data
 
 # Advisory scan — fails the check and posts a PR comment if the diff contains

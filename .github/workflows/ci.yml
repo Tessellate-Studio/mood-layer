@@ -1,3 +1,4 @@
+# CI — SUBJECT: the PR diff — tsc and jest. This is the merge gate.
 # PR test gate — typecheck + tests + security audit on every PR to master.
 name: CI
 
