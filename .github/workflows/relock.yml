@@ -1,4 +1,5 @@
-name: Relock
+# Relock — hosted — SUBJECT: this repo's lockfile, regenerated on a hosted runner.
+name: Relock — hosted
 
 # Regenerate package-lock.json to ensure Linux/macOS/Windows compatibility.
 # Runs `npm install` (not `npm ci`) to update the lockfile to the latest

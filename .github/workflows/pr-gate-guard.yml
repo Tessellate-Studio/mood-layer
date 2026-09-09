@@ -1,3 +1,4 @@
+# Guard — PR check coverage — SUBJECT: open PRs whose CI cannot run at all because they conflict with base — an ABSENT gate, not a failing one.
 # ---------------------------------------------------------------------------
 # PR gate guard — makes a MISSING gate visible.
 #
@@ -49,7 +50,7 @@
 # costs in coverage and when to re-add it.
 # ---------------------------------------------------------------------------
 
-name: PR gate guard
+name: Guard — PR check coverage
 
 on:
   pull_request_target:

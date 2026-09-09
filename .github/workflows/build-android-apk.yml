@@ -1,3 +1,4 @@
+# Build Android APK — SUBJECT: the signed Android artefact (APK/AAB) produced from this repo.
 name: Build Android APK
 
 # Two triggers, two different outputs:
@@ -260,5 +261,11 @@ jobs:
               repo: context.repo.repo,
               title: `APK build failed: run ${context.runId}`,
               body: `The Android APK build failed or was cancelled.\n\nRun: https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
-              labels: ['ci-failure'],
+              // `build-failure` is REQUIRED, not decoration. crash-monitor's
+              // triage filter is an ALLOWLIST — bug / build-failure /
+              // crash-monitor / auto-generated / unlabelled (forge
+              // skills/crash-monitor/SKILL.md). `ci-failure` is on none of
+              // them, so every issue this job has opened was silently skipped
+              // by the automation meant to pick it up. Found 2026-09-09.
+              labels: ['ci-failure', 'build-failure'],
             })
