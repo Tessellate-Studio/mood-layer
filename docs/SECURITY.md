@@ -147,6 +147,69 @@ The trust boundary, reviewed before code (BACKLOG P0 entry):
 | 2026-08-03 | `postcss` high (`<=8.5.17`, GHSA-r28c-9q8g-f849) | **fixed** | → 8.5.25. Supersedes the 2026-07-28 "deferred" row above; closes issue #48 |
 | 2026-08-03 | `uuid` moderate (GHSA-w5hq-g745-h8pq) | accepted | Unchanged from 2026-07-28 — build-time only, via `xcode` ← `@expo/config-plugins` and `@expo/ngrok` (dev) |
 
+## Security sweep — 2026-09-09
+
+Safe pass (`npm audit fix`, no `--force`, lockfile-only — `package.json`
+untouched). PR [#115](https://github.com/Tessellate-Studio/mood-layer/pull/115).
+
+Distinct vulnerable packages: **5 → 2.** Raw headline: **23 → 20.**
+
+### Fixed
+
+| Package | Severity | Advisory | PR |
+|---|---|---|---|
+| `@xmldom/xmldom` → 0.8.15 | high / moderate | GHSA-w2rr-34g9-rvrj, GHSA-4w3w-2rp5-g8jm, GHSA-c7q8-3ch8-vqpv, GHSA-27p8-2357-5qqv, GHSA-8344-3jmq-59r6, GHSA-965w-775f-mr7g, GHSA-93r5-fhx6-vmg9, GHSA-x4fp-j954-r2f4, GHSA-6h8r-xr42-gp59, GHSA-6gmq-8vp8-gcm6, + others | #115 |
+| `browserslist` 4.28.4 → 4.28.9 | high | GHSA-c83g-rgw3-j3cx, GHSA-73wf-gq98-2v4g | #115 |
+| `baseline-browser-mapping` → 2.11.21 | moderate | GHSA-w5vr-8v7q-w6rv | #115 |
+
+The `@xmldom/xmldom` bump is the whole story of this sweep: **~24 open
+Dependabot alerts collapse into one lockfile line.** Every one of those advisory
+ranges shares a `<=0.8.14` ceiling, so 0.8.15 clears the lot at once.
+
+All three are build-time — xmldom via `plist` ← `@expo/config-plugins`
+(prebuild), the other two via Babel/Metro browser-target resolution. Nothing
+here ships in the binary.
+
+> **Why this app could take the fix and badige could not.** badige carries the
+> identical `@xmldom/xmldom` chain and had to accept it as a residual: there it
+> resolves to 0.7.13 behind `@expo/plist`'s `~0.7.7` pin under Expo SDK 50, so
+> the fix needs an expo major. This app's newer SDK resolves `plist`
+> differently, leaving the bump semver-reachable. Same advisory, different
+> reachability — worth remembering before assuming the two apps should show the
+> same disposition.
+
+### Verification
+
+`npm ci` exit 0; `npx jest` **50 suites / 599 tests passing**, identical to the
+baseline captured before the change.
+
+### Also in PR #115 — the hook that blocked every lockfile commit
+
+Not a vulnerability, but it is why this sweep nearly shipped nothing here.
+
+`.husky/pre-commit` §4 exempts `package-lock.json` from the 500KB guard with
+`grep -v`, then pipes into `xargs ls -l`. When the lockfile is the **only**
+staged file, that pipeline goes empty — and `xargs` with empty stdin still runs
+the command, so bare `ls -l` listed the whole repo root. The guard then measured
+untracked build output (`app-release.apk`) and the very lockfile it had just
+exempted, and blocked the commit.
+
+Net effect: **no lockfile-only commit could land in this repo** — precisely the
+shape of every dependency-patch commit. Fixed by guarding the empty case
+explicitly (not `xargs -r`, a GNU extension and not portable here).
+
+### Accepted residual / still open
+
+| Package | Severity | Status |
+|---|---|---|
+| `uuid` | moderate | Unchanged — build-time via `xcode`, still capped behind an Expo major |
+| `decode-uri-component` | moderate | **Left untouched deliberately.** Being handled in #93 / #110 by another session; this sweep did not open a competing fix or contradict that triage |
+
+No alerts were dismissed here this sweep — the ones this PR fixes are left open
+so they auto-close on merge rather than being recorded as "accepted".
+
+---
+
 ## Security sweep — 2026-09-01
 
 Safe pass (`npm audit fix`, no `--force`) — lockfile-only, `package.json`
