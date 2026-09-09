@@ -86,7 +86,15 @@ if [ -n "$SIGNING" ]; then
 fi
 
 # ── §4 Large files (blocking) ────────────────────────────────────────
-LARGE_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -v 'package-lock.json' | xargs ls -l 2>/dev/null | awk '$5 > 512000 {print $9}')
+# `xargs` with an empty stdin still runs `ls -l`, which lists the WHOLE repo
+# root — so a commit staging only package-lock.json (the exempt file) used to
+# fail on untracked build output like app-release.apk. Guard the empty case.
+LARGE_CANDIDATES=$(git diff --cached --name-only --diff-filter=ACM | grep -v 'package-lock.json' || true)
+if [ -n "$LARGE_CANDIDATES" ]; then
+  LARGE_FILES=$(echo "$LARGE_CANDIDATES" | xargs ls -l 2>/dev/null | awk '$5 > 512000 {print $9}')
+else
+  LARGE_FILES=""
+fi
 if [ -n "$LARGE_FILES" ]; then
   echo "❌ files over 500KB staged:"
   echo "$LARGE_FILES"
