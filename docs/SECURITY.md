@@ -177,6 +177,83 @@ percent-encoded input) triggered by a crafted deep link — an app hang, not
 data disclosure. **Not dismissed**, because it is runtime-reachable and the
 fix is real but deferred; the alert stays open per the triage standard.
 
+
+> **Correction (2026-09-05).** Four things in the row above are wrong. The most
+> important is the severity-relevant one: **this is not reachable in this app.**
+> All registry facts below were verified 2026-09-05 and are stated as of that
+> date.
+>
+> **1. It is NOT runtime-reachable here.** `decode-uri-component` ships in the
+> bundle, but nothing can reach it. `@react-navigation/core` calls `query-string`
+> at exactly one site — `getStateFromPath` (`7.21.13`,
+> `lib/module/getStateFromPath.js:586`) — gated behind
+> `const isLinkingEnabled = linking ? linking.enabled !== false : false;`.
+> This app never passes the prop: `src/navigation/AppNavigator.tsx:142` is
+> `<NavigationContainer ref={navigationRef} onReady={flushPendingNavigation}>`,
+> with no `linking`, no `prefixes`, no `scheme` in `app.json`, no `expo-linking`
+> dependency and no `Linking.*` call anywhere in `src/`. **There is no deep-link
+> entry point, so no attacker-controlled string reaches `parse()`.** The
+> 2026-09-01 entry asserted the deep-link path without checking this app's own
+> navigation config.
+>
+> **2. "Clears on a `@react-navigation` major" — premature, not wrong.**
+> `@react-navigation/core@7.21.13` is the `latest` dist-tag and is what is
+> installed here; it still pins `query-string@^7.1.3`, so there is no v7 release
+> to move to. But a **major does** eventually clear it:
+> `@react-navigation/core@8.0.0-alpha.34` (dist-tag `next`, published
+> 2026-08-19) pins `query-string@^9.4.0`, resolving to a release carrying
+> `decode-uri-component@^0.5.0`. The v8 line is alpha-only today, so the real
+> trigger is **the stable v8 release** — keep watching react-navigation majors.
+>
+> **3. "`query-string@8` dropped the dependency outright" — no.** Every
+> `query-string@8` release still depends on it (`^0.2.2` through 8.0.3, `^0.4.1`
+> from 8.1.0). Only `9.5.0+` carries `^0.5.0`. This was the "verify, don't
+> infer" rule not being applied — `npm view query-string@8
+> dependencies.decode-uri-component` shows it in one line.
+>
+> **4. The obvious remediation is a trap — it breaks the app AND greens the
+> audit.** An `overrides` pin to `decode-uri-component@^0.5.0` resolves cleanly
+> and makes `npm audit` report `found 0 vulnerabilities`, while breaking every
+> call:
+>
+> ```
+> parse("plain=1")      -> TypeError: decodeComponent is not a function
+> parse("id=abc%20def") -> TypeError: decodeComponent is not a function
+> ```
+>
+> It is a **module-format** break, not an API break. `0.2.2` is CommonJS
+> (`module.exports = fn`); `0.4.1` and `0.5.0` are ESM-only (`"type":"module"`,
+> `exports` map with no `require` condition). `query-string@7.1.3` is CommonJS
+> and does `require('decode-uri-component')` at `index.js:3`, calling it at
+> `:233`. Verified under Node **and** under this app's own
+> `babel-preset-expo` driven through a Metro-style CJS registry — Babel and
+> Metro do not rewrite `require()` calls at all (`esModuleInterop` applies only
+> to `import`), so the require receives `exports.default = fn` and is not
+> callable. It fails on `plain=1`, i.e. every query string, not just malformed
+> input.
+>
+> Two related traps: overriding **`query-string` to 9.5.x** — which is what
+> `npm audit fix --force` offers — is *also* broken, because query-string@9 is
+> default-export-only while react-navigation does `import * as queryString`, so
+> `queryString.parse` is `undefined`. And pinning **`0.3.0`** keeps CJS but is
+> still inside the advisory range. (Note `0.4.2` was never published; the
+> advisory range `<=0.4.2` is effectively `<=0.4.1`.)
+>
+> **What does work,** verified functional under both Node and Metro, if this app
+> ever needs it: `patch-package` on `query-string@7.1.3` changing line 3 to
+> `const _duc = require('decode-uri-component'); const decodeComponent =
+> _duc.default || _duc;`, combined with the `^0.5.0` override. alate is applying
+> exactly this, because alate *does* have a linking config. **The Mood Layer is
+> not taking it** — adding a build-time dependency and a `postinstall` to patch
+> an unreachable code path is not worth it here.
+>
+> **Revised disposition: tracked, not currently reachable — and NOT dismissed.**
+> Severity as-shipped is lower than recorded (no entry point), but this becomes
+> live the moment anyone adds a `linking` prop or a URL scheme. The re-check
+> trigger is therefore two-headed: **(a)** this app gains a deep-link entry
+> point, or **(b)** stable `@react-navigation` v8 ships and this app moves to
+> it, which clears it outright.
+
 ### Accepted residual — 2
 
 | Package | Sev | Advisory | Reason |
@@ -204,8 +281,12 @@ neither is reached by app code that handles emotion check-ins or journal text.
 
 - **`image-size` publishing anything above 2.0.2** — this one cannot clear on
   our side at all. Nothing we upgrade fixes it until upstream ships.
-- A `@react-navigation` major (or `query-string` 7 → 8 inside it) — clears
-  `decode-uri-component`, the only runtime finding.
+- ~~A `@react-navigation` major (or `query-string` 7 → 8 inside it) — clears
+  `decode-uri-component`, the only runtime finding.~~ — **corrected 2026-09-05.**
+  The `query-string` 7 → 8 half is wrong (v8 never dropped the dep), and it is
+  not a runtime finding here — this app has no `linking` prop and no URL scheme,
+  so the path is unreachable. A **stable `@react-navigation` v8** does clear it
+  (the v8 alpha already pins `query-string@^9.4.0`). See the correction note above.
 - An Expo major — clears `uuid`.
 
 ## Security sweep — 2026-08-03
