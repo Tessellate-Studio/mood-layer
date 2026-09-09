@@ -3,6 +3,13 @@
 name: CI
 
 on:
+  # POST-MERGE RUN — the only thing that tests what actually shipped. A
+  # `pull_request` check runs against a PREDICTED merge; that prediction goes
+  # stale the instant anything else lands, and nothing afterwards re-checks it.
+  # Cheap here: the single Tests job averages 62s (measured 2026-09-09), and
+  # this repo merges ~1.8x a day, so the post-merge run costs ~2 min/day.
+  push:
+    branches: [master]
   pull_request:
     branches: [master]
 
@@ -27,3 +34,76 @@ jobs:
         run: npx tsc --noEmit
       - name: Jest
         run: npx jest --no-coverage --ci
+
+  # Failure alerting for the POST-MERGE run. A red run on a PR is not silent —
+  # the author is looking at it — but a red run on master after a merge has
+  # nobody watching, and that is how alate's backend deploys sat dead for 18
+  # days (2026-06-15 -> 2026-07-03) with merges piling up unshipped.
+  #
+  # `needs` deliberately lists ONLY the jobs that run post-merge. Naming a
+  # PR-only lint job here would skip this alert whenever that job is skipped,
+  # which is every post-merge run — the exact case it exists for.
+  #
+  # PROVEN to fire, not assumed: verified end to end in forge on 2026-09-09
+  # against a branch with a deliberately failing test — one issue opened, a
+  # second failure commented rather than duplicating. forge's standard is that
+  # a monitor must be proven to go RED, not merely green today.
+  alert-on-failure:
+    name: Alert — red default branch
+    needs: [test]
+    if: failure() && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      # github-script, NOT `gh`: the CLI is ABSENT on the org's self-hosted
+      # runners (probed 2026-07-26), so `gh issue create` would become a silent
+      # `command not found` if this job ever moved off hosted.
+      - name: Open or append to the ci-failure issue
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const { owner, repo } = context.repo;
+            const ref = process.env.GITHUB_REF_NAME;
+            const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+            const titlePrefix = `CI failure: ${ref}`;
+
+            // DEDUP is mandatory: the post-merge run fires on EVERY merge, and
+            // this repo merges ~2x a day. Undeduped, one broken master would
+            // open twenty issues before anyone looked. alate's own
+            // supabase-migrations alerter has opened nine issues for want of
+            // this (#306, #309, #311, #312, #316, #318, #324, #331, #332).
+            const open = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'open', labels: 'ci-failure', per_page: 100,
+            });
+            const existing = open.find((i) => i.title.startsWith(titlePrefix));
+
+            if (existing) {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: existing.number,
+                body: `Still red — ${runUrl}`,
+              });
+              core.info(`Appended to #${existing.number}; not duplicating.`);
+              return;
+            }
+
+            await github.rest.issues.create({
+              owner, repo,
+              title: `${titlePrefix} (${new Date().toISOString().slice(0, 10)})`,
+              // `bug` is REQUIRED, not decoration. crash-monitor's triage
+              // filter is an ALLOWLIST — bug / build-failure / crash-monitor /
+              // auto-generated / unlabelled. `ci-failure` alone is on none of
+              // them and gets skipped by the automation meant to pick it up.
+              labels: ['ci-failure', 'bug'],
+              body: [
+                `**CI is red on \`${ref}\`** — a post-merge run, so nothing else reports it.`,
+                '',
+                `Run: ${runUrl}`,
+                '',
+                'This is the case a PR check cannot catch: each PR was green against its own predicted merge ref, but the combination that actually landed was never tested.',
+                '',
+                'Close this once CI is green again — the next failure opens a fresh issue.',
+              ].join('\n'),
+            });
+            core.notice('Opened a ci-failure issue.');
