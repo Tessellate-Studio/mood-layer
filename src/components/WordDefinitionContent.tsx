@@ -77,8 +77,12 @@ export function WordDefinitionContent({ wordId }: Props) {
   // same-hue accent, the two mutedPalette categories this is (CLAUDE.md).
   const muted = mutedPalette[family.id];
 
+  // key={wordId}: a new word gets a fresh card rather than its text patched
+  // into the old nodes. Patched in place, iOS left Explosive's Constructive
+  // line drawn on one clipped line inside a box measured for three (device,
+  // 2026-09-13 — regression #35).
   return (
-    <View style={styles.root}>
+    <View key={wordId} style={styles.root}>
       <View style={styles.tagRow}>
         <View style={[styles.tag, { backgroundColor: muted.fill }]}>
           <Text style={[styles.tagText, { color: muted.accent }]}>{family.label}</Text>
