@@ -53,10 +53,10 @@ merging, bug-fixing), not just at session start:
 - **Status update** — change came from a BACKLOG / regression-log / runbook
   entry? Update that entry (status, PR, SHA) in the same PR.
 - **Device-test queue** — shipped something only a human with the phone can
-  verify? Enqueue it as a comment on the pinned
-  [Device test queue issue #66](https://github.com/Tessellate-Studio/mood-layer/issues/66)
-  before ending the turn (format + full rule: `forge/standards/workflows.md`
-  → "Device-test queue"); the user drains all apps with `/forge:device-test`.
+  verify? Enqueue it as its own issue labelled `device-test` —
+  `dtq enqueue --repo mood-layer …` — before ending the turn (body fields + full
+  rule: `forge/standards/workflows.md` → "Device-test queue"); the user drains
+  all apps with `/forge:device-test`, and `dtq` shows what's pending.
 - **External-tool decisions** — decided setups go in
   [`docs/manual-runbook.md`](./docs/manual-runbook.md) with a fixed
   format: **What's left:** [one line] · **Steps:** [numbered, copy-pasteable] ·

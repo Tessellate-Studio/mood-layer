@@ -29,7 +29,7 @@ npx jest --no-coverage
 
 ## Device verification
 <!-- Every UI change needs a device-test queue item before this merges —
-     forge standards/workflows.md → "Device-test queue" (issue #66).
+     forge standards/workflows.md → "Device-test queue" (one `device-test` issue per test).
      Say which item covers this, or why none is needed. -->
 
 - [ ] Queued as a device-test item: #
