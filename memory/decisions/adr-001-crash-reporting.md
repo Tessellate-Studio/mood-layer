@@ -65,7 +65,7 @@ rewrite.
 - Needs a Sentry project + `EXPO_PUBLIC_SENTRY_DSN`; without the DSN the code
   stays inert, so an un-provisioned build behaves exactly as before.
 - Play Store data-safety disclosure will need a "Crash logs — optional"
-  entry when the listing is filled in (BACKLOG P2).
+  entry when the listing is filled in (mood-layer#134).
 
 ## Verification
 

@@ -23,6 +23,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      # RFD 004 §5.7 freeze guard: BACKLOG.md is a one-line pointer to the
+      # issue list. A PR that adds an entry fails here, with the fix in the
+      # message, instead of merging into a dead file.
+      - name: BACKLOG.md is retired
+        run: grep -q 'backlog-retired' BACKLOG.md && [ "$(grep -cv '^\s*$' BACKLOG.md)" -le 1 ] || { echo "::error::BACKLOG.md is retired — file an issue (wi new) instead"; exit 1; }
       - uses: actions/setup-node@v7
         with:
           node-version: 22

@@ -75,7 +75,7 @@ reasoning and the rejected alternative (a local-only crash journal):
   the throw site if one is added — a scrubber cannot tell which substring is
   a feeling.
 - **Play Store:** needs a "Crash logs — optional" data-safety entry when the
-  listing is filled in (BACKLOG P2).
+  listing is filled in (mood-layer#134).
 
 ## Usage analytics — PROPOSED, not yet a sanctioned exception (scoped 2026-08-26)
 
@@ -107,7 +107,7 @@ device:
 ## Circle relay — the sanctioned exception (privacy review, 2026-07-18)
 
 User-decided 2026-07-18: circle sharing may deliver app-to-app through a relay.
-The trust boundary, reviewed before code (BACKLOG P0 entry):
+The trust boundary, reviewed before code ([the BACKLOG P0 entry](https://github.com/Tessellate-Studio/mood-layer/blob/a6516bf/BACKLOG.md#L22-L39)):
 
 - **What leaves the phone:** ONLY the gated weekly summary string — the same
   text "Share this week" hands to the OS share sheet (`shareSummary`, gated by

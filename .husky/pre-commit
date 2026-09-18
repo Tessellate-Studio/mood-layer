@@ -126,7 +126,7 @@ if [ "$CODE_LINES" -gt 30 ]; then
   else
     echo "   1. Quality pass run? (/code-review then /simplify, cleanups in a separate commit)"
   fi
-  echo "   2. If this came from BACKLOG / the regression log / a tracker entry — entry updated?"
+  echo "   2. Came from an issue? Closes #N in the PR body. From a regression-log / runbook entry? Entry updated?"
   echo "   3. UI change? It needs a device-test queue item (forge standards/workflows.md)."
 fi
 

@@ -1,0 +1,25 @@
+{
+  "bd2526a82f78": {
+    "verdict": "device-test"
+  },
+  "e6f665c7a06d": {
+    "verdict": "create",
+    "priority": "P3",
+    "title": "Circle relay: instant FCM push pokes, only if the daily/weekly cadence feels slow",
+    "deferredUntil": "the daily/weekly delivery cadence feels slow in real use"
+  },
+  "90cc84bfa793": {
+    "verdict": "create",
+    "title": "Word-definition action labels: keep Constructive / Ambiguous / Destructive, or soften them",
+    "decisionPr": 129
+  },
+  "3a51b6ed0739": {
+    "decisionPr": 128
+  },
+  "63f474f994e8": {
+    "verdict": "device-test"
+  },
+  "76c3ad860e9d": {
+    "type": "chore"
+  }
+}
