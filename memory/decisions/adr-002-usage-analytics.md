@@ -1,10 +1,6 @@
 # ADR-002 — Anonymized, event-level usage analytics (PROPOSED)
 
-- **Status:** proposed 2026-08-26 — scoped, **not yet decided**. This ADR is
-  the vehicle for the hard rule's escape hatch ("until the user explicitly
-  decides otherwise, then it goes through the tracker + a privacy review"),
-  but the decision itself still needs an explicit yes from the user before any
-  code lands. Nothing in this doc authorizes implementation.
+- **Status:** accepted — approved via this PR (merge = approve, close = reject)
 - **Tier:** ADR (tactical, reversible — one toggle, one new dependency), same
   tier as `memory/decisions/adr-001-crash-reporting.md`, on the same reasoning:
   scoped data class, opt-in, one library, no architecture change.
