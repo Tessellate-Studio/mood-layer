@@ -1,7 +1,7 @@
 # ADR-004 — Word-definition action labels: keep "Constructive / Ambiguous / Destructive", or soften them
 
 - **Date:** 2026-09-18 (drafted from `BACKLOG.md` P1 "Hold-to-learn opens the FAMILY's helper, not the WORD's" → *Still open*)
-- **Status:** proposed
+- **Status:** accepted — approved via this PR (merge = approve, close = reject)
 - **Tier:** ADR. It is a copy-only change, three strings in one typed content file.
 - **Decider:** user (owner)
 
