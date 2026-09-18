@@ -50,8 +50,9 @@ merging, bug-fixing), not just at session start:
   boundary in the navigator.
 - **Quality pass** — before committing any non-trivial diff (UI or not):
   `/code-review`, then `/simplify`, re-run tests, commit cleanups separately.
-- **Status update** — change came from a BACKLOG / regression-log / runbook
-  entry? Update that entry (status, PR, SHA) in the same PR.
+- **Status update** — change came from an issue? `Closes #N` in the PR body
+  (`Refs #N` for plumbing-only PRs). From a regression-log / runbook entry?
+  Update that entry (status, PR, SHA) in the same PR.
 - **Device-test queue** — shipped something only a human with the phone can
   verify? Enqueue it as its own issue labelled `device-test` —
   `dtq enqueue --repo mood-layer …` — before ending the turn (body fields + full
@@ -63,7 +64,8 @@ merging, bug-fixing), not just at session start:
   **Verify:** [how to confirm it worked]. A finished setup is DELETED — section
   and table row both; keep only a residual action, if there is one. Leaving
   finished work in the file is how it rots. History, context and rejected
-  options go in BACKLOG; the runbook holds outstanding exactly-how, nothing
+  options go in the issue (decided designs: `memory/decisions/`); the
+  runbook holds outstanding exactly-how, nothing
   else.
 - **Doc placement** — [`PROJECT_DOCS.md`](./PROJECT_DOCS.md) maps every doc
   type to its location. Platform rule: `forge/standards/doc-placement.md`.
@@ -130,9 +132,15 @@ inventing a `publish` command to get past the check.
 
 ## Planning docs
 
-- `BACKLOG.md` — durable out-of-scope record (P0–P4)
+- **Work items are GitHub issues**, P0–P3 labels
+  ([open, by priority](https://github.com/Tessellate-Studio/mood-layer/issues?q=is%3Aissue+is%3Aopen+label%3AP0%2CP1%2CP2%2CP3+sort%3Acreated-asc)).
+  File with `wi new --repo mood-layer --priority P2 …` (forge), never in
+  `BACKLOG.md`: it is a retired pointer, and CI fails any PR that adds to it
+  (RFD 004). An owner yes/no is a draft PR labelled `decision`. File an item
+  in the repo that owns the code.
 - `USER_PATHS.md` — happy + edge + uncovered flows
-- `WEEKLY_DIGEST.md` — append-only weekly priorities (roadmap-pulse)
+- Weekly priorities — the roadmap Artifact, refreshed by roadmap-pulse.
+  `WEEKLY_DIGEST.md` is retired history and is no longer appended to.
 - `memory/` — regression log, anti-patterns, design vision
 
 ## Builds — cloud ONLY, never compile natively on the laptop

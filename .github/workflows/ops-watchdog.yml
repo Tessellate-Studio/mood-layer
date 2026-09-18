@@ -13,7 +13,7 @@
 #      This matters more here than the endpoint count suggests. The relay is
 #      this app's ONLY server, it lives in ALATE's Supabase project (chosen
 #      2026-07-18 because a free-tier project pauses after ~1 week idle and
-#      alate's traffic keeps it awake — BACKLOG), and nothing in this repo has
+#      alate's traffic keeps it awake — docs/SECURITY.md "Circle relay"), and nothing in this repo has
 #      ever watched it. If alate goes quiet and the project pauses, circle
 #      delivery stops silently: sends fail into a catch, and the only person
 #      who finds out is a user whose weekly share never arrived.
@@ -152,7 +152,7 @@ jobs:
                   `The scheduled relay probe failed.\n\n${detail}\n\n` +
                   `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\n` +
                   `First thing to check: is the **alate** Supabase project paused? This ` +
-                  `function lives there (BACKLOG — free-tier projects pause after ~1 week ` +
+                  `function lives there (docs/SECURITY.md, "Circle relay": free-tier projects pause after ~1 week ` +
                   `idle). Circle delivery is down for every user while this is red. ` +
                   `Close the issue once the probe is green; the watchdog opens a fresh one ` +
                   `on the next failure.`,

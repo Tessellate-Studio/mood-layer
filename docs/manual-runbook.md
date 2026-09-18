@@ -3,7 +3,7 @@
 Durable record of every external-tool setup that has a **decided** path — the
 steps no script can take, because they happen in someone else's console behind
 someone else's login. Actionable steps only, no history — why a thing was
-decided lives in [`BACKLOG.md`](../BACKLOG.md); this file holds *exactly how*.
+decided lives in its GitHub issue or `memory/decisions/`; this file holds *exactly how*.
 
 Legend: ✅ done · 🟡 in progress (action left) · ⏸️ parked (decided, not now) ·
 📖 reference · 🔲 not started.
@@ -11,12 +11,12 @@ Legend: ✅ done · 🟡 in progress (action left) · ⏸️ parked (decided, no
 **When a setup is finished, DELETE IT** — its section and its row, both. This
 file holds outstanding work only; a finished setup left behind reads as work
 and buries the items that actually are. The history is not lost: the decision
-lives in [`BACKLOG.md`](../BACKLOG.md), the steps stay in git. If a finished
+lives in its issue (or `memory/decisions/`), the steps stay in git. If a finished
 setup has a residual action, keep only that action, as its own row.
 
 Everything not listed here is local-only by design — no backend, auth,
 analytics, or crash-reporting to configure. The one sanctioned off-device path
-is the Circle relay (decision in [`BACKLOG.md`](../BACKLOG.md), trust boundary
+is the Circle relay (decision in the [last full `BACKLOG.md`](https://github.com/Tessellate-Studio/mood-layer/blob/a6516bf/BACKLOG.md#L22-L39), trust boundary
 in [`SECURITY.md`](./SECURITY.md)).
 
 ---

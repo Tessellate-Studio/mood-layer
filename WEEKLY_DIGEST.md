@@ -1,3 +1,5 @@
+> **Retired 2026-09-19 (RFD 004 §4.6):** the digest is now the roadmap Artifact (its URL is `artifactUrl` in `.roadmap-pulse-state.json`, set by the next pulse run). This file is no longer appended to; its history stays in git.
+
 # Weekly Digest — The Mood Layer
 
 Append-only history of weekly priority decisions, produced by the

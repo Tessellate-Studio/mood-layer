@@ -1,0 +1,166 @@
+[
+  {
+    "key": "e6f665c7a06d",
+    "title": "Circle relay: instant FCM push pokes, only if the daily/weekly cadence feels slow",
+    "verdict": "create",
+    "sourceLines": "22-39",
+    "sourceSha": "a6516bf",
+    "sourceRepo": "mood-layer",
+    "repo": "mood-layer",
+    "briefs": [],
+    "issue": 130,
+    "url": "https://github.com/Tessellate-Studio/mood-layer/issues/130",
+    "action": "created",
+    "labels": [
+      "P3",
+      "feature",
+      "migrated-from-backlog"
+    ]
+  },
+  {
+    "key": "90cc84bfa793",
+    "title": "Word-definition action labels: keep Constructive / Ambiguous / Destructive, or soften them",
+    "verdict": "create",
+    "sourceLines": "43-90",
+    "sourceSha": "a6516bf",
+    "sourceRepo": "mood-layer",
+    "repo": "mood-layer",
+    "briefs": [],
+    "issue": 131,
+    "url": "https://github.com/Tessellate-Studio/mood-layer/issues/131",
+    "action": "created",
+    "labels": [
+      "P1",
+      "feature",
+      "needs-input",
+      "migrated-from-backlog"
+    ]
+  },
+  {
+    "key": "0fa67d269831",
+    "title": "Insights: many more templates, with the words you actually logged woven in (Pitch)",
+    "verdict": "create",
+    "sourceLines": "92-105",
+    "sourceSha": "a6516bf",
+    "sourceRepo": "mood-layer",
+    "repo": "mood-layer",
+    "briefs": [],
+    "issue": 132,
+    "url": "https://github.com/Tessellate-Studio/mood-layer/issues/132",
+    "action": "created",
+    "labels": [
+      "P1",
+      "feature",
+      "migrated-from-backlog"
+    ]
+  },
+  {
+    "key": "3a51b6ed0739",
+    "title": "Usage analytics — third sanctioned-exception decision needed",
+    "verdict": "create",
+    "sourceLines": "118-132",
+    "sourceSha": "a6516bf",
+    "sourceRepo": "mood-layer",
+    "repo": "mood-layer",
+    "briefs": [],
+    "issue": 133,
+    "url": "https://github.com/Tessellate-Studio/mood-layer/issues/133",
+    "action": "created",
+    "labels": [
+      "P1",
+      "feature",
+      "needs-input",
+      "migrated-from-backlog"
+    ]
+  },
+  {
+    "key": "76c3ad860e9d",
+    "title": "Publish The Mood Layer to Google Play (indie route)",
+    "verdict": "create",
+    "sourceLines": "169-188",
+    "sourceSha": "a6516bf",
+    "sourceRepo": "mood-layer",
+    "repo": "mood-layer",
+    "briefs": [],
+    "issue": 134,
+    "url": "https://github.com/Tessellate-Studio/mood-layer/issues/134",
+    "action": "created",
+    "labels": [
+      "P2",
+      "chore",
+      "migrated-from-backlog"
+    ]
+  },
+  {
+    "key": "813d82928f28",
+    "title": "Three more drawings of the mark and its chrome could collapse into one",
+    "verdict": "create",
+    "sourceLines": "205-216",
+    "sourceSha": "a6516bf",
+    "sourceRepo": "mood-layer",
+    "repo": "mood-layer",
+    "briefs": [],
+    "issue": 135,
+    "url": "https://github.com/Tessellate-Studio/mood-layer/issues/135",
+    "action": "created",
+    "labels": [
+      "P3",
+      "refactor",
+      "migrated-from-backlog"
+    ]
+  },
+  {
+    "key": "a8afe2349567",
+    "title": "A pause after \"take a moment\" cards — timer, reminder, or reward",
+    "verdict": "create",
+    "sourceLines": "227-237",
+    "sourceSha": "a6516bf",
+    "sourceRepo": "mood-layer",
+    "repo": "mood-layer",
+    "briefs": [],
+    "issue": 136,
+    "url": "https://github.com/Tessellate-Studio/mood-layer/issues/136",
+    "action": "created",
+    "labels": [
+      "P3",
+      "feature",
+      "migrated-from-backlog"
+    ]
+  },
+  {
+    "key": "756c07fb6c3f",
+    "title": "Further de-overwhelm interactions for word pickers",
+    "verdict": "create",
+    "sourceLines": "239-247",
+    "sourceSha": "a6516bf",
+    "sourceRepo": "mood-layer",
+    "repo": "mood-layer",
+    "briefs": [],
+    "issue": 137,
+    "url": "https://github.com/Tessellate-Studio/mood-layer/issues/137",
+    "action": "created",
+    "labels": [
+      "P3",
+      "feature",
+      "migrated-from-backlog"
+    ]
+  },
+  {
+    "key": "184abc7d76ee",
+    "title": "Check in with any field-guide word",
+    "verdict": "create",
+    "sourceLines": "249-257",
+    "sourceSha": "a6516bf",
+    "sourceRepo": "mood-layer",
+    "repo": "mood-layer",
+    "briefs": [],
+    "issue": 138,
+    "url": "https://github.com/Tessellate-Studio/mood-layer/issues/138",
+    "action": "created",
+    "labels": [
+      "P3",
+      "feature",
+      "migrated-from-backlog"
+    ]
+  }
+]

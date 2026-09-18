@@ -98,4 +98,4 @@ next Monday's open replaces the cards, the 1st's open replaces the month.
 - The tab left open across the Monday-midnight boundary shows the empty state
   until it is re-focused (generation runs on focus).
 - Template variety: seven fixed skeletons, two a week — repeats are structural
-  until the BACKLOG P1 variety pitch lands.
+  until the variety pitch (mood-layer#132) lands.
