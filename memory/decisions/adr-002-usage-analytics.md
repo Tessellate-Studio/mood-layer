@@ -5,6 +5,7 @@
   tier as `memory/decisions/adr-001-crash-reporting.md`, on the same reasoning:
   scoped data class, opt-in, one library, no architecture change.
 - **Decider:** user (pending)
+- **Tracking:** mood-layer#133
 
 ## Context
 
@@ -21,7 +22,7 @@ user-decided, reviewed exceptions — the circle relay (`docs/SECURITY.md` →
 would be a **third** sanctioned exception, and per the hard rule in
 `CLAUDE.md`, "there is already an exception" is explicitly *not* a precedent —
 this needs its own decision and its own privacy review, not a rider on the
-crash-reporting or Play Store submission work already in flight (BACKLOG →
+crash-reporting or Play Store submission work already in flight (mood-layer#134,
 "Publish The Mood Layer to Google Play").
 
 ### The scope has to be narrower than the question
@@ -136,9 +137,9 @@ responsibility to it.
 - **A third line item** in `CLAUDE.md`'s hard-rules bullet ("TWO sanctioned
   exceptions") becomes three, *only once this is actually decided* — not as
   part of this scoping pass.
-- **App Store / Play Store disclosure.** BACKLOG's Play Store data-safety entry
+- **App Store / Play Store disclosure.** The Play Store data-safety section
   currently states "no analytics" as a settled fact
-  (`BACKLOG.md` → "Publish The Mood Layer to Google Play"). That line becomes
+  (mood-layer#134, "Publish The Mood Layer to Google Play"). That line becomes
   false the moment this ships and must be updated in the same PR — "Usage
   analytics — collected, optional, not linked to identity," mirroring the
   existing crash-logs entry.
@@ -208,11 +209,11 @@ from "proposed" to "accepted."
      accepted review (mirror the "Crash reports" section's structure).
    - `CLAUDE.md` hard-rules bullet → "TWO" becomes "THREE," with a one-line
      summary and a link to this ADR, matching the existing two entries' format.
-   - `BACKLOG.md` → Play Store data-safety entry gets a new line: "Usage
+   - mood-layer#134 → its Play Store data-safety section gets a new line: "Usage
      analytics — collected, optional, not linked to identity."
    - App Store / Play Store privacy questionnaire (whichever is live at
      submission time) → same disclosure, in the listing itself, not just
-     BACKLOG.
+     the issue.
    - `tessellate-pages` repo, privacy policy page → cross-repo PR adding the
      usage-analytics disclosure; treat as a blocking dependency for launch,
      filed and tracked before this ships, not discovered after.

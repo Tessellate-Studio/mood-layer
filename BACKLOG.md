@@ -130,8 +130,6 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
   into the in-flight crash-reporting or Play Store submission work — own PR,
   after acceptance. *Owner: user (decision), then agent (implementation
   plan in the ADR).*
-  **Decision PR:** [#128](https://github.com/Tessellate-Studio/mood-layer/pull/128) — merge = accept ADR-002 as
-  written (Aptabase, features not moods), close = reject/shelve.
 
 - ~~**Install the app icons from the logo handoff**~~ — shipped 2026-07-13,
   PR #14 (`e862632`). The on-device look (2026-08-31) failed it: the pastel
