@@ -75,9 +75,7 @@ Seeded 2026-07-12 from the first roadmap-pulse run.
   **Still open:** on-device verification (queued); no design review yet on
   whether the action-bucket LABELS ("Constructive"/"Ambiguous"/"Destructive")
   read as clinical against the app's gentle voice — worth a look once it's
-  seen on a phone. **Decision PR:** [#129](https://github.com/Tessellate-Studio/mood-layer/pull/129) —
-  [ADR-004](memory/decisions/adr-004-word-action-labels.md); merge = approve,
-  close = keep the Atlas terms. An 8-angle adversarial review (2026-09-03) found and fixed
+  seen on a phone. An 8-angle adversarial review (2026-09-03) found and fixed
   the family-staleness issue above plus four conventions cleanups (hardcoded
   literals → theme tokens in `WordDefinitionContent`'s intensity dots, the
   action labels moved into `wordDefinitions.ts`, a stale comment, a

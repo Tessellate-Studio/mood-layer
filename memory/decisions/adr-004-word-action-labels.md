@@ -4,6 +4,7 @@
 - **Status:** accepted — approved via this PR (merge = approve, close = reject)
 - **Tier:** ADR. It is a copy-only change, three strings in one typed content file.
 - **Decider:** user (owner)
+- **Tracking:** mood-layer#131
 
 ## Context
 
