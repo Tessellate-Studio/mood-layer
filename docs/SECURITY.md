@@ -147,6 +147,57 @@ The trust boundary, reviewed before code ([the BACKLOG P0 entry](https://github.
 | 2026-08-03 | `postcss` high (`<=8.5.17`, GHSA-r28c-9q8g-f849) | **fixed** | → 8.5.25. Supersedes the 2026-07-28 "deferred" row above; closes issue #48 |
 | 2026-08-03 | `uuid` moderate (GHSA-w5hq-g745-h8pq) | accepted | Unchanged from 2026-07-28 — build-time only, via `xcode` ← `@expo/config-plugins` and `@expo/ngrok` (dev) |
 
+## Security sweep — 2026-09-21
+
+**Clean pass, nothing reachable.** Distinct vulnerable packages **2 → 2**; raw
+headline **20 → 16**. The safe pass (`npm audit fix`, no `--force`) reported
+zero lockfile changes, and so did a full lockfile re-resolve against the
+unchanged manifest. No PR was opened here this sweep.
+
+### The headline fell without this sweep touching anything
+
+Worth stating plainly, because it is the mirror image of the usual warning in
+these logs. The raw count went **20 → 16** while distinct vulnerable packages
+stayed at 2. Nothing was fixed here — ordinary merges since 2026-09-09 (the
+`zustand` bump in #94, the BACKLOG migration in #141) reshaped the tree so that
+fewer *dependents* of the same two leaves are counted separately.
+
+This is the same mechanism that made alate mobile read 23 → 53 on 2026-07-28
+while real exposure went *down*; it simply ran in the pleasant direction this
+time. Neither number is evidence about exposure on its own. **Distinct
+vulnerable packages is the count that means something, and it did not move.**
+
+### Current disposition — both unchanged
+
+| Package | Severity | Disposition | Unchanged from |
+|---|---|---|---|
+| `decode-uri-component` | moderate | **Tracked, not currently reachable, not dismissed.** The `overrides` remediation is a CJS/ESM trap that greens `npm audit` while breaking every `query-string` call — see the 2026-09-05 correction below | 2026-09-05 |
+| `uuid` | moderate | Accepted residual — build-time via `xcode`, capped behind an Expo major | 2026-07-03 |
+
+`@xmldom/xmldom`, `browserslist` and `baseline-browser-mapping` stay gone:
+PR #115's 0.8.15 bump is holding, three sweeps on.
+
+### Dependabot — owned by the daily task since 2026-09-19
+
+Per the user's instruction, all Dependabot work (bump PRs *and* alerts) now
+belongs to the daily `dependabot-pr-triage-daily` task. This sweep used the
+alert list read-only.
+
+- **Alerts dismissed by the daily task since the last sweep: none** in this repo.
+- **Issues it filed: none** in this repo.
+- **Open Dependabot alerts: 1** — `decode-uri-component` (GHSA-vcc3-ghjq-m6fr).
+  Deliberately still open: tracked, not accepted.
+- **Open Dependabot PRs: none.**
+
+### Re-check triggers (unchanged)
+
+- Stable `@react-navigation` **v8** ships → clears `decode-uri-component`
+  outright (v8 pins `query-string@^9.4.0`, which carries
+  `decode-uri-component@^0.5.0`).
+- An Expo major → clears `uuid`.
+
+---
+
 ## Security sweep — 2026-09-09
 
 Safe pass (`npm audit fix`, no `--force`, lockfile-only — `package.json`
