@@ -138,6 +138,25 @@ export default function AppNavigator() {
 
   // onReady is the first moment a queued deep link can be delivered — a
   // notification tap always arrives before it (regression row 21).
+  //
+  // SECURITY — the "deep link" above is a notification tap routed through
+  // `navigationRef`, NOT react-navigation's URL `linking` config, and the
+  // difference is load-bearing. `decode-uri-component` (GHSA-vcc3-ghjq-m6fr,
+  // moderate: DoS via exponential decoding of malformed percent-encoded input)
+  // ships in the bundle via `query-string@7.1.3` ← `@react-navigation/core`,
+  // and it has no reachable fix: 0.5.0 is patched but ESM-only, and overriding
+  // to it breaks EVERY query-string call, not just malformed ones
+  // (docs/SECURITY.md has the verified repro).
+  //
+  // It stays unreachable because `@react-navigation/core` calls `query-string`
+  // at exactly one site — `getStateFromPath` — gated behind
+  // `linking ? linking.enabled !== false : false`. We pass no `linking` prop
+  // and there is no `Linking.*` call in src/, so no attacker-controlled URL
+  // reaches `parse()`. Routing through `navigationRef` never touches it.
+  //
+  // Adding a `linking` prop here makes that advisory LIVE. Re-open the triage
+  // in docs/SECURITY.md before you do — the fix is a patch-package on
+  // query-string, not an override.
   return (
     <NavigationContainer ref={navigationRef} onReady={flushPendingNavigation}>
       <Stack.Navigator initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
