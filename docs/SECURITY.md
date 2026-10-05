@@ -147,6 +147,65 @@ The trust boundary, reviewed before code ([the BACKLOG P0 entry](https://github.
 | 2026-08-03 | `postcss` high (`<=8.5.17`, GHSA-r28c-9q8g-f849) | **fixed** | → 8.5.25. Supersedes the 2026-07-28 "deferred" row above; closes issue #48 |
 | 2026-08-03 | `uuid` moderate (GHSA-w5hq-g745-h8pq) | accepted | Unchanged from 2026-07-28 — build-time only, via `xcode` ← `@expo/config-plugins` and `@expo/ngrok` (dev) |
 
+## Security sweep — 2026-10-05
+
+**`decode-uri-component` is gone.** The safe pass fixed two build/dev-tooling packages in PR [#148](https://github.com/Tessellate-Studio/mood-layer/pull/148), which is lockfile-only with the manifest untouched. Two new upstream advisories are build-time and genuinely unpatched.
+
+| | 2026-09-21 | before this sweep | after #148 |
+|---|---|---|---|
+| Distinct vulnerable packages | 2 | 5 | **3** |
+| Raw headline | 16 | 55 | **53** |
+
+### `decode-uri-component` — cleared by an ordinary bump, not by this sweep
+
+PR #145 (2026-10-03) was Dependabot's `minor-patch` group bump of `@react-navigation/*`, moving 7.3.18 → 7.19.x.
+
+The newer `@react-navigation/native` no longer depends on `query-string`. That removed `query-string@7.1.3` and `decode-uri-component@0.2.2` from the lockfile entirely, and Dependabot alert #13 closed as fixed the same day.
+
+This closes the tracked item carried since the 2026-09-05 correction. The route that cleared it was a 7.x minor, not the v8 release the re-check trigger expected. badige is still on v6 and records the same route in its own log.
+
+### Fixed
+
+| Package | Severity | Advisory | PR |
+|---|---|---|---|
+| `brace-expansion` (15 nested copies → 1.1.21 / 2.1.7 / 5.0.12) | high | GHSA-qhr7-859c-m2p7, GHSA-6j4f-fj2g-mc7p, GHSA-q2hr-2g5m-vwhr | #148 |
+| `http-cache-semantics` 4.2.0 → 4.3.0 (dev-only) | high | GHSA-ch52-4w7c-c8xp | #148 |
+
+Both are build or dev tooling (eslint, jest, RN codegen, rimraf). No packages were added or removed.
+
+Verification: `npm ci` ok and `tsc --noEmit` clean. jest gave 51 suites / 600 passed, identical to the baseline. The baseline was run twice per the cold-install note.
+
+### New — accepted residual, build-time, genuinely unpatched
+
+| Package | Severity | Advisory | Path | Registry check |
+|---|---|---|---|---|
+| `braces` 3.0.3 | high | GHSA-vfj7-8cjw-p6xm (`<=3.0.3`) | `micromatch` ← `@jest/transform` ← `babel-jest` (also Metro) | `npm view` → **3.0.3**, itself in range |
+| `node-forge` 1.4.0 | high | GHSA-86w9-cpqp-85rv (`<=1.4.0`) | `@expo/cli` ← `expo` | `npm view` → **1.4.0**, itself in range |
+
+No issue was filed, per the necessity bar.
+
+`uuid` is unchanged from 2026-07-03: build-time via `xcode`, capped behind an Expo major.
+
+The safe pass and a full lockfile re-resolve moved nothing else.
+
+### Dependabot — owned by the daily task
+
+This sweep used the alert list read-only.
+
+- **Alerts dismissed by the daily task since 2026-09-21: 1.** That was `http-cache-semantics` #51, `tolerable_risk`, on 2026-10-05. It is now also fixed by #148.
+- **Issues it filed:** none.
+- **Open alerts: 9.**
+  - `brace-expansion` #40, #42, #43, #45–#48 are cleared by #148.
+  - `node-forge` #49 and `braces` #50 are build-time and unpatched as above. They are left for the daily task.
+- **Open Dependabot PRs:** none.
+
+### Re-check triggers
+
+- A `braces` release above 3.0.3, or a `node-forge` release above 1.4.0, means the next safe pass takes it.
+- An Expo major clears `uuid`.
+
+---
+
 ## Security sweep — 2026-09-21
 
 **Clean pass, nothing reachable.** Distinct vulnerable packages **2 → 2**; raw
