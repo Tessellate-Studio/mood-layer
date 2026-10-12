@@ -147,6 +147,61 @@ The trust boundary, reviewed before code ([the BACKLOG P0 entry](https://github.
 | 2026-08-03 | `postcss` high (`<=8.5.17`, GHSA-r28c-9q8g-f849) | **fixed** | → 8.5.25. Supersedes the 2026-07-28 "deferred" row above; closes issue #48 |
 | 2026-08-03 | `uuid` moderate (GHSA-w5hq-g745-h8pq) | accepted | Unchanged from 2026-07-28 — build-time only, via `xcode` ← `@expo/config-plugins` and `@expo/ngrok` (dev) |
 
+## Security sweep — 2026-10-12
+
+The safe pass fixed three build-tooling packages in PR [#150](https://github.com/Tessellate-Studio/mood-layer/pull/150), one of them a new **critical**. The PR is lockfile-only: the manifest is untouched and no packages were added or removed.
+
+| | 2026-10-05 (after #148) | before this sweep | after #150 |
+|---|---|---|---|
+| Distinct vulnerable packages | 3 | 7 | **4** |
+| Raw headline | 53 | 61 | **58** |
+
+Four new upstream advisories landed since 2026-10-05. Three are fixed by #150. The fourth, `sprintf-js`, is genuinely unpatched and dev-only.
+
+### Fixed
+
+All three are Expo / React Native CLI tooling and never reach the APK. Verified on the branch: `npm ci` ok, `tsc --noEmit` clean, jest 51 suites / 600 tests passed, identical to the baseline. The baseline was run twice per the cold-install note; the first run had three load-induced timeouts and the second was clean.
+
+| Package | Severity | Advisory | Path | PR |
+|---|---|---|---|---|
+| `shell-quote` 1.9.0 → 1.12.0 | **critical** | GHSA-pqg4-j6r4-53mv | `react-devtools-core` ← `react-native` | #150 |
+| `compression` 1.8.1 → 1.8.2 | high | GHSA-vc2v-76pw-4v95 | `@expo/cli` ← `expo` (dev server) | #150 |
+| `source-map-js` 1.2.1 → 1.2.2 | high | GHSA-68fv-2mgg-jv7q | `postcss` ← `@expo/metro-config` ← `expo` (bundler) | #150 |
+
+The `shell-quote` advisory is critical by CVSS, but here the package is only reached by React DevTools' shell-argument quoting on a developer machine. It was fixed because the patch was in range and the suite stayed green, not because it was reachable from the app.
+
+### New — accepted residual, dev-only, genuinely unpatched
+
+| Package | Severity | Advisory | Path | Registry check |
+|---|---|---|---|---|
+| `sprintf-js` 1.0.3 | moderate | GHSA-hp3w-g68c-fv3c (`<=1.1.3`) | `argparse` ← `js-yaml` ← `@istanbuljs/load-nyc-config` ← `babel-plugin-istanbul` ← `@jest/transform` ← `jest` (devDependency) | `npm view` → **1.1.3**, which is itself in range. No fix exists |
+
+No issue was filed, per the necessity bar.
+
+### Unchanged
+
+A full lockfile re-resolve on top of the safe pass moved nothing else.
+
+- **`braces`, `node-forge`:** still genuinely unpatched. `npm view` → 3.0.3 and 1.4.0, both re-verified today and both inside their ranges. Unchanged from 2026-10-05.
+- **`uuid`:** build-time via `xcode`, capped behind an Expo major. Unchanged from 2026-07-03.
+
+### Dependabot — owned by the daily task
+
+This sweep used the alert list read-only.
+
+- **Alerts dismissed by the daily task since 2026-10-05: 2.** `node-forge` #49 and `braces` #50, both `tolerable_risk` on 2026-10-05, both tracing the same paths as the entry above.
+- **Alerts closed as fixed since 2026-10-05: 10.** `brace-expansion` #40–#48 and `http-cache-semantics` #51, by #148.
+- **Issues it filed:** none.
+- **Open alerts: 0.** Dependabot has raised no alert for `shell-quote`, `compression`, `source-map-js` or `sprintf-js`. This file is the record for those.
+- **Open Dependabot PRs:** none.
+
+### Re-check triggers
+
+- **A `sprintf-js` release above 1.1.3, a `braces` release above 3.0.3, or a `node-forge` release above 1.4.0:** the next safe pass takes it.
+- **An Expo major** clears `uuid`.
+
+---
+
 ## Security sweep — 2026-10-05
 
 **`decode-uri-component` is gone.** The safe pass fixed two build/dev-tooling packages in PR [#148](https://github.com/Tessellate-Studio/mood-layer/pull/148), which is lockfile-only with the manifest untouched. Two new upstream advisories are build-time and genuinely unpatched.
