@@ -149,7 +149,7 @@ The trust boundary, reviewed before code ([the BACKLOG P0 entry](https://github.
 
 ## Security sweep — 2026-10-27
 
-**No fix PR this sweep.** Distinct vulnerable packages: 3 (npm headline 8). Open Dependabot alerts: 0.
+**Lockfile fix opened after the first pass:** PR [#153](https://github.com/Tessellate-Studio/mood-layer/pull/153) — `node-forge` →1.4.1 via targeted `npm update --package-lock-only`. After #153: 2 distinct (`uuid`, `zod`). Distinct vulnerable packages: 3 (npm headline 8). Open Dependabot alerts: 0.
 
 | Package | Severity | Path | Disposition |
 |---|---|---|---|
@@ -161,7 +161,7 @@ No data path to or from the device is touched by any of these (privacy posture u
 
 ### Not done this run
 
-Safe-pass lockfile re-resolve and `npm view` re-verification were not run for mood-layer.
+Re-resolve and `npm view` re-checks were run. `uuid` has no reachable fix; `zod` needs the Expo major.
 
 ## Security sweep — 2026-10-12
 
