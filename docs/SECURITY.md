@@ -147,6 +147,22 @@ The trust boundary, reviewed before code ([the BACKLOG P0 entry](https://github.
 | 2026-08-03 | `postcss` high (`<=8.5.17`, GHSA-r28c-9q8g-f849) | **fixed** | → 8.5.25. Supersedes the 2026-07-28 "deferred" row above; closes issue #48 |
 | 2026-08-03 | `uuid` moderate (GHSA-w5hq-g745-h8pq) | accepted | Unchanged from 2026-07-28 — build-time only, via `xcode` ← `@expo/config-plugins` and `@expo/ngrok` (dev) |
 
+## Security sweep — 2026-10-27
+
+**Lockfile fix opened after the first pass:** PR [#153](https://github.com/Tessellate-Studio/mood-layer/pull/153) — `node-forge` →1.4.1 via targeted `npm update --package-lock-only`. After #153: 2 distinct (`uuid`, `zod`). Distinct vulnerable packages: 3 (npm headline 8). Open Dependabot alerts: 0.
+
+| Package | Severity | Path | Disposition |
+|---|---|---|---|
+| `node-forge` | high | `@expo/code-signing-certificates` ← `expo` | Accepted: Expo signing tooling, dev machine only |
+| `zod` | high | `@expo/cli` ← `expo` | Accepted: Expo CLI, dev machine only |
+| `uuid` | moderate | transitive | Accepted: no reachable fix short of the Expo major; not re-traced this run |
+
+No data path to or from the device is touched by any of these (privacy posture unchanged).
+
+### Not done this run
+
+Re-resolve and `npm view` re-checks were run. `uuid` has no reachable fix; `zod` needs the Expo major.
+
 ## Security sweep — 2026-10-12
 
 The safe pass fixed three build-tooling packages in PR [#150](https://github.com/Tessellate-Studio/mood-layer/pull/150), one of them a new **critical**. The PR is lockfile-only: the manifest is untouched and no packages were added or removed.
