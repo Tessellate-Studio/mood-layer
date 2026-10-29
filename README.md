@@ -18,11 +18,6 @@ iOS builds go to TestFlight) built on two ideas:
 write lives on your phone. Two opt-in exceptions exist, both reviewed — see
 [Privacy](#privacy).
 
-> Naming: this repo took the `mood-layer` name on 2026-07-07. The brand-side
-> Shopify app that held it before is now **Alate (for Brands)**
-> ([`Tessellate-Studio/loom`](https://github.com/Tessellate-Studio/loom)). The
-> two are unrelated — never port code or docs between them.
-
 ## What's in the app
 
 Four tabs, plus modal flows and a few pushed pages
@@ -134,4 +129,7 @@ labelled P0–P3; `BACKLOG.md` is a retired pointer.
 
 ## License
 
-See [`LICENSE`](./LICENSE).
+Copyright (c) 2026 Tessellate Studio. **All rights reserved.** This is
+proprietary software: no licence is granted to use, copy, modify or
+distribute any part of it. Being publicly visible on GitHub does not change
+that. Full terms in [`LICENSE`](./LICENSE).

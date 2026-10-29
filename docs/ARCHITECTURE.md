@@ -234,7 +234,7 @@ sequenceDiagram
     R-->>F: next FlowState
   end
   F->>S: addCheckIn(emotions, flags, note…)
-  S-->>S: stamp id, createdAt, dayKey; persist
+  S-->>S: stamp id, createdAt, dayKey, then persist
   S-->>Q: checkIns changed
   Q->>L: computeQuiltLayout(checkIns, width)
   L-->>Q: weeks → day rows → cloth pieces

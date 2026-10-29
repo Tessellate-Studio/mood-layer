@@ -25,7 +25,7 @@ Quick reference for where every doc lives and what it contains.
 | Doc | Path | Holds |
 |-----|------|-------|
 | **Security policy** | [`SECURITY.md`](./docs/SECURITY.md) | Dependency-alert triage (fix / accept / N/A) + why. Local-only context: any network-capable or data-leaving dep is a finding |
-| **External-tool setup** | [`manual-runbook.md`](./docs/manual-runbook.md) | **Decided** setups only (Play, EAS, Auth, DNS, Stripe). Actual values, copy-pasteable steps, verification commands. Status: ✅ / 🟡 / 🚧 / 📖 / 🔲. **Renamed** from `user-actions-tracker.md` (2026-08-11) |
+| **External-tool setup (legacy)** | [`manual-runbook.md`](./docs/manual-runbook.md) | Existing entries only (Play, EAS, circle pairing, TestFlight…), kept until each is done. **New** human-only steps are PRs labelled `manual run list` (since 2026-10-17), not new sections here |
 | **User doc template** | [`_USER_DOC_TEMPLATE.md`](./_USER_DOC_TEMPLATE.md) | Runbook template: plain-language "what" → numbered "how" (real links) → "verify" |
 | **Device testing quick ref** | [`manual-runbook.md` (Expo section)](./docs/manual-runbook.md) | LAN IP changes per session; verify with `npx expo start`. Regression-log #6 for failures |
 
@@ -36,7 +36,7 @@ Quick reference for where every doc lives and what it contains.
 - **Before coding:** skim `CLAUDE.md` (rules + isolation checklist) + `memory/project_anti_patterns.md` (why each rule matters).
 - **Before fixing a bug:** scan `memory/project_regression_log.md` for a matching symptom.
 - **Before shipping:** walk each feature's issue, confirm all paths work end-to-end.
-- **Before deployment:** check `docs/SECURITY.md` (open alerts) + `docs/manual-runbook.md` (verified steps).
+- **Before deployment:** check `docs/SECURITY.md` (open alerts) + open `manual run list` PRs and `docs/manual-runbook.md` (legacy entries).
 
 ---
 
@@ -62,6 +62,6 @@ Quick reference for where every doc lives and what it contains.
 
 **Digest:** the roadmap Artifact, refreshed in place by each roadmap-pulse run. Trigger it manually if a decision is urgent and can't wait for Sunday. `WEEKLY_DIGEST.md` is retired history.
 
-**Issue → manual runbook:** when a decision is made (not evaluated, decided), copy its *exactly-how* steps to the runbook. The issue evolves; the runbook is stable and indexed. Once a setup is done, delete its section AND its table row, and close the issue. The runbook carries outstanding work only; the decision stays in the issue (or `memory/decisions/`) and the steps stay in git. Keep a residual action, never a finished setup.
+**Decision → manual run list:** when a decision is made (not evaluated, decided) and it needs a human-only step, raise ONE draft PR labelled `manual run list` (body: What's left / Steps / Verify); the owner's merge is the done record. The decision stays in the issue (or `memory/decisions/`). The legacy runbook only shrinks: when a `manual run list` PR finishes one of its entries, delete that section AND its table row.
 
 **Shared rules (forge):** CLAUDE.md summarizes them. When forge changes the rule, update the summary here on the next session. The source of truth is `forge/standards/anti-patterns.md` + `forge/references/CLAUDE.base.md`, not this copy.
