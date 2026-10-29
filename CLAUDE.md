@@ -58,15 +58,20 @@ merging, bug-fixing), not just at session start:
   `dtq enqueue --repo mood-layer …` — before ending the turn (body fields + full
   rule: `forge/standards/workflows.md` → "Device-test queue"); the user drains
   all apps with `/forge:device-test`, and `dtq` shows what's pending.
-- **External-tool decisions** — decided setups go in
-  [`docs/manual-runbook.md`](./docs/manual-runbook.md) with a fixed
+- **Manual steps are PRs** — a step only a human can do (an external
+  console, a re-consent, a CLI login) is ONE draft PR labelled
+  `manual run list`, raised before the session ends. Its body uses a fixed
   format: **What's left:** [one line] · **Steps:** [numbered, copy-pasteable] ·
-  **Verify:** [how to confirm it worked]. A finished setup is DELETED — section
-  and table row both; keep only a residual action, if there is one. Leaving
-  finished work in the file is how it rots. History, context and rejected
-  options go in the issue (decided designs: `memory/decisions/`); the
-  runbook holds outstanding exactly-how, nothing
-  else.
+  **Verify:** [how to confirm it worked]. The owner does the steps and merges;
+  the merge is the done record. Check for an open one before raising another.
+  History and rejected options go in the issue (decided designs:
+  `memory/decisions/`). [`docs/manual-runbook.md`](./docs/manual-runbook.md) is
+  legacy: it keeps only its existing entries until each is done — no new open
+  sections (`forge/standards/workflows.md` → "Manual steps are PRs").
+- **Shared docs & duplicate work** — before editing the regression log or the
+  runbook, list the open PRs already touching that file; before starting
+  anything, scan open PR titles for your intent. Date-key new log rows, never a
+  sequential number.
 - **Doc placement** — [`PROJECT_DOCS.md`](./PROJECT_DOCS.md) maps every doc
   type to its location. Platform rule: `forge/standards/doc-placement.md`.
 - **Standalone runbooks** — a procedure too big to sit as a section in the

@@ -159,3 +159,8 @@
 - name: security
   color: "D73A4A"
   description: "Security-relevant"
+
+# ── Manual steps (forge, since 2026-10-17) ───────────────────────────
+- name: manual run list
+  color: "7A8C6E"
+  description: "A step only a human can do: PR body has What's left / Steps / Verify; merge = done"
