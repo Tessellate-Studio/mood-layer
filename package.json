@@ -59,5 +59,6 @@
     "react-test-renderer": "19.2.0",
     "typescript": "~5.9.2"
   },
+  "license": "UNLICENSED",
   "private": true
 }
