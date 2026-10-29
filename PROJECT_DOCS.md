@@ -9,7 +9,8 @@ Quick reference for where every doc lives and what it contains.
 | Doc | Path | Holds |
 |-----|------|-------|
 | **Project rules** | [`CLAUDE.md`](./CLAUDE.md) | Shared forge policy (TDD, WCAG, isolation) + app-specific rules (emotional quilt, local-only, typewriter voice, Reanimated, versioned Expo docs) |
-| **README** | [`README.md`](./README.md) | Product vision + tech stack. Emotional quilt, ink-on-paper design, Expo 55/RN 0.83 |
+| **README** | [`README.md`](./README.md) | Product vision, what's in the app, design language, stack, run/test, privacy summary |
+| **Architecture map** | [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) | System context, navigation, layers, data model, key flows, circle relay, CI. Update in the same PR as any structural change |
 | **Work items** | [GitHub issues, P0–P3](https://github.com/Tessellate-Studio/mood-layer/issues?q=is%3Aissue+is%3Aopen+label%3AP0%2CP1%2CP2%2CP3+sort%3Acreated-asc) | Open work, one issue per item, scored weekly by roadmap-pulse. `BACKLOG.md` is a retired pointer (RFD 004) |
 | **Weekly digest** | The roadmap Artifact | Weekly priorities, refreshed by roadmap-pulse. [`WEEKLY_DIGEST.md`](./WEEKLY_DIGEST.md) is retired history, no longer appended |
 | **User paths** | [`USER_PATHS.md`](./USER_PATHS.md) | Happy / edge / uncovered flows per feature. Seeded 2026-08-30 with the first-time helper-notes path |
