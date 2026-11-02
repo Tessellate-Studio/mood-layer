@@ -147,6 +147,18 @@ The trust boundary, reviewed before code ([the BACKLOG P0 entry](https://github.
 | 2026-08-03 | `postcss` high (`<=8.5.17`, GHSA-r28c-9q8g-f849) | **fixed** | → 8.5.25. Supersedes the 2026-07-28 "deferred" row above; closes issue #48 |
 | 2026-08-03 | `uuid` moderate (GHSA-w5hq-g745-h8pq) | accepted | Unchanged from 2026-07-28 — build-time only, via `xcode` ← `@expo/config-plugins` and `@expo/ngrok` (dev) |
 
+## Security sweep — 2026-11-02
+
+**No fix PR.** `npm audit` shows 5 distinct vulnerable packages (headline 60, no critical), unchanged in kind from 2026-10-27. A targeted lockfile re-resolve (`npm update zod --package-lock-only`) moved nothing.
+
+| Package | Severity | Path | Disposition |
+|---|---|---|---|
+| `zod` | high | `@expo/cli` (build-time) | Accepted; alert dismissed by the daily task 2026-10-28 (`tolerable_risk`). Latest 4.6.7 is a major |
+| `uuid`, `glob`, `minimatch`, `deepmerge` | moderate / low | Expo / RN / jest toolchain | Accepted, build-time; each needs an Expo, RN or jest-expo major. `deepmerge` alert dismissed 2026-10-30 |
+
+No runtime-reachable finding; the local-only data posture is unaffected. Open Dependabot alerts: 2 (`glob`, `minimatch`, both medium).
+
+
 ## Security sweep — 2026-10-27
 
 **Lockfile fix opened after the first pass:** PR [#153](https://github.com/Tessellate-Studio/mood-layer/pull/153) — `node-forge` →1.4.1 via targeted `npm update --package-lock-only`. After #153: 2 distinct (`uuid`, `zod`). Distinct vulnerable packages: 3 (npm headline 8). Open Dependabot alerts: 0.
