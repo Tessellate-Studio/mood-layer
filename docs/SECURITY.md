@@ -147,6 +147,16 @@ The trust boundary, reviewed before code ([the BACKLOG P0 entry](https://github.
 | 2026-08-03 | `postcss` high (`<=8.5.17`, GHSA-r28c-9q8g-f849) | **fixed** | → 8.5.25. Supersedes the 2026-07-28 "deferred" row above; closes issue #48 |
 | 2026-08-03 | `uuid` moderate (GHSA-w5hq-g745-h8pq) | accepted | Unchanged from 2026-07-28 — build-time only, via `xcode` ← `@expo/config-plugins` and `@expo/ngrok` (dev) |
 
+## Security sweep — 2026-11-16
+
+**Lockfile fix:** `node-forge` 1.4.1→1.4.3 (moderate, build-time: `@expo/cli` chain). Targeted `npm update node-forge --package-lock-only --no-save`; manifest untouched. Verified: `npm ci` ok, `tsc --noEmit` clean, jest 47/51 suites on a loaded first run, the 4 reds (`quiltRender`, `tabIcon`, `fieldGuideScreen`, `screenSmoke`, timeouts) pass 45/45 on rerun — the known cold-run flake, not the bump.
+
+Distinct vulnerable packages: 6 → 5 (`zod` high build-time via `@expo/cli`; `uuid`, `glob`, `minimatch`, `deepmerge` — Expo / jest toolchain majors). Otherwise unchanged from 2026-11-02. No runtime-reachable finding; local-only data posture unaffected.
+
+### Daily-task activity since 2026-11-02
+
+Dismissed `tolerable_risk`: `node-forge` ×4 (2026-11-16), `glob` (11-03). Open Dependabot alerts: 0.
+
 ## Security sweep — 2026-11-02
 
 **No fix PR.** `npm audit` shows 5 distinct vulnerable packages (headline 60, no critical), unchanged in kind from 2026-10-27. A targeted lockfile re-resolve (`npm update zod --package-lock-only`) moved nothing.
