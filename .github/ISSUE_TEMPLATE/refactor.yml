@@ -3,7 +3,7 @@
 # the code-inspection check fails when this file drifts from forge's.
 name: Refactor
 description: Restructure code without changing behaviour
-labels: ["refactor", "needs-triage"]
+labels: ["refactor", "🔁 refactor", "needs-triage", "🔎 needs-triage"]
 body:
   - type: textarea
     id: what

@@ -3,7 +3,7 @@
 # the code-inspection check fails when this file drifts from forge's.
 name: Feature
 description: New functionality or a user-visible improvement
-labels: ["feature", "needs-triage"]
+labels: ["feature", "✨ feature", "needs-triage", "🔎 needs-triage"]
 body:
   - type: textarea
     id: what
